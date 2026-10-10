@@ -55,6 +55,28 @@ Il database locale `neartech_kb` non è persistente.
   O*NET, Atlante ed ESCO caricati localmente; embedding ricalcolati e caricati localmente. Tutto questo va rifatto
   sul database persistente.
 
+### Embedding salvati in chat (da ricaricare nella sessione nuova)
+
+Gli embedding sono stati inviati in chat come file da scaricare, in float16 (perdita di precisione
+di circa 1e-4). I file da caricare nella nuova sessione sono:
+
+- `bge_m3_onet_atlante.f16.npy.part00` ... `part03` (O*NET, Atlante)
+- `bge_m3_esco.f16.npy.part00` e `part01` (ESCO)
+- `embeddings_index.jsonl` e `embeddings_esco_index.jsonl` (indici, stesso ordine dei vettori)
+- `fonti-manifest.json` e `checksum-parti.txt` (per verificare le parti)
+
+Ricomposizione (nella cartella con i file):
+
+```bash
+cat bge_m3_onet_atlante.f16.npy.part* > embeddings_bge_m3.npy
+cat bge_m3_esco.f16.npy.part*         > embeddings_esco_bge_m3.npy
+sha256sum -c checksum-parti.txt   # verifica le parti; i checksum dei file ricomposti non sono in lista
+```
+
+Il caricatore `scripts/carica_tassonomie.py` legge questi nomi e converte i vettori in float32. Per
+usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con gli hash di
+`docs/dati/fonti-manifest.json`. Gli embedding ricaricati evitano i circa 40 minuti di calcolo.
+
 ## Da fare, in ordine
 
 1. **Database persistente.** Scegliere PostgreSQL con pgvector in regione UE (consigliato:

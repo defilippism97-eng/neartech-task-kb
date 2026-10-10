@@ -88,9 +88,9 @@ def load_source(conn, rows: list[dict], *, name: str, version: str, uri: str, tm
 
 def load_embeddings(conn, embeddings_dir: Path, model: str) -> None:
     index = [json.loads(l) for l in (embeddings_dir / "embeddings_index.jsonl").read_text(encoding="utf-8").splitlines()]
-    vecs = np.load(embeddings_dir / "embeddings_bge_m3.npy")
+    vecs = np.load(embeddings_dir / "embeddings_bge_m3.npy").astype(np.float32)
     esco = [json.loads(l) for l in (embeddings_dir / "embeddings_esco_index.jsonl").read_text(encoding="utf-8").splitlines()]
-    esco_vecs = np.load(embeddings_dir / "embeddings_esco_bge_m3.npy")
+    esco_vecs = np.load(embeddings_dir / "embeddings_esco_bge_m3.npy").astype(np.float32)
     pairs = list(zip(index, vecs)) + list(zip(esco, esco_vecs))
 
     with conn.transaction():
