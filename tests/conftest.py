@@ -23,6 +23,9 @@ def dsn() -> str:
     with psycopg.connect(url, autocommit=True) as conn:
         conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
         conn.execute(SCHEMA.read_text(encoding="utf-8"))
+        # Le migrazioni si applicano nell'ordine del nome, dopo lo schema (come in produzione).
+        for migration in sorted((ROOT / "db" / "migrations").glob("*.sql")):
+            conn.execute(migration.read_text(encoding="utf-8"))
     return url
 
 
