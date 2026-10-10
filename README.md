@@ -20,9 +20,9 @@ Fase F0 (Fondazioni), in corso:
 - caricatore delle tassonomie da CSV (idempotente, con controllo dell'hash per versione);
 - inserimento di evidenze collegate a un nodo di tassonomia, con validazione della scala 0–4;
 - test delle tre verifiche di F0 del piano, su dati sintetici;
-- Scorer con `claude-haiku-5-5` (5 campioni per voce, ogni campione salvato come record `llm`), testato con un client finto. Il test sul modello reale richiede `ANTHROPIC_API_KEY`.
+- Scorer con `claude-haiku-5-5` (5 campioni per voce, ogni campione salvato come record `llm`), testato con un client finto. Il test sul modello reale richiede `NEARTECH_ANTHROPIC_API_KEY`.
 
-Da fare in F0: caricatori dei dati reali (O*NET, ESCO, Atlante INAPP), Crosswalk Mapper e Canonicalizer, job di calcolo di N e D, e la prima esecuzione reale dello Scorer sul gold standard. Per l'esecuzione reale serve `ANTHROPIC_API_KEY` nell'ambiente.
+Da fare in F0: caricatori dei dati reali (O*NET, ESCO, Atlante INAPP), Crosswalk Mapper e Canonicalizer, job di calcolo di N e D, e la prima esecuzione reale dello Scorer sul gold standard. Per l'esecuzione reale serve `NEARTECH_ANTHROPIC_API_KEY` nell'ambiente.
 
 ## Sviluppo
 

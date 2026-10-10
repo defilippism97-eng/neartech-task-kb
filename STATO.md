@@ -15,7 +15,7 @@ non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel
   `claude-haiku-5-5` (`scorer.py`, 5 campioni per voce, ogni campione salvato come record `llm`).
 - **Caricatore completo** (`scripts/carica_tassonomie.py`): carica O*NET 31.0, Atlante (API v2)
   ed ESCO 1.2.1 in italiano con la gerarchia, poi gli embedding bge-m3.
-- **Test**: 14 test passano su PostgreSQL 16 + pgvector; 1 test richiede `ANTHROPIC_API_KEY`.
+- **Test**: 14 test passano su PostgreSQL 16 + pgvector; 1 test richiede `NEARTECH_ANTHROPIC_API_KEY`.
 - **Workflow manuale** (`.github/workflows/test-scorer-reale.yml`): esegue i test con il modello reale
   usando il segreto GitHub `Claude`. Ultimo run riuscito: run #2.
 - **Licenze**: confermate dal responsabile del progetto il 2026-10-10. Il testo di ciascuna licenza
@@ -91,7 +91,7 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
    Prima di rilanciarlo, controllare che il database sia vuoto o che le versioni siano già registrate.
 4. **Chiave del modello per il Crosswalk Mapper.** Creare una chiave nuova su console.anthropic.com
    (nome `neartech-f0`, con limite di spesa mensile). Metterla come variabile d'ambiente
-   `ANTHROPIC_API_KEY` nell'ambiente della sessione, poi aprire una sessione nuova.
+   `NEARTECH_ANTHROPIC_API_KEY` nell'ambiente della sessione, poi aprire una sessione nuova.
    La chiave non va mai scritta in chat né nel repository.
 5. **Crosswalk Mapper**: non ancora implementato. Per ogni task canonico cerca i 20 nodi più vicini
    per tassonomia, poi il modello assegna la relazione (esatta, più ampia, più stretta, affine, nessuna)

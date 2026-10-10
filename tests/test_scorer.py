@@ -1,6 +1,6 @@
 """Test dello scorer con un client finto: nessuna chiamata di rete.
 
-Il test con il modello reale è in fondo ed è saltato senza ANTHROPIC_API_KEY.
+Il test con il modello reale è in fondo ed è saltato senza NEARTECH_ANTHROPIC_API_KEY.
 """
 
 import os
@@ -69,11 +69,11 @@ def test_campioni_salvati_come_record_separati_marcati_llm(conn):
     assert {r[0] for r in rows} == {"llm"} and {r[1] for r in rows} == {MODEL_ID}
 
 
-@pytest.mark.skipif(not os.environ.get("ANTHROPIC_API_KEY"), reason="serve ANTHROPIC_API_KEY")
+@pytest.mark.skipif(not os.environ.get("NEARTECH_ANTHROPIC_API_KEY"), reason="serve NEARTECH_ANTHROPIC_API_KEY")
 def test_modello_reale_risponde_in_formato_atteso():
     import anthropic
 
-    client = anthropic.Anthropic()
+    client = anthropic.Anthropic(api_key=os.environ["NEARTECH_ANTHROPIC_API_KEY"])
     samples = score_item(
         client,
         task_title="Registrare presenze da badge",
