@@ -1,0 +1,4 @@
+scheme,code,label,lang,parent_code
+ONET_TASK,SYN-1,Comporre il piano turni settimanale (dato sintetico),it,
+ONET_TASK,SYN-2,Condurre un colloquio con la famiglia (dato sintetico),it,
+ONET_TASK,SYN-3,Registrare presenze da badge (dato sintetico),it,SYN-1
