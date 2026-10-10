@@ -35,6 +35,26 @@ Controllo rapido: i vicini di un task O*NET sono coerenti tra lingue e fonti.
 **Attenzione:** i file sorgente e i vettori sono in `/tmp/claude-0/` e spariscono con la sessione.
 Il database locale `neartech_kb` non è persistente.
 
+## Recupero dopo il cambio di sessione (importante)
+
+- **Gli embedding non sono salvati da nessuna parte.** I vettori (circa 190 MB) sono in `/tmp/claude-0/kb_work/out/`
+  e spariscono con la sessione. Il connettore Google Drive non è adatto: il contenuto passa per il contesto
+  della chat e un file così grande non ci entra. Non tentare di caricarli su Drive.
+- **Piano di recupero:** appena `DATABASE_URL` è disponibile, lanciare prima schema, migrazione e caricamento dei
+  nodi (veloce), poi ricalcolare gli embedding bge-m3 in background (circa 40 minuti su CPU) e scriverli in
+  `taxonomy_embeddings`. Il caricatore `scripts/carica_tassonomie.py` lo fa in un solo passaggio, ma richiede
+  le fonti scaricate di nuovo (vedi sotto).
+- **Manifest delle fonti** (hash e stato): `docs/dati/fonti-manifest.json`. Usalo per verificare che i file
+  riscaricati siano gli stessi (stesso SHA-256). ESCO: il pacchetto locale da 3,9 GB non serve, usa solo il
+  CSV italiano (`esco_classification_it_csv.zip`, circa 9 MB).
+- **Cartella Drive "Metodologia e costruzione Knowledge base" (id `1FX2nP75zZsb3ddehwzrypwNVXHvc1FaR`):**
+  contiene la cartella "Job Società Dolce" (id `1g2LGTbuEfNml6a9McwjvEkHQGgFzLwFx`) con i job description
+  approvati, da leggere con il connettore Drive quando serve. Il repository resta la fonte del codice e della
+  documentazione.
+- **Stato all'ultima sessione:** schema e migrazione applicati al database locale (non persistente); nodi di
+  O*NET, Atlante ed ESCO caricati localmente; embedding ricalcolati e caricati localmente. Tutto questo va rifatto
+  sul database persistente.
+
 ## Da fare, in ordine
 
 1. **Database persistente.** Scegliere PostgreSQL con pgvector in regione UE (consigliato:

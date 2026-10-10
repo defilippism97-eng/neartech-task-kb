@@ -1,0 +1,36 @@
+{
+  "retrieved_at": "2026-10-10T14:39:41+00:00",
+  "sources": [
+    {
+      "name": "O*NET",
+      "version": "31.0 (text)",
+      "kind": "taxonomy",
+      "uri": "https://www.onetcenter.org/dl_files/database/db_31_0_text.zip",
+      "file": "onet_31_0_text.zip",
+      "sha256": "6883548adf5fde64cf6f801b35d15519c9225f2732c3cab0e281c652d16b23a9",
+      "license": "DA VERIFICARE",
+      "status": "scaricata, non caricata"
+    },
+    {
+      "name": "Atlante del Lavoro INAPP",
+      "version": "API v2 (snapshot 2026-10-10)",
+      "kind": "taxonomy",
+      "uri": "https://atlantelavoro.inapp.org/api/v2/adaCompleto",
+      "file": "../inapp_probe/adaCompleto.json",
+      "sha256": "3c5c28d510458f82b72b0e739add3dc9e6d73fcee0af1192d9c7ec385b1fcf40",
+      "license": "DA VERIFICARE",
+      "status": "scaricata, non caricata"
+    },
+    {
+      "name": "ESCO",
+      "version": "1.2.1",
+      "kind": "taxonomy",
+      "uri": "https://ec.europa.eu/esco/download/ESCO%20dataset%20-%20v1.2.1%20-%20classification%20-%20it%20-%20csv.zip",
+      "file": "esco/esco_classification_it_csv.zip",
+      "sha256": "cc872f502481ab219770e423538f3226628abcefa5a309ebb976899f99c1d5fb",
+      "license": "DA VERIFICARE",
+      "status": "scaricata, non caricata",
+      "note": "pacchetto locale completo (3,9 GB, con Solr/Fuseki) scaricato per prova: non usato, ESCO CSV italiano scelto come fonte"
+    }
+  ]
+}
