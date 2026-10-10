@@ -125,5 +125,7 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
 
 ```bash
 uv venv -p 3.12 .venv && uv pip install -p .venv -e ".[dev]"
-NEARTECH_TEST_DSN="postgresql://.../neartech_test" .venv/bin/pytest
+# Test: serve un PostgreSQL 16 con pgvector locale (nella sandbox: apt install postgresql-16 postgresql-16-pgvector)
+NEARTECH_TEST_DSN="postgresql://postgres:test@localhost:5432/neartech_test" .venv/bin/pytest
+# Il test con il modello reale richiede anche NEARTECH_ANTHROPIC_API_KEY (consuma token).
 ```
