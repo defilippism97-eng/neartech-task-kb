@@ -8,12 +8,26 @@ il caricamento si ferma: la versione va incrementata, non sovrascritta.
 
 import csv
 import hashlib
+import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterator, TypeVar
 
 import psycopg
 
 from neartech.models import TaxonomyNodeIn
+
+BATCH_SIZE = 500
+_T = TypeVar("_T")
+
+# Lo schema del genitore di ciascun livello Atlante: il risultato atteso sta sotto l'ADA,
+# l'attività sotto il risultato atteso. Senza questa mappa il genitore non verrebbe trovato.
+PARENT_SCHEME = {"ATLANTE_RA": "ATLANTE_ADA", "ATLANTE_ATTIVITA": "ATLANTE_RA"}
+
+
+def _chunks(items: list[_T], size: int) -> Iterator[list[_T]]:
+    for start in range(0, len(items), size):
+        yield items[start : start + size]
 
 
 @dataclass(frozen=True)
@@ -73,32 +87,46 @@ def load_taxonomy(
             source_id = row[0]
 
         inserted = 0
-        for node in nodes:
+        # Scritture a blocchi: una riga per nodo sarebbe troppo lenta su collegamenti remoti.
+        for chunk in _chunks(nodes, BATCH_SIZE):
+            values = ", ".join(["(%s, %s, %s, %s, %s)"] * len(chunk))
+            params = [v for n in chunk for v in (n.scheme.value, n.code, n.label, n.lang, source_id)]
             cur = conn.execute(
-                """
+                f"""
                 INSERT INTO taxonomy_nodes (scheme, code, label, lang, source_id)
-                VALUES (%s, %s, %s, %s, %s)
+                VALUES {values}
                 ON CONFLICT (scheme, code, lang, source_id) DO NOTHING
                 """,
-                (node.scheme.value, node.code, node.label, node.lang, source_id),
+                params,
             )
             inserted += cur.rowcount
 
         # Seconda passata: i genitori si collegano dopo che tutti i nodi esistono.
-        for node in nodes:
-            if node.parent_code:
-                conn.execute(
-                    """
-                    UPDATE taxonomy_nodes child
-                    SET parent_id = parent.node_id
-                    FROM taxonomy_nodes parent
-                    WHERE child.scheme = %s AND child.code = %s AND child.lang = %s
-                      AND child.source_id = %s
-                      AND parent.scheme = child.scheme AND parent.code = %s
-                      AND parent.source_id = child.source_id
-                    """,
-                    (node.scheme.value, node.code, node.lang, source_id, node.parent_code),
-                )
+        links = [
+            {
+                "scheme": n.scheme.value,
+                "code": n.code,
+                "lang": n.lang,
+                "parent_scheme": PARENT_SCHEME.get(n.scheme.value, n.scheme.value),
+                "parent_code": n.parent_code,
+            }
+            for n in nodes
+            if n.parent_code
+        ]
+        for chunk in _chunks(links, BATCH_SIZE):
+            conn.execute(
+                """
+                UPDATE taxonomy_nodes child
+                SET parent_id = parent.node_id
+                FROM json_to_recordset(%s::json)
+                       AS l(scheme text, code text, lang text, parent_scheme text, parent_code text)
+                JOIN taxonomy_nodes parent
+                  ON parent.scheme = l.parent_scheme AND parent.code = l.parent_code
+                WHERE child.scheme = l.scheme AND child.code = l.code AND child.lang = l.lang
+                  AND child.source_id = %s AND parent.source_id = child.source_id
+                """,
+                (json.dumps(chunk), source_id),
+            )
 
         total = conn.execute(
             "SELECT count(*) FROM taxonomy_nodes WHERE source_id = %s", (source_id,)

@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np
 
 from neartech.db import connect
-from neartech.taxonomy import load_taxonomy
+from neartech.taxonomy import BATCH_SIZE, load_taxonomy
 
 LICENZA_CONFERMATA = "confermata dal responsabile del progetto (2026-10-10); testo della licenza da allegare"
 
@@ -93,19 +93,30 @@ def load_embeddings(conn, embeddings_dir: Path, model: str) -> None:
     esco_vecs = np.load(embeddings_dir / "embeddings_esco_bge_m3.npy").astype(np.float32)
     pairs = list(zip(index, vecs)) + list(zip(esco, esco_vecs))
 
+    # Scritture a blocchi: vedi BATCH_SIZE in taxonomy.py.
     with conn.transaction():
-        for meta, vec in pairs:
-            row = conn.execute(
-                "SELECT node_id FROM taxonomy_nodes WHERE scheme = %s AND code = %s AND lang = %s",
-                (meta["scheme"], meta["code"], meta["lang"]),
-            ).fetchone()
-            if row is None:
-                raise ValueError(f"nodo mancante per l'embedding: {meta['scheme']} {meta['code']}")
+        for start in range(0, len(pairs), BATCH_SIZE):
+            batch = pairs[start : start + BATCH_SIZE]
+            records = [
+                {"scheme": meta["scheme"], "code": meta["code"], "lang": meta["lang"],
+                 "vec": "[" + ",".join(f"{x:.6f}" for x in vec) + "]"}
+                for meta, vec in batch
+            ]
+            payload = json.dumps(records)
+            found = conn.execute(
+                """SELECT count(*) FROM json_to_recordset(%s::json) AS v(scheme text, code text, lang text, vec text)
+                   JOIN taxonomy_nodes n ON n.scheme = v.scheme AND n.code = v.code AND n.lang = v.lang""",
+                (payload,),
+            ).fetchone()[0]
+            if found != len(batch):
+                raise ValueError(f"nodi mancanti per gli embedding: attesi {len(batch)}, trovati {found}")
             conn.execute(
                 """INSERT INTO taxonomy_embeddings (node_id, model_name, vec)
-                   VALUES (%s, %s, %s::vector)
+                   SELECT n.node_id, %s, v.vec::vector
+                   FROM json_to_recordset(%s::json) AS v(scheme text, code text, lang text, vec text)
+                   JOIN taxonomy_nodes n ON n.scheme = v.scheme AND n.code = v.code AND n.lang = v.lang
                    ON CONFLICT (node_id, model_name) DO NOTHING""",
-                (row[0], model, "[" + ",".join(f"{x:.6f}" for x in vec) + "]"),
+                (model, payload),
             )
     print(f"embedding {model}: {len(pairs)} vettori", flush=True)
 
