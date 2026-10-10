@@ -1,0 +1,85 @@
+# Stato del progetto (aggiornato al 2026-10-10)
+
+Questo file è il punto di ripartenza per le sessioni future. La cronologia della chat
+non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel codice.
+
+## Cosa è fatto
+
+- **Metodologia**: `docs/piano-sviluppo-v2.md` (piano V2 completo). Regole di progetto in `CLAUDE.md`.
+- **Schema**: `db/schema.sql` (PostgreSQL 16 + pgvector), applicato e verificato.
+  Vincolo sui profili di pesi attivi, e vista `v_role_metrics` interrogabile.
+- **Migrazione 0002** (`db/migrations/`): livelli `ATLANTE_RA` e `ATLANTE_ATTIVITA`,
+  tabella `taxonomy_embeddings` per modello. Lo schema originale non è stato modificato.
+- **Codice Python** (`src/neartech/`): connessione (`db.py`), modelli validati (`models.py`),
+  caricatore tassonomie (`taxonomy.py`), evidenze (`evidence.py`), Scorer con
+  `claude-haiku-5-5` (`scorer.py`, 5 campioni per voce, ogni campione salvato come record `llm`).
+- **Caricatore completo** (`scripts/carica_tassonomie.py`): carica O*NET 31.0, Atlante (API v2)
+  ed ESCO 1.2.1 in italiano con la gerarchia, poi gli embedding bge-m3.
+- **Test**: 14 test passano su PostgreSQL 16 + pgvector; 1 test richiede `ANTHROPIC_API_KEY`.
+- **Workflow manuale** (`.github/workflows/test-scorer-reale.yml`): esegue i test con il modello reale
+  usando il segreto GitHub `Claude`. Ultimo run riuscito: run #2.
+- **Licenze**: confermate dal responsabile del progetto il 2026-10-10. Il testo di ciascuna licenza
+  va ancora allegato (vedi "Da fare").
+
+## Dati caricati (nel database locale di sessione, non persistente)
+
+| Fonte | Versione | Nodi | Note |
+|---|---|---|---|
+| O*NET | 31.0 (testo) | 18.838 task | scheme `ONET_TASK`, lingua `en` |
+| Atlante del Lavoro INAPP | API v2, snapshot 2026-10-10 | 961 ADA, 2.482 RA, 7.129 attività | gerarchia ADA → RA → attività |
+| ESCO | 1.2.1, CSV italiano | 3.039 occupazioni, 13.939 competenze | 25 righe duplicate già nel file originale: tenuta la prima |
+
+Embedding bge-m3 (1024 dimensioni) per tutti i nodi: 46.388 vettori.
+Controllo rapido: i vicini di un task O*NET sono coerenti tra lingue e fonti.
+
+**Attenzione:** i file sorgente e i vettori sono in `/tmp/claude-0/` e spariscono con la sessione.
+Il database locale `neartech_kb` non è persistente.
+
+## Da fare, in ordine
+
+1. **Database persistente.** Scegliere PostgreSQL con pgvector in regione UE (consigliato:
+   Supabase, regione Frankfurt; alternativa: Neon, Frankfurt). Fornire la stringa di connessione
+   come variabile d'ambiente `DATABASE_URL`. Chiedere il contratto di trattamento dei dati (DPA).
+2. **Applicare schema e migrazione** al database persistente:
+   `psql "$DATABASE_URL" -f db/schema.sql` poi `-f db/migrations/0002_livelli_atlante_e_embedding_tassonomie.sql`.
+3. **Ricaricare le tassonomie.** Servono le fonti (O*NET zip, Atlante via API, ESCO CSV zip,
+   scaricabili di nuovo) e gli embedding, che vanno ricalcolati (circa 40 minuti su CPU con bge-m3).
+   Comando:
+   `DATABASE_URL=... python scripts/carica_tassonomie.py --onet-zip ... --atlante-json ... --esco-csv-zip ... --embeddings-dir ...`
+   Prima di rilanciarlo, controllare che il database sia vuoto o che le versioni siano già registrate.
+4. **Chiave del modello per il Crosswalk Mapper.** Creare una chiave nuova su console.anthropic.com
+   (nome `neartech-f0`, con limite di spesa mensile). Metterla come variabile d'ambiente
+   `ANTHROPIC_API_KEY` nell'ambiente della sessione, poi aprire una sessione nuova.
+   La chiave non va mai scritta in chat né nel repository.
+5. **Crosswalk Mapper**: non ancora implementato. Per ogni task canonico cerca i 20 nodi più vicini
+   per tassonomia, poi il modello assegna la relazione (esatta, più ampia, più stretta, affine, nessuna)
+   con una motivazione. Si salvano solo le relazioni diverse da "nessuna".
+6. **Job description Dolce**: cartella Drive "Job Società Dolce" (id `1g2LGTbuEfNml6a9McwjvEkHQGgFzLwFx`),
+   circa 35 file .docx, uno per ruolo; la lista è paginata, quindi verificare il totale.
+   Passo successivo: scomposizione in task canonici (con il modello) e collegamento alle tassonomie.
+7. **Allegare i testi delle licenze** di O*NET, Atlante ed ESCO al progetto, e aggiornare la colonna
+   `license` in `sources`.
+8. **Job di calcolo di N e D** (Monte Carlo, quadranti, baricentro e dispersione): non ancora costruito.
+   Si può scrivere con dati sintetici, senza chiavi.
+
+## Decisioni prese
+
+- Il responsabile dell'organizzazione (Dolce) segue i ruoli human in the loop per il pilota.
+  Il piano prevede però anche curatore, responsabile metodologico e un rappresentante dei lavoratori
+  nel panel: va chiarito chi copre ciascun ruolo, per evitare che un solo soggetto giudichi tutto.
+- Nessuna soglia o peso nel codice: stanno in tabelle di governance versionate.
+- Niente piattaforma di orchestrazione per ora: script, tabella `jobs` e revisione umana quando
+  ci saranno casi reali (piano, F3).
+
+## Limiti noti
+
+- ESCO: la gerarchia delle competenze (`skillsHierarchy`) e le relazioni tra occupazioni non sono ancora caricate.
+- Atlante: un'attività che compare sotto più risultati attesi ha come genitore solo il primo.
+- Scorer: il test con il modello reale è verde, ma non è ancora stato eseguito sul gold standard.
+
+## Comandi utili
+
+```bash
+uv venv -p 3.12 .venv && uv pip install -p .venv -e ".[dev]"
+NEARTECH_TEST_DSN="postgresql://.../neartech_test" .venv/bin/pytest
+```
