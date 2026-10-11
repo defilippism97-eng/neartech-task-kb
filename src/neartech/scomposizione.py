@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field, ValidationError
 
 MODEL_ID = "claude-sonnet-5-5"  # estrazione da documenti: Sonnet, come da CLAUDE.md
 MAX_ATTEMPTS = 2
-MAX_TOKENS = 8000
+MAX_TOKENS = 16000  # le job più lunghe producono risposte oltre 8.000 token
 ORG_NAME = "Società Dolce"
 ORG_SECTOR = "servizi alla persona e terzo settore"
 SOURCE_KIND = "org_document"

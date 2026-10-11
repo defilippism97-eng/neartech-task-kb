@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from neartech.db import connect  # noqa: E402
 from neartech.scomposizione import (  # noqa: E402
+    ScompostoError,
     carica_documenti,
     proponi_attivita,
     salva_documento,
@@ -43,10 +44,17 @@ def main() -> None:
         print(f"scartato (vuoto o senza titolo di posizione): {nome}", flush=True)
     print(f"documenti da elaborare: {len(docs)}", flush=True)
 
+    falliti: list[str] = []
     with connect() as conn:
         for i, doc in enumerate(docs, start=1):
             titoli = titoli_attivi(conn) if not args.dry_run else []
-            attivita = proponi_attivita(client, doc, titoli)
+            try:
+                attivita = proponi_attivita(client, doc, titoli)
+            except ScompostoError as err:
+                # Un documento che fallisce non blocca gli altri: si rilancia lo script per riprovarlo.
+                print(f"[{i}/{len(docs)}] ERRORE {doc.nome_file}: {err}", flush=True)
+                falliti.append(doc.nome_file)
+                continue
             print(f"[{i}/{len(docs)}] {doc.ruolo}: {len(attivita)} attività", flush=True)
             if args.proposte:
                 with args.proposte.open("a", encoding="utf-8") as fh:
@@ -58,6 +66,8 @@ def main() -> None:
                 continue
             nuove = salva_documento(conn, doc, attivita)
             print(f"    occorrenze nuove: {nuove}", flush=True)
+    if falliti:
+        raise SystemExit(f"documenti da rielaborare: {len(falliti)}: {falliti}")
 
 
 if __name__ == "__main__":
