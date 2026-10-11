@@ -10,7 +10,12 @@ va registrata qui, con la ragione e la fonte.
 | WORKBank (Ae, esperti) | task | sì, ma scala di Ae da verificare | 0 con score (bloccata) |
 | GDPval (win+tie) | occupazione | no, collegamento task mancante | 0 |
 | AEI (uso) | task | solo uso, classificato contesto | 17.033 exact (non in N) |
-| METR, Microsoft, ILO, INAPP | — | non ancora verificati | 0 |
+| METR (run 1.0 e 1.1) | task METR, non O\*NET | sì come capacità del modello, ma nessun collegamento a un nodo | 0 |
+| Microsoft (IWA e SOC) | uso osservato | solo uso, contesto | 0 (contesto) |
+| ILO, INAPP | occupazione / ponte | non estratti / non raggiungibili | 0 |
+
+Dati raggiunti tramite raw.githubusercontent.com: METR e Microsoft sono ora scaricati. Nessuno dei due
+collega a un task O\*NET per ID, quindi restano fuori da N finché non c'è un ponte.
 
 **Risultato:** oggi nessun nodo O\*NET ha un'evidenza di capacità utilizzabile per N.
 La carenza è totale. Ogni copertura futura parte da zero e va documentata.
