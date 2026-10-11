@@ -95,6 +95,15 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
 - Il documento `Job_Responsabile Qualità e Altri Sistemi -.docx` è vuoto: escluso.
 - Il crosswalk non è ancora stato eseguito sui task di Dolce: `scripts/esegui_crosswalk.py` ora ha i task da mappare.
 
+## Crosswalk dei task Dolce (eseguito in produzione, 2026-10-11)
+
+- 6.520 relazioni su 382 task canonici: 346 esatte, 823 più ampie, 1.018 più strette, 4.333 affini.
+  Tutte con `validated = false`: la revisione del campione del 10% e la soglia di precisione devono ancora essere fatte.
+- Due task restano senza relazioni perché il modello ha citato candidati inesistenti, due volte di fila:
+  "Gestire le richieste del personale su tematiche contrattuali, organizzative o di sviluppo" e
+  "Predisporre e aggiornare il piano di tesoreria". Si rilanciano con `scripts/esegui_crosswalk.py` dopo un controllo.
+- Un task senza relazioni viene riprocessato a ogni rilancio dello script, anche quando il modello non trova corrispondenze.
+
 ## Da fare, in ordine
 
 1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
