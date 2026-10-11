@@ -8,6 +8,7 @@ Lo script si può rilanciare: documenti già caricati (stessa impronta) e occorr
 """
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -29,6 +30,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dir", type=Path, required=True)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--proposte", type=Path, help="scrive le proposte in JSON, per confrontarle con la revisione")
     args = ap.parse_args()
 
     api_key = os.environ.get("NEARTECH_ANTHROPIC_API_KEY")
@@ -46,6 +48,10 @@ def main() -> None:
             titoli = titoli_attivi(conn) if not args.dry_run else []
             attivita = proponi_attivita(client, doc, titoli)
             print(f"[{i}/{len(docs)}] {doc.ruolo}: {len(attivita)} attività", flush=True)
+            if args.proposte:
+                with args.proposte.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps({"ruolo": doc.ruolo, "documento": doc.nome_file,
+                                         "attivita": [a.model_dump() for a in attivita]}, ensure_ascii=False) + "\n")
             if args.dry_run:
                 for a in attivita:
                     print(f"    g{a.granularita} {a.titolo}", flush=True)
