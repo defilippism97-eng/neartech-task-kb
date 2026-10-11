@@ -90,7 +90,9 @@ def ruolo_da_testo(testo: str) -> str | None:
     """Il titolo della posizione è l'elemento che segue l'etichetta, nel testo estratto."""
     righe = testo.splitlines()
     for i, riga in enumerate(righe):
-        if riga.strip().upper() == "TITOLO DELLA POSIZIONE" and i + 1 < len(righe):
+        # Alcuni file hanno un numero di servizio attaccato all'etichetta (es. "26TITOLO DELLA POSIZIONE").
+        etichetta = re.sub(r"^\d+", "", riga.strip()).strip().upper()
+        if etichetta == "TITOLO DELLA POSIZIONE" and i + 1 < len(righe):
             return righe[i + 1].strip()
     return None
 
