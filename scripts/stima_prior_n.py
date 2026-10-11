@@ -58,7 +58,7 @@ def main() -> None:
     da_fare = [t for t in tasks if t["task_id"] not in fatti]
     print(f"attività totali {len(tasks)}, già fatte {len(fatti)}, da fare {len(da_fare)}", flush=True)
 
-    client = anthropic.Anthropic(api_key=os.environ["NEARTECH_ANTHROPIC_API_KEY"])
+    client = anthropic.Anthropic(api_key=os.environ["NEARTECH_ANTHROPIC_API_KEY"], timeout=60.0, max_retries=3)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("a", encoding="utf-8") as fh, ThreadPoolExecutor(max_workers=args.workers) as pool:
         futuri = [pool.submit(stima_task, client, t, rubric) for t in da_fare]
