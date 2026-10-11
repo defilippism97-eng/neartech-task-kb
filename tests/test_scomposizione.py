@@ -95,3 +95,16 @@ def test_rilancio_non_duplica(conn):
     # Si contano solo le righe di questo test: altre suite possono lasciare fonti nel database di test.
     assert conn.execute("SELECT count(*) FROM sources WHERE name = 'A.docx'").fetchone()[0] == 1
     assert conn.execute("SELECT count(*) FROM roles WHERE name = 'RESPONSABILE UFFICIO ACQUISTI'").fetchone()[0] == 1
+
+
+def test_record_approvato_rispetta_la_verifica_sul_testo():
+    from neartech.scomposizione import attivita_da_record, verifica_attivita
+
+    doc = _doc("A.docx", TESTO_A, "RESPONSABILE UFFICIO ACQUISTI")
+    buono = {"attivita": [{"titolo": "Aggiornare la banca dati fornitori", "granularita": 2,
+                           "testo_originale": "Aggiorna la banca dati fornitori aziendali.", "nota_contesto": None}]}
+    assert len(verifica_attivita(attivita_da_record(buono), doc.testo)) == 1
+    inventato = {"attivita": [{"titolo": "Negoziare contratti quadro", "granularita": 2,
+                               "testo_originale": "Negozia contratti quadro.", "nota_contesto": None}]}
+    with pytest.raises(ValueError):
+        verifica_attivita(attivita_da_record(inventato), doc.testo)

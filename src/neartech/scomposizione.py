@@ -119,16 +119,26 @@ def _user_message(doc: DocumentoJob, titoli_esistenti: list[str]) -> str:
     )
 
 
+def verifica_attivita(attivita: list[_Attivita], testo_documento: str) -> list[_Attivita]:
+    """Ogni passo deve comparire letteralmente nel documento: altrimenti l'attività è inventata."""
+    documento = _normalizza(testo_documento)
+    for att in attivita:
+        if _normalizza(att.testo_originale) not in documento:
+            raise ValueError(f"passo non presente nel documento: {att.testo_originale[:80]!r}")
+    return attivita
+
+
 def _parse_e_verifica(text: str, testo_documento: str) -> list[_Attivita]:
     match = re.search(r"\{.*\}", text, flags=re.DOTALL)
     if not match:
         raise ValueError("nessun oggetto JSON nella risposta")
     lista = _Attivita_Lista.model_validate(json.loads(match.group(0)))
-    documento = _normalizza(testo_documento)
-    for att in lista.attivita:
-        if _normalizza(att.testo_originale) not in documento:
-            raise ValueError(f"passo non presente nel documento: {att.testo_originale[:80]!r}")
-    return lista.attivita
+    return verifica_attivita(lista.attivita, testo_documento)
+
+
+def attivita_da_record(record: dict) -> list[_Attivita]:
+    """Le attività di un record del file di proposte approvato (stesso formato di --proposte)."""
+    return [_Attivita.model_validate(a) for a in record["attivita"]]
 
 
 def proponi_attivita(client, doc: DocumentoJob, titoli_esistenti: list[str]) -> list[_Attivita]:

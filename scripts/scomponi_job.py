@@ -20,11 +20,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from neartech.db import connect  # noqa: E402
 from neartech.scomposizione import (  # noqa: E402
     ScompostoError,
+    attivita_da_record,
     carica_documenti,
     proponi_attivita,
     salva_documento,
     titoli_attivi,
+    verifica_attivita,
 )
+
+
+def carica_da_file(cartella: Path, file_proposte: Path) -> None:
+    """Carica esattamente le attività del file approvato. Ogni passo viene ricontrollato sul documento."""
+    docs, _ = carica_documenti(cartella)
+    per_nome = {d.nome_file: d for d in docs}
+    records = [json.loads(l) for l in file_proposte.read_text(encoding="utf-8").splitlines() if l.strip()]
+    with connect() as conn:
+        for i, rec in enumerate(records, start=1):
+            doc = per_nome[rec["documento"]]
+            attivita = verifica_attivita(attivita_da_record(rec), doc.testo)
+            nuove = salva_documento(conn, doc, attivita)
+            print(f"[{i}/{len(records)}] {doc.ruolo}: {len(attivita)} attività, occorrenze nuove: {nuove}", flush=True)
 
 
 def main() -> None:
@@ -32,7 +47,11 @@ def main() -> None:
     ap.add_argument("--dir", type=Path, required=True)
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--proposte", type=Path, help="scrive le proposte in JSON, per confrontarle con la revisione")
+    ap.add_argument("--da-file", type=Path, help="carica le attività da un file di proposte approvato, senza chiamare il modello")
     args = ap.parse_args()
+
+    if args.da_file:
+        return carica_da_file(args.dir, args.da_file)
 
     api_key = os.environ.get("NEARTECH_ANTHROPIC_API_KEY")
     if not api_key:
