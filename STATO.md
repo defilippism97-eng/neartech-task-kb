@@ -87,7 +87,7 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
 
 ## Scomposizione job description Dolce (completata 2026-10-11)
 
-- 36 job description caricate da `docs/dati/`-approvate (file `docs/dati/scomposizione-approvata-2026-10-11.jsonl`,
+- 36 job description caricate dalle proposte approvate (file `docs/dati/scomposizione-approvata-2026-10-11.jsonl`,
   sha256 `a86b6304...`). Il file contiene le attività verificate sul testo, e il caricamento le usa senza
   chiamare il modello (`scripts/scomponi_job.py --da-file`).
 - Database di produzione: 384 task canonici, 530 occorrenze (ruolo x task), 36 ruoli, 36 fonti `org_document`.
