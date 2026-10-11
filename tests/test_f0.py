@@ -42,8 +42,9 @@ def _setup_base(conn: psycopg.Connection) -> dict:
            VALUES ('org_document', 'Mansionario sintetico', '1', 'interno', 'hash-synth') RETURNING source_id"""
     ).fetchone()[0]
     occ = conn.execute(
-        """INSERT INTO task_occurrences (task_id, role_id, raw_snippet, time_share, source_id)
-           VALUES (%s, %s, 'frammento sintetico', 1.0, %s) RETURNING occurrence_id""",
+        """INSERT INTO task_occurrences
+             (task_id, role_id, raw_snippet, time_share, source_id, model_name, prompt_hash)
+           VALUES (%s, %s, 'frammento sintetico', 1.0, %s, 'test', 'test') RETURNING occurrence_id""",
         (task, role, src),
     ).fetchone()[0]
     conn.execute("INSERT INTO rubric_versions (version, is_current) VALUES ('r-test', true)")
