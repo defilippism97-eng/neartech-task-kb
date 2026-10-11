@@ -17,7 +17,7 @@ import anthropic
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from neartech.crosswalk import EMBEDDING_MODEL, map_task  # noqa: E402
+from neartech.crosswalk import EMBEDDING_MODEL, CrosswalkError, map_task  # noqa: E402
 from neartech.db import connect  # noqa: E402
 
 
@@ -63,9 +63,18 @@ def main() -> None:
             """
         ).fetchall()
         print(f"task da mappare: {len(todo)}", flush=True)
+        falliti: list[str] = []
         for i, (task_id, title) in enumerate(todo, start=1):
-            saved = map_task(conn, client, str(task_id), title)
+            try:
+                saved = map_task(conn, client, str(task_id), title)
+            except CrosswalkError as err:
+                # Un task che fallisce non blocca gli altri: rilanciando lo script viene ripreso.
+                print(f"[{i}/{len(todo)}] ERRORE {title}: {err}", flush=True)
+                falliti.append(title)
+                continue
             print(f"[{i}/{len(todo)}] {title}: {saved} relazioni", flush=True)
+    if falliti:
+        raise SystemExit(f"task da rielaborare: {len(falliti)}")
 
 
 if __name__ == "__main__":

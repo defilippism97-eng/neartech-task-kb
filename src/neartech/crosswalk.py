@@ -28,7 +28,7 @@ EMBEDDING_MODEL = "BAAI/bge-m3"
 CANDIDATE_SCHEMES = ("ONET_TASK", "ATLANTE_ATTIVITA", "ESCO_SKILL")
 CANDIDATES_PER_SCHEME = 20
 MAX_ATTEMPTS = 2
-MAX_TOKENS = 2000
+MAX_TOKENS = 8000  # con 60 candidati e motivazioni la risposta supera 2.000 token
 
 Relation = Literal["exact", "broad", "narrow", "related"]
 
