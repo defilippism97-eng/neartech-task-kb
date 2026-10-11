@@ -1,18 +1,19 @@
 {
-  "versione": "bozza-1",
-  "stato": "PROPOSTA: nessuna mappa è approvata. Serve l'approvazione del responsabile metodologico prima del caricamento.",
+  "versione": "bozza-2",
+  "stato": "GDPval approvata dal responsabile il 2026-10-11, ma sospesa finché non c'è il collegamento a task. Le altre mappe restano proposte.",
   "regole": {
     "WB_Ae_expert": {
       "stato": "bloccata",
       "motivo": "scala originale di Ae non letta nel testo: convertire solo dopo la verifica nell'appendice B"
     },
     "AEI_task_penetration": {
-      "stato": "proposta: nessuna conversione a capacità",
-      "motivo": "la quota d'uso non misura la capacità; resta come contesto (uso osservato), come da piano",
-      "uso": "contesto"
+      "stato": "contesto con traccia di carenza",
+      "uso": "contesto",
+      "promozione_a_N": "consentita solo se, a fine ricerca, le fonti di capacità non coprono un nodo; ogni promozione resta tracciata nel file carenza-evidenze.md",
+      "motivo": "la quota d'uso non misura la capacità; usata come riserva per evitare nodi senza evidenza"
     },
     "GDPVAL_win_tie": {
-      "stato": "proposta, non approvata",
+      "stato": "approvata, sospesa (collegamento a task mancante)",
       "formula": "score_0_4 = 4 * quota_win_tie",
       "esempio": "47,6% -> 1,90",
       "bloccata_da": "collegamento a task O*NET mancante (solo occupazione)"
