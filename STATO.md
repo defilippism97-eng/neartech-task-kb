@@ -85,9 +85,19 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
 - Il collegamento al database passa dall'endpoint HTTPS di Neon: `NEARTECH_DB_VIA=https`. Le scritture non sono
   in transazione interattiva: i caricamenti sono idempotenti e si rilanciano se si interrompono.
 
+## Scomposizione job description Dolce (completata 2026-10-11)
+
+- 36 job description caricate da `docs/dati/`-approvate (file `docs/dati/scomposizione-approvata-2026-10-11.jsonl`,
+  sha256 `a86b6304...`). Il file contiene le attività verificate sul testo, e il caricamento le usa senza
+  chiamare il modello (`scripts/scomponi_job.py --da-file`).
+- Database di produzione: 384 task canonici, 530 occorrenze (ruolo x task), 36 ruoli, 36 fonti `org_document`.
+- Noto: 5 titoli compaiono due volte nello stesso ruolo; la base dati ne tiene una sola occorrenza (vincolo unico task-ruolo).
+- Il documento `Job_Responsabile Qualità e Altri Sistemi -.docx` è vuoto: escluso.
+- Il crosswalk non è ancora stato eseguito sui task di Dolce: `scripts/esegui_crosswalk.py` ora ha i task da mappare.
+
 ## Da fare, in ordine
 
-1. **Crosswalk Mapper**: non ancora implementato. Per ogni task canonico cerca i 20 nodi più vicini
+1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
    per tassonomia, poi il modello assegna la relazione (esatta, più ampia, più stretta, affine, nessuna)
    con una motivazione. Si salvano solo le relazioni diverse da "nessuna".
 2. **Job description Dolce**: cartella Drive "Job Società Dolce" (id `1g2LGTbuEfNml6a9McwjvEkHQGgFzLwFx`),
