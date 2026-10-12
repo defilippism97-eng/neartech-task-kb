@@ -123,6 +123,13 @@ Registrati su indicazione del responsabile del progetto. Dettagli in `docs/metod
 - Aree di responsabilità (granularità 3): non sono task. Ritirate e fuori dal crosswalk; 658 relazioni eliminate.
 - Canonicalizer: fusioni applicate prima della revisione a campione del curatore, su indicazione del responsabile.
 
+## Stato del crosswalk e del Canonicalizer (2026-10-12)
+
+- Crosswalk: tutti i task attivi di granularità 1–2 hanno un giudizio per schema (`crosswalk_giudizi`); i 2 task rimasti sono stati completati.
+- Canonicalizer in produzione: 349 task giudicati, 1.745 decisioni (`fusioni_proposte`), 54 task fusi in 35 gruppi.
+  Task attivi: 295. Elenco per la revisione del curatore: `fusioni_da_verificare.md`.
+- Da fare: revisione a campione delle fusioni; decisione su soglia e campione di governance (vedi sopra).
+
 ## Da fare, in ordine
 
 1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
