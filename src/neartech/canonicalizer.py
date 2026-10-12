@@ -76,7 +76,7 @@ def trova_vicini(conn: psycopg.Connection, task_id: str, k: int = NEIGHBOURS) ->
             FROM canonical_tasks t
             JOIN task_embeddings eb ON eb.task_id = t.task_id AND eb.model_name = %s
             JOIN task_embeddings ea ON ea.task_id = %s AND ea.model_name = %s
-            WHERE t.task_id <> %s AND t.status = 'active' AND t.granularity = 2
+            WHERE t.task_id <> %s AND t.status = 'active' AND t.granularity IN (1, 2)
             ORDER BY eb.vec <=> ea.vec
             LIMIT %s
         ) v
@@ -167,6 +167,11 @@ def _gruppi_da_fondere(conn: psycopg.Connection) -> list[list[str]]:
     return [g for g in gruppi.values() if len(g) > 1]
 
 
+def _array_uuid(ids: list[str]) -> str:
+    """Letterale di array Postgres: vale sia per la connessione diretta sia per quella HTTPS."""
+    return "{" + ",".join(ids) + "}"
+
+
 def fondi(conn: psycopg.Connection, task_ids: list[str]) -> str:
     """Fonde un gruppo: il task con più occorrenze resta, gli altri puntano a lui. Ritorna l'id superstite."""
     occ = {
@@ -174,13 +179,13 @@ def fondi(conn: psycopg.Connection, task_ids: list[str]) -> str:
             """SELECT t.task_id, count(o.occurrence_id) FROM canonical_tasks t
                LEFT JOIN task_occurrences o ON o.task_id = t.task_id
                WHERE t.task_id = ANY(%s::uuid[]) AND t.status = 'active' GROUP BY t.task_id""",
-            (task_ids,),
+            (_array_uuid(task_ids),),
         ).fetchall()
     }
     if len(occ) < 2:
         return ""
     titoli = {str(r[0]): r[1] for r in conn.execute(
-        "SELECT task_id, title_it FROM canonical_tasks WHERE task_id = ANY(%s::uuid[])", (list(occ),)
+        "SELECT task_id, title_it FROM canonical_tasks WHERE task_id = ANY(%s::uuid[])", (_array_uuid(list(occ)),)
     ).fetchall()}
     superstite = max(occ, key=lambda t: (occ[t], -len(titoli[t]), titoli[t]))
     for m in occ:
@@ -213,7 +218,7 @@ def canonicalizza(conn: psycopg.Connection, client) -> dict[str, int]:
     """Giudica i vicini di ogni task attivo non ancora esaminato, poi applica le fusioni. Ritorna i conteggi."""
     da_esaminare = [str(r[0]) for r in conn.execute(
         """SELECT t.task_id FROM canonical_tasks t
-           WHERE t.status = 'active' AND t.granularity = 2
+           WHERE t.status = 'active' AND t.granularity IN (1, 2)
              AND NOT EXISTS (SELECT 1 FROM fusioni_proposte f WHERE f.task_id = t.task_id)
            ORDER BY t.title_it"""
     ).fetchall()]

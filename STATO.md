@@ -115,6 +115,14 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
   - "Gestire l'approvvigionamento, l'utilizzo e la dismissione della flotta di automezzi" -> ATLANTE 2320, no
   - "Definire piani finanziari di breve, medio e lungo periodo" -> ESCO 56ff27ef, no
 
+## Strappi approvati alla metodologia (2026-10-12)
+
+Registrati su indicazione del responsabile del progetto. Dettagli in `docs/metodologia-estensioni.md`.
+- Validazione di 36 relazioni del crosswalk sul solo campione attuale (40 relazioni), approvata dal responsabile.
+- Task senza corrispondenza nelle tassonomie: restano nella KB, con origine tracciata (`v_task_origine`).
+- Aree di responsabilità (granularità 3): non sono task. Ritirate e fuori dal crosswalk; 658 relazioni eliminate.
+- Canonicalizer: fusioni applicate prima della revisione a campione del curatore, su indicazione del responsabile.
+
 ## Da fare, in ordine
 
 1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
