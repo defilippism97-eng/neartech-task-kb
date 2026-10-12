@@ -25,9 +25,9 @@ def rubric_text(rubric: dict, item: str) -> str:
     return "\n".join(f"{liv}: {testo}" for liv, testo in sorted(ancore.items()))
 
 
-def stima_task(client, task: dict, rubric: dict, campioni: int) -> dict:
+def stima_task(client, task: dict, rubric: dict, campioni: int, voci=("k1", "k2", "k3", "r")) -> dict:
     punteggi, errori = {}, {}
-    for item in ("k1", "k2", "k3", "r"):
+    for item in voci:
         try:
             risultati = score_item(client, task_title=task["text"], item=item,
                                    rubric_text=rubric_text(rubric, item), n_samples=campioni)
@@ -47,6 +47,7 @@ def main() -> None:
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--campioni", type=int, default=SAMPLES_PER_ITEM)
+    ap.add_argument("--voci", default="k1,k2,k3,r")
     args = ap.parse_args()
 
     tasks = [json.loads(l) for l in args.tasks.read_text(encoding="utf-8").splitlines()]
@@ -62,7 +63,7 @@ def main() -> None:
     client = anthropic.Anthropic(api_key=os.environ["NEARTECH_ANTHROPIC_API_KEY"], timeout=60.0, max_retries=3)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("a", encoding="utf-8") as fh, ThreadPoolExecutor(max_workers=args.workers) as pool:
-        futuri = [pool.submit(stima_task, client, t, rubric, args.campioni) for t in da_fare]
+        futuri = [pool.submit(stima_task, client, t, rubric, args.campioni, tuple(args.voci.split(","))) for t in da_fare]
         for n, f in enumerate(as_completed(futuri), 1):
             fh.write(json.dumps(f.result(), ensure_ascii=False) + "\n")
             fh.flush()
