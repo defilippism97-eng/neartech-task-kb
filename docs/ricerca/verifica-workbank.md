@@ -39,7 +39,7 @@ Errore standard approssimato con n = 538: ±0,043. k1 e k2 sono distanti da zero
 
 ## Decisioni per il responsabile metodologico
 
-1. Accettare la correlazione di rango come criterio di coerenza con WORKBank, in attesa delle ancore di Ae.
+1. **Approvata** dal responsabile metodologico (2026-10-12): la correlazione di rango è il criterio di coerenza con WORKBank, in attesa delle ancore di Ae.
 2. Chiedere agli autori le ancore 1–5 di Ae, necessarie per la conversione a 0–4: non compaiono né nel paper né nel codebook.
 3. Verificare la licenza di WORKBank prima di conservare i dati grezzi nel repo.
 
