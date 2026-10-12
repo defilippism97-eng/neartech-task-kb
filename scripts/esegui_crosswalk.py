@@ -27,7 +27,7 @@ def _embed_missing_tasks(conn) -> int:
     missing = conn.execute(
         """
         SELECT t.task_id, t.title_it FROM canonical_tasks t
-        WHERE t.status = 'active'
+        WHERE t.status = 'active' AND t.granularity <> 3
           AND NOT EXISTS (SELECT 1 FROM task_embeddings e
                           WHERE e.task_id = t.task_id AND e.model_name = %s)
         """,
@@ -57,7 +57,7 @@ def main() -> None:
         todo = conn.execute(
             """
             SELECT t.task_id, t.title_it FROM canonical_tasks t
-            WHERE t.status = 'active'
+            WHERE t.status = 'active' AND t.granularity <> 3
               AND NOT EXISTS (SELECT 1 FROM task_mappings m WHERE m.task_id = t.task_id)
             ORDER BY t.title_it
             """

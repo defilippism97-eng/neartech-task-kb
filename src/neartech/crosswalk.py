@@ -109,7 +109,11 @@ def _parse(text: str, candidates: list[Candidate]) -> list[Judgement]:
     by_n = {i: c for i, c in enumerate(candidates, start=1)}
     out: list[Judgement] = []
     seen: set[int] = set()
+    by_code = {c.code: i for i, c in by_n.items()}
     for j in parsed.relazioni:
+        if j.n not in by_n and str(j.n) in by_code:
+            # Il modello a volte cita il codice del nodo invece del numero d'ordine.
+            j = j.model_copy(update={"n": by_code[str(j.n)]})
         if j.n not in by_n:
             raise ValueError(f"candidato inesistente: {j.n}")
         if j.n in seen:
@@ -160,11 +164,23 @@ def save_judgements(conn: psycopg.Connection, task_id: str, judgements: list[Jud
     return inserted
 
 
+def registra_giudizio(conn: psycopg.Connection, task_id: str, scheme: str, n_relazioni: int) -> None:
+    """Un giudizio per task e schema: 'relazioni' oppure 'nessuna corrispondenza'. Non viene sovrascritto."""
+    esito = "relazioni" if n_relazioni > 0 else "nessuna"
+    conn.execute(
+        """INSERT INTO crosswalk_giudizi (task_id, scheme, esito, n_relazioni, model_name, prompt_hash)
+           VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (task_id, scheme) DO NOTHING""",
+        (task_id, scheme, esito, n_relazioni, MODEL_ID, prompt_hash()),
+    )
+
+
 def map_task(conn: psycopg.Connection, client, task_id: str, task_title: str) -> int:
     """Esegue il crosswalk per un task canonico su tutti gli schemi. Ritorna le relazioni salvate."""
     total = 0
     for scheme in CANDIDATE_SCHEMES:
         candidates = find_candidates(conn, task_id, scheme)
         judgements = judge(client, task_title, candidates)
-        total += save_judgements(conn, task_id, judgements)
+        salvate = save_judgements(conn, task_id, judgements)
+        registra_giudizio(conn, task_id, scheme, len(judgements))
+        total += salvate
     return total
