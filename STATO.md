@@ -104,6 +104,17 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
   "Predisporre e aggiornare il piano di tesoreria". Si rilanciano con `scripts/esegui_crosswalk.py` dopo un controllo.
 - Un task senza relazioni viene riprocessato a ogni rilancio dello script, anche quando il modello non trova corrispondenze.
 
+## Revisione del campione del crosswalk (2026-10-12)
+
+- Campione di 40 relazioni (`docs/dati/revisione-crosswalk-2026-10-11.md`): 36 OK, 2 PARZIALE, 2 NO. Precisione 90%.
+- Esiti registrati in `revisioni_crosswalk` (migrazione 0005), un record per relazione, mai sovrascritti.
+- Validate (`validated = true`): le 36 relazioni confermate. Le altre 6.484 restano non validate.
+- Da correggere, senza decisione ancora presa sulla relazione corretta:
+  - "Elaborare le procedure di sicurezza per le attività aziendali" -> ONET 9442, parziale (confidenza da alzare o relazione da confermare)
+  - "Monitorare l'efficacia degli interventi HR e proporre azioni correttive" -> ONET 11214, parziale (relazione troppo forte)
+  - "Gestire l'approvvigionamento, l'utilizzo e la dismissione della flotta di automezzi" -> ATLANTE 2320, no
+  - "Definire piani finanziari di breve, medio e lungo periodo" -> ESCO 56ff27ef, no
+
 ## Da fare, in ordine
 
 1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
