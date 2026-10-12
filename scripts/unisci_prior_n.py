@@ -19,9 +19,9 @@ def leggi(p: Path) -> dict:
 
 
 def main() -> None:
-    v1 = leggi(ESTRATTI / "llm-prior-staff.live.jsonl")
-    ric = leggi(ESTRATTI / "ricalcolo_k2_r_v2.live.jsonl")
-    nuovi = leggi(ESTRATTI / "nuovi_v2.live.jsonl")
+    v1 = leggi(ESTRATTI / "llm-prior-staff.jsonl")
+    ric = leggi(ESTRATTI / "ricalcolo_k2_r_v2.jsonl")
+    nuovi = leggi(ESTRATTI / "nuovi_v2.jsonl")
     out = []
     for tid, r in v1.items():
         if tid not in ric:
