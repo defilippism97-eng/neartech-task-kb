@@ -1,0 +1,31 @@
+{
+  "versione": "bozza-1",
+  "stato": "BOZZA dagli esempi del piano V2: da validare con il responsabile metodologico e con task reali dell'azienda pilota",
+  "nota": "Le ancore dell'asse N non fanno riferimento a etica o relazioni, che appartengono a D.",
+  "items": {
+    "k1": {"nome": "Variabilità dell'input", "ancore": {
+      "0": "Input strutturato e completo. Es.: registrare presenze da badge",
+      "1": "Semi-strutturato con varianti note. Es.: registrare fatture fornitori",
+      "2": "Non strutturato in un dominio delimitato. Es.: sintetizzare una relazione di servizio",
+      "3": "Incompleto o contraddittorio, va ricostruito. Es.: ricostruire il bisogno di un utente da documenti e servizi",
+      "4": "Contesto aperto che cambia durante l'esecuzione. Es.: gestire un'uscita con imprevisti"}},
+    "k2": {"nome": "Giudizio", "ancore": {
+      "0": "Regole esaustive. Es.: calcolare maggiorazioni da contratto collettivo",
+      "1": "Scelta tra opzioni documentate. Es.: assegnare una sostituzione da graduatoria",
+      "2": "Bilanciare 2-3 vincoli noti. Es.: comporre turni con vincoli orari e di competenza",
+      "3": "Dati incompleti, senza precedenti standard. Es.: rivedere un progetto dopo un cambiamento di contesto",
+      "4": "Sintesi inedita in scenari mai visti. Es.: riorganizzare un servizio in emergenza"}},
+    "k3": {"nome": "Componente fisico-percettiva", "ancore": {
+      "0": "Nessuna. Es.: redigere un verbale",
+      "1": "Dispositivi standard. Es.: stampare e archiviare",
+      "2": "Manipolazione ordinaria in ambiente stabile. Es.: riordinare il magazzino",
+      "3": "Manipolazione o percezione in ambiente variabile. Es.: intervento fisico fuori sede",
+      "4": "Intervento fine e non pianificabile. Es.: intervento d'urgenza sul campo"}},
+    "r": {"nome": "Criticità dell'errore (moltiplicatore)", "ancore": {
+      "0": "Reversibile senza effetti",
+      "1": "Intercettato dai controlli ordinari",
+      "2": "Richiede rilavorazione o chiarimento con terzi",
+      "3": "Danno economico, legale o reputazionale rilevante",
+      "4": "Danno irreversibile a salute, sicurezza o diritti fondamentali"}}
+  }
+}
