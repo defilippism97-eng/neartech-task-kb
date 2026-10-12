@@ -44,3 +44,14 @@ Errore standard approssimato con n = 538: ±0,043. k1 e k2 sono distanti da zero
 3. Verificare la licenza di WORKBank prima di conservare i dati grezzi nel repo.
 
 Script riproducibile: `scripts/confronta_workbank.py <percorso del CSV delle valutazioni esperte>`.
+
+## Ipotesi sulle ancore di Ae (non approvata)
+
+Le ancore 1–5 di Ae non sono disponibili (né nel paper né nel codebook) e non è possibile contattare gli autori. Per proseguire è stata adottata un'**ipotesi di lavoro**, da confermare o sostituire:
+
+- 1 = il sistema attuale non sa svolgere il task; 5 = lo svolge completamente (analoga alla domanda di Aw, "per niente … completamente").
+- Conversione: score_0_4 = Ae − 1 (registrata in `config/mappe_scala.json`, stato "ipotesi di lavoro, non approvata").
+
+**Effetto sul confronto.** Il ρ di Spearman non cambia con la conversione (k1 −0,235; k2 −0,289; k3 +0,070; r −0,049), perché la conversione è monotona. Quindi la conclusione di direzione non dipende dall'ipotesi.
+
+**Cosa l'ipotesi cambia.** Solo i confronti di livello. Con l'ipotesi, la media di Ae su 0–4 è 2,6, contro 1,7 per k1 e 1,7 per k2. Questo confronto non è interpretabile finché le ancore non sono note: non va usato come calibrazione né entra nel calcolo di N.
