@@ -19,7 +19,7 @@ def leggi(p: Path) -> dict:
 
 
 def main() -> None:
-    v1 = leggi(ESTRATTI / "llm-prior-staff.jsonl")
+    v1 = leggi(ESTRATTI / "llm-prior-staff.live.jsonl")
     ric = leggi(ESTRATTI / "ricalcolo_k2_r_v2.live.jsonl")
     nuovi = leggi(ESTRATTI / "nuovi_v2.live.jsonl")
     out = []
