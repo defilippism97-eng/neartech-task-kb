@@ -4,7 +4,8 @@ rimozione dei valori di policy dallo schema."""
 import psycopg
 import pytest
 
-from neartech.migrazioni import CARTELLA_ORGANIZZAZIONE, da_applicare
+from neartech import organizzazioni
+from neartech.migrazioni import CARTELLA_ORGANIZZAZIONE, SchemaAssente, applica, da_applicare
 from neartech.organizzazioni import (
     CodiceNonValido,
     aggiorna_spazi,
@@ -172,3 +173,35 @@ def test_stato_legato_alla_decisione_dello_stesso_task(conn, revisione):
             "INSERT INTO stati_validazione_task (task_id, stato, decisione_id) VALUES (%s, 'validato', %s)",
             (altro, decisione),
         )
+
+
+# --- santa-loop, giro 1 -----------------------------------------------------------
+
+def test_lo_spazio_si_crea_solo_dalle_funzioni_con_permesso(conn):
+    assert not hasattr(organizzazioni, "crea_spazio")
+
+
+def test_codice_non_si_riassegna(conn, admin):
+    org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="alfa")
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("UPDATE organizations SET codice = 'beta' WHERE org_id = %s", (org,))
+
+
+def test_applica_su_schema_inesistente_si_ferma(conn):
+    with pytest.raises(SchemaAssente):
+        applica(conn, CARTELLA_ORGANIZZAZIONE, "org_mancante")
+
+
+def test_aggiorna_spazi_salta_gli_spazi_rimossi(conn, admin):
+    crea_organizzazione(conn, admin, nome="Org sintetica", codice="uscita")
+    conn.execute("DROP SCHEMA org_uscita CASCADE")
+    assert aggiorna_spazi(conn) == {}
+    assert conn.execute("SELECT to_regclass('public.occorrenze')").fetchone()[0] is None
+
+
+def test_creazione_registrata_nel_registro(conn, admin):
+    org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
+    assert conn.execute(
+        "SELECT atto FROM registro_decisioni WHERE tipo_oggetto = 'organizzazione' AND oggetto_id = %s",
+        (org,),
+    ).fetchall() == [("approvazione",)]

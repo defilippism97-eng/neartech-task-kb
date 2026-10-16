@@ -1,11 +1,14 @@
 """Utenti, ruoli e permessi. I permessi stanno in tabella, ogni verifica lascia
 una riga nel log di accesso, e il log non si modifica."""
 
+from datetime import timedelta
+
 import psycopg
 import pytest
 
 from neartech.permessi import (
     AmministratoreGiaPresente,
+    UltimoAmministratore,
     PermessoNegato,
     assegna_ruolo,
     chiudi_assegnazione,
@@ -200,3 +203,35 @@ def test_utente_identificato_solo_da_soggetto_sso(conn):
         "SELECT column_name FROM information_schema.columns WHERE table_name = 'utenti'"
     ).fetchall()}
     assert not colonne & {"nome", "cognome", "email"}
+
+
+# --- santa-loop, giro 1 -----------------------------------------------------------
+
+def test_assegnazione_a_termine_si_revoca_prima(conn, scenario):
+    nuovo = crea_utente(conn, "sso|a-termine")
+    adesso = conn.execute("SELECT now()").fetchone()[0]
+    assegnazione = assegna_ruolo(conn, nuovo, "comitato_guida", scenario["a"], assegnata_da=scenario["admin"],
+                                 valida_al=adesso + timedelta(days=30))
+    chiudi_assegnazione(conn, assegnazione, chiusa_da=scenario["admin"], motivazione="revoca anticipata")
+    assert not puo(conn, nuovo, "approvare_parametro", scenario["a"])
+
+
+def test_assegnazioni_a_termine_non_si_sovrappongono(conn, scenario):
+    nuovo = crea_utente(conn, "sso|a-termine")
+    adesso = conn.execute("SELECT now()").fetchone()[0]
+    assegna_ruolo(conn, nuovo, "revisore", scenario["a"], assegnata_da=scenario["admin"],
+                  valida_al=adesso + timedelta(days=30))
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        assegna_ruolo(conn, nuovo, "revisore", scenario["a"], assegnata_da=scenario["admin"])
+
+
+def test_ultimo_amministratore_non_si_chiude(conn, scenario):
+    assegnazione = conn.execute(
+        "SELECT assegnazione_id FROM assegnazioni_ruolo WHERE utente_id = %s", (scenario["admin"],)
+    ).fetchone()[0]
+    with pytest.raises(UltimoAmministratore):
+        chiudi_assegnazione(conn, assegnazione, chiusa_da=scenario["admin"], motivazione="x")
+
+
+def test_organizzazione_inesistente_e_negata(conn, scenario):
+    assert not puo(conn, scenario["auditor"], "leggere", "00000000-0000-0000-0000-00000000dead")

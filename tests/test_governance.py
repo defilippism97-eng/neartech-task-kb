@@ -260,3 +260,32 @@ def test_contenuto_degli_indirizzi_verificato(conn, org):
 def test_truncate_vietato(conn, tabella):
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute(f"TRUNCATE {tabella}")
+
+
+# --- santa-loop, giro 1 -----------------------------------------------------------
+
+def test_versione_superata_non_si_approva(conn, org):
+    prima = _proponi(conn, org, {"valore": 0.9})
+    seconda = _proponi(conn, org, {"valore": 0.85})
+    approva_parametro(conn, org["comitato"], seconda, motivazione="ok")
+    with pytest.raises(DecisioneGiaPresa):
+        approva_parametro(conn, org["comitato"], prima, motivazione="tardiva")
+
+
+def test_segnalazione_solo_su_oggetti_della_propria_organizzazione(conn, org):
+    altra = str(conn.execute("INSERT INTO organizations (name) VALUES ('Altra') RETURNING org_id").fetchone()[0])
+    comitato_altra = crea_utente(conn, "sso|comitato-altra")
+    assegna_ruolo(conn, comitato_altra, "comitato_guida", altra, assegnata_da=org["admin"])
+    indirizzo = proponi_indirizzo(conn, comitato_altra, org_id=altra, codice="x", testo="x",
+                                  ambito="x", motivazione="x")
+    with pytest.raises(LookupError):
+        segnala(conn, org["revisore"], org_id=org["id"], tipo_oggetto="indirizzo",
+                oggetto_id=indirizzo, motivazione="x")
+
+
+def test_contenuto_dei_parametri_verifica_l_organizzazione(conn, org):
+    parametro = _proponi(conn, org, {"valore": 0.9})
+    altra = str(conn.execute("INSERT INTO organizations (name) VALUES ('Altra') RETURNING org_id").fetchone()[0])
+    conn.execute("ALTER TABLE parametri_governance DISABLE TRIGGER parametri_append_only")
+    conn.execute("UPDATE parametri_governance SET org_id = %s WHERE parametro_id = %s", (altra, parametro))
+    assert verifica_contenuti(conn) == [("parametro", parametro)]

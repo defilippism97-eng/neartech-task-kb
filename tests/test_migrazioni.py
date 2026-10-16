@@ -111,3 +111,10 @@ def test_nome_di_migrazione_non_valido(nome):
 def test_registro_delle_migrazioni_non_si_modifica(conn):
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute("DELETE FROM public.migrazioni_applicate")
+
+
+
+def test_inizializza_accetta_solo_migrazioni_precedenti_al_registro(conn):
+    conn.execute("DROP TABLE public.migrazioni_applicate")
+    with pytest.raises(ValueError):
+        inizializza_registro(conn, ["0008_utenti_ruoli_permessi.sql"])

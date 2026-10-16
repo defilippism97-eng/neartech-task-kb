@@ -70,3 +70,30 @@ def test_serve_l_amministratore(conn, dati):
     assegna_ruolo(conn, revisore, "revisore", dati["org"], assegnata_da=dati["admin"])
     with pytest.raises(PermessoNegato):
         sposta_testo_cliente(conn, revisore, dati["org"], codice="sintetica")
+
+
+
+def test_documenti_con_lo_stesso_contenuto(conn, dati):
+    seconda_fonte = conn.execute(
+        """INSERT INTO sources (kind, name, version, license, content_hash)
+           VALUES ('org_document', 'mansionario.docx', '2', 'interno', 'hash-sintetico') RETURNING source_id"""
+    ).fetchone()[0]
+    altro_task = conn.execute(
+        "INSERT INTO canonical_tasks (title_it, granularity) VALUES ('Altro task', 2) RETURNING task_id"
+    ).fetchone()[0]
+    conn.execute(
+        """INSERT INTO task_occurrences (task_id, role_id, raw_snippet, source_id, model_name, prompt_hash)
+           VALUES (%s, %s, 'altro frammento', %s, 'modello', 'hash')""",
+        (altro_task, dati["ruolo"], seconda_fonte),
+    )
+    esito = sposta_testo_cliente(conn, dati["admin"], dati["org"], codice="sintetica")
+    assert esito["documenti"] == 2
+    assert conn.execute("SELECT count(*) FROM org_sintetica.documenti").fetchone()[0] == 2
+
+
+def test_spostamento_registrato_nel_registro(conn, dati):
+    sposta_testo_cliente(conn, dati["admin"], dati["org"], codice="sintetica")
+    atto = conn.execute(
+        "SELECT atto, dettagli ->> 'occorrenze' FROM registro_decisioni WHERE tipo_oggetto = 'spostamento_testo_cliente'"
+    ).fetchall()
+    assert atto == [("approvazione", "1")]
