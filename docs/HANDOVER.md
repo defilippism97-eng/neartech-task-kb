@@ -113,13 +113,16 @@ Piano: `docs/piani/fase-1-fondazioni.md`. Decisioni tecniche: ADR 0003. Ambiente
 | Coda dei job e worker | `0012`, `neartech.coda`, `scripts/worker.py` | SKIP LOCKED; worker senza gestori finché le fasi successive non li aggiungono |
 | Default di policy tolti dallo schema | `0013` | `lambda_r`, `theta_n`, `theta_d` |
 | Rafforzamenti dopo le revisioni | `0014`, `migrations_org/0002` | TRUNCATE vietato, legami fra atti e oggetti, indici FK |
+| Correzioni della santa-loop | `0015`, `0016`, `0017`, `migrations_org/0003` | Revoca delle assegnazioni a termine, lock sui duplicati, amministratore senza scadenza, log senza chiavi esterne, validità dei ruoli con `statement_timestamp()` |
 | Spazio dell'organizzazione | `migrations_org/0001`, `neartech.organizzazioni`, `neartech.spostamento` | Testo del cliente in `org_<codice>`; copia dei dati esistenti pronta, non eseguita |
 
-Test: 144 passati su Postgres locale temporaneo (1 saltato: richiede la chiave API). Revisioni Python, database e sicurezza fatte; problemi critici e alti corretti.
+Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave API), compresi test di concorrenza su un database isolato. Revisioni Python, database e sicurezza fatte; problemi critici e alti corretti.
+
+**Santa-loop** (due revisori Claude indipendenti; nessun modello esterno installato): 3 giri, tutti con esito negativo, ogni volta su problemi nuovi e più sottili (giro 3: validità dei ruoli valutata con l'ora di inizio della transazione). Il problema del giro 3 è corretto e coperto da test, ma non è stato rivisto da un quarto giro.
 
 **In produzione non è stato applicato nulla.** Passi da approvare, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
-2. `scripts/migra.py --applica` (0008–0014).
+2. `scripts/migra.py --applica` (0008–0017 e gli spazi delle organizzazioni).
 3. Bootstrap dell'amministratore tecnico (`neartech.permessi.inizializza_amministratore`) con il soggetto SSO del responsabile.
 4. Copia del testo di Società Dolce nello spazio dell'organizzazione (`neartech.spostamento`, prima con `piano_spostamento` in sola lettura), poi rimozione del testo da `public` con una migrazione dedicata.
 5. Ruoli di database separati: proprietario per le migrazioni, ruolo applicativo senza proprietà (le tabelle append-only restano tali solo per un ruolo non proprietario).
@@ -201,7 +204,8 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
    - chi propone e approva i parametri NEARTECH comuni (`org_id` vuoto): oggi nessun ruolo può farlo;
    - chi valida i task del dataset condiviso presenti in più organizzazioni: oggi un revisore può cambiare lo stato solo dei task della propria organizzazione;
    - se nel comitato guida chi propone un parametro o un indirizzo può anche approvarlo;
-   - se l'amministratore tecnico può assegnarsi un ruolo di organizzazione (oggi sì).
+   - se l'amministratore tecnico può assegnarsi un ruolo di organizzazione (oggi sì);
+   - il testo degli indirizzi del comitato e le descrizioni dei parametri stanno nello schema condiviso e restano dopo l'uscita del cliente: va deciso se è accettabile (ADR 0001 non li elenca fra i testi del cliente).
 
 **Decisioni ancora aperte nel tempo:**
 - Costituzione del comitato guida e individuazione dei rappresentanti dei lavoratori.
