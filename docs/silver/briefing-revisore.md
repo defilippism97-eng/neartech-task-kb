@@ -1,4 +1,4 @@
-# Briefing per il revisore delle etichette silver
+﻿# Briefing per il revisore delle etichette silver
 
 **Versione:** 2026-10-16. **Per:** revisore delle etichette, persona o modello.
 **Stato del progetto:** fase F0 quasi completata, F1 non iniziata. Le etichette sono proposte, non decisioni. Nessun risultato è validato e nessun risultato va usato per decisioni organizzative.
@@ -77,6 +77,8 @@ Per ogni task ti verranno date due cose: il testo del task con la nota di contes
 Procedi così:
 
 1. **Prima, senza l'etichetta.** Classifica il task usando solo la rubrica. Scrivi i valori di k1, k2, k3, r, d1, d2 e la riserva di legge, con una riga di motivazione.
+
+   **Scala:** k1, k2, k3, r, d1 e d2 sono numeri interi da 0 a 4. La riserva di legge è 	rue o alse. La fiducia è lta, media o assa. Le ancore di ogni livello sono nel file docs/silver/pacchetto-gemini.md, sezioni 1 e 2.
 2. **Poi, confronta** con l'etichetta proposta. Per ogni differenza indica se l'etichetta proposta è sbagliata, incerta o ragionevole.
 3. **Segnala** in particolare: r sottostimato o sovrastimato; k2 mal calibrato; d2 alto senza motivo nel testo; una riserva di legge citata senza norma verificabile.
 4. **Non valutare** d3 e d4, né la capacità delle tecnologie.
@@ -101,3 +103,4 @@ Il tuo output è una tabella per task: id, valori tuoi, valori proposti, giudizi
 - Il modello che etichetta è Claude Haiku 5.5. Il revisore è un'altra istanza di modello. Un accordo fra modelli misura coerenza, non validità.
 - Le fonti di capacità sono in parte prodotte da modelli Claude. La dipendenza va considerata.
 - Non esistono ancora dati sulla capacità in produzione. Le etichette di N non la includono.
+
