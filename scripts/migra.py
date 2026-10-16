@@ -1,14 +1,14 @@
-"""Verifica e applica le migrazioni del database condiviso.
+"""Verifica e applica le migrazioni del database condiviso e degli spazi delle organizzazioni.
 
 Uso:
-  DATABASE_URL=... python scripts/migra.py                     # verifica, sola lettura
-  DATABASE_URL=... python scripts/migra.py --applica           # applica le mancanti
-  DATABASE_URL=... python scripts/migra.py --registra-esistenti 0002_... 0003_...
+  DATABASE_URL=... python scripts/migra.py                       # verifica, sola lettura
+  DATABASE_URL=... python scripts/migra.py --inizializza 0002_... 0003_... 0004_... 0005_... 0006_...
+  DATABASE_URL=... python scripts/migra.py --applica             # applica le mancanti, poi gli spazi
 
---registra-esistenti segna come applicate, senza eseguirle, le migrazioni applicate a
-mano prima del registro (0007). Va usato solo dopo aver verificato che i loro oggetti
-esistono. Su produzione, --applica e --registra-esistenti richiedono l'approvazione
-del responsabile del progetto.
+--inizializza crea il registro (0007) su un database migrato a mano prima del registro
+e vi segna, senza eseguirle, le migrazioni indicate. Va usato una volta sola, dopo aver
+verificato che i loro oggetti esistono. Su produzione, --inizializza e --applica
+richiedono l'approvazione del responsabile del progetto.
 """
 
 import argparse
@@ -22,31 +22,32 @@ from neartech.migrazioni import (  # noqa: E402
     CARTELLA_CONDIVISA,
     applica,
     da_applicare,
-    registra_senza_eseguire,
+    inizializza_registro,
 )
+from neartech.organizzazioni import aggiorna_spazi  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     gruppo = parser.add_mutually_exclusive_group()
     gruppo.add_argument("--applica", action="store_true")
-    gruppo.add_argument("--registra-esistenti", nargs="+", metavar="NOME")
+    gruppo.add_argument("--inizializza", nargs="+", metavar="NOME")
     args = parser.parse_args()
 
     with connect() as conn:
+        if args.inizializza:
+            inizializza_registro(conn, args.inizializza)
+            conn.commit()
+            print(f"registro creato, migrazioni segnate come applicate: {len(args.inizializza) + 1}")
+            return
         if args.applica:
+            conn.autocommit = True
             for percorso in applica(conn, CARTELLA_CONDIVISA):
                 print(f"applicata: {percorso.name}")
-            conn.commit()
-            return
-        if args.registra_esistenti:
-            percorsi = [CARTELLA_CONDIVISA / nome for nome in args.registra_esistenti]
-            mancanti = [p.name for p in percorsi if not p.exists()]
-            if mancanti:
-                raise SystemExit(f"file non trovati: {', '.join(mancanti)}")
-            registra_senza_eseguire(conn, percorsi)
-            conn.commit()
-            print(f"registrate senza eseguire: {len(percorsi)}")
+            with conn.transaction():
+                for schema, nomi in aggiorna_spazi(conn).items():
+                    for nome in nomi:
+                        print(f"applicata in {schema}: {nome}")
             return
         conn.read_only = True
         mancanti = da_applicare(conn, CARTELLA_CONDIVISA)

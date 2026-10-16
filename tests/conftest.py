@@ -9,16 +9,14 @@ import psycopg
 import pytest
 
 from neartech.migrazioni import CARTELLA_CONDIVISA, applica
-from pg_locale import cartella_binari, postgres_temporaneo
+from pg_locale import cartella_binari, controlla_dsn_di_test, postgres_temporaneo
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "db" / "schema.sql"
 
 
 def _prepara(url: str) -> None:
-    dbname = url.rsplit("/", 1)[-1].split("?")[0]
-    if "test" not in dbname:
-        raise RuntimeError("NEARTECH_TEST_DSN deve puntare a un database il cui nome contiene 'test'")
+    controlla_dsn_di_test(url)
     # Il database viene ripulito e ricreato dallo schema reale a ogni sessione di test.
     with psycopg.connect(url, autocommit=True) as conn:
         conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
@@ -45,6 +43,7 @@ def dsn() -> Iterator[str]:
 
 @pytest.fixture
 def conn(dsn):
-    with psycopg.connect(dsn) as c:
+    # Transazione esterna sempre annullata: le conn.transaction() del codice diventano
+    # savepoint e niente di un test resta nel database della sessione.
+    with psycopg.connect(dsn) as c, c.transaction(force_rollback=True):
         yield c
-        c.rollback()

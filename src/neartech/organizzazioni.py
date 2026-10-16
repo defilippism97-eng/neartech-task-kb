@@ -29,13 +29,14 @@ def schema_organizzazione(codice: str) -> str:
 def crea_organizzazione(
     conn: psycopg.Connection, utente_id: str, *, nome: str, codice: str, settore: str | None = None
 ) -> str:
-    schema = schema_organizzazione(codice)
-    richiedi(conn, utente_id, "gestire_organizzazioni", risorsa=f"organizzazione:{codice}")
-    org_id = str(conn.execute(
-        "INSERT INTO organizations (name, sector) VALUES (%s, %s) RETURNING org_id", (nome, settore)
-    ).fetchone()[0])
-    crea_spazio(conn, org_id, codice)
-    return org_id
+    schema_organizzazione(codice)
+    with conn.transaction():
+        richiedi(conn, utente_id, "gestire_organizzazioni", risorsa=f"organizzazione:{codice}")
+        org_id = str(conn.execute(
+            "INSERT INTO organizations (name, sector) VALUES (%s, %s) RETURNING org_id", (nome, settore)
+        ).fetchone()[0])
+        crea_spazio(conn, org_id, codice)
+        return org_id
 
 
 def crea_spazio(conn: psycopg.Connection, org_id: str, codice: str) -> str:
@@ -48,7 +49,11 @@ def crea_spazio(conn: psycopg.Connection, org_id: str, codice: str) -> str:
 
 
 def aggiorna_spazi(conn: psycopg.Connection) -> dict[str, list[str]]:
-    """Applica a ogni spazio le migrazioni di organizzazione mancanti."""
+    """Applica a ogni spazio le migrazioni di organizzazione mancanti.
+
+    Operazione di manutenzione dello schema, come scripts/migra.py: la esegue chi gestisce
+    le migrazioni con il ruolo di database proprietario, non un utente dell'applicazione.
+    """
     esito: dict[str, list[str]] = {}
     for (codice,) in conn.execute(
         "SELECT codice FROM organizations WHERE codice IS NOT NULL ORDER BY codice"

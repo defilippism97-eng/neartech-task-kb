@@ -109,8 +109,9 @@ def test_il_rifiuto_resta_nel_log_anche_se_la_transazione_viene_annullata(dsn):
     with psycopg.connect(dsn, autocommit=True) as log_conn:
         configura_log(log_conn)
         try:
+            # L'utente esiste già quando si verifica un permesso: qui è creato e confermato prima.
+            utente = crea_utente(log_conn, "sso|log-durevole")
             with psycopg.connect(dsn) as conn:
-                utente = crea_utente(conn, "sso|log-durevole")
                 with pytest.raises(PermessoNegato):
                     richiedi(conn, utente, "gestire_utenti", risorsa="prova-log-durevole")
                 conn.rollback()

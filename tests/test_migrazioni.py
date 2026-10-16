@@ -45,13 +45,12 @@ def test_hash_ignora_la_differenza_tra_fine_riga(tmp_path):
     assert hash_migrazione(lf) == hash_migrazione(crlf)
 
 
-def test_migrazione_modificata_viene_rilevata(conn):
-    conn.execute(
-        "UPDATE public.migrazioni_applicate SET hash_sha256 = 'diverso' "
-        "WHERE nome = (SELECT min(nome) FROM public.migrazioni_applicate)"
-    )
+def test_migrazione_modificata_viene_rilevata(conn, tmp_path):
+    cartella = _copia_migrazioni(tmp_path)
+    prima = sorted(cartella.glob("*.sql"))[0]
+    prima.write_text(prima.read_text(encoding="utf-8") + "\n-- modifica successiva\n", encoding="utf-8")
     with pytest.raises(MigrazioneModificata):
-        da_applicare(conn, CARTELLA_CONDIVISA)
+        da_applicare(conn, cartella)
 
 
 def test_file_nuovo_risulta_da_applicare(conn, tmp_path):

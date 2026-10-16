@@ -5,10 +5,12 @@ Uso:
 
 Prende i job in coda uno alla volta, ciascuno nella propria transazione, finché la coda
 è vuota o si raggiunge --massimo. I gestori per tipo di job si registrano in GESTORI:
-oggi non ce ne sono, quindi un job di tipo sconosciuto fallisce con un errore esplicito.
+oggi non ce ne sono, quindi il lavoratore non prende alcun job. Sul job si registra solo
+il tipo di errore e la prima riga del messaggio, troncata: il traceback va nel log locale.
 """
 
 import argparse
+import logging
 import socket
 import sys
 from collections.abc import Callable
@@ -28,25 +30,35 @@ GESTORI: dict[str, Callable[[psycopg.Connection, Any], None]] = {}
 
 RIPROVA_TRA = timedelta(minutes=5)
 BLOCCATO_DOPO = timedelta(hours=1)
+LUNGHEZZA_ERRORE = 300
+
+log = logging.getLogger("neartech.worker")
+
+
+class JobNonPiuNostro(RuntimeError):
+    """Il job è stato recuperato da un altro lavoratore mentre questo lo eseguiva."""
+
+
+def _errore_breve(errore: BaseException) -> str:
+    righe = str(errore).splitlines()
+    return f"{type(errore).__name__}: {righe[0] if righe else ''}"[:LUNGHEZZA_ERRORE]
 
 
 def esegui_uno(conn: psycopg.Connection, lavoratore: str) -> bool:
     with conn.transaction():
-        job = prendi(conn, lavoratore, tipi=list(GESTORI) or None)
+        job = prendi(conn, lavoratore, tipi=list(GESTORI))
     if job is None:
         return False
     try:
-        gestore = GESTORI.get(job.tipo)
-        if gestore is None:
-            raise LookupError(f"nessun gestore per il tipo '{job.tipo}'")
         with conn.transaction():
-            gestore(conn, job.payload)
-            completa(conn, job.job_id)
-        print(f"completato {job.tipo} {job.job_id}", flush=True)
+            GESTORI[job.tipo](conn, job.payload)
+            if not completa(conn, job.job_id, lavoratore):
+                raise JobNonPiuNostro(job.job_id)
+        log.info("completato %s %s", job.tipo, job.job_id)
     except Exception as errore:  # noqa: BLE001 - ogni errore del gestore va registrato sul job
+        log.exception("fallito %s %s", job.tipo, job.job_id)
         with conn.transaction():
-            fallisci(conn, job.job_id, f"{type(errore).__name__}: {errore}"[:2000], riprova_tra=RIPROVA_TRA)
-        print(f"fallito {job.tipo} {job.job_id}: {type(errore).__name__}", flush=True)
+            fallisci(conn, job.job_id, lavoratore, _errore_breve(errore), riprova_tra=RIPROVA_TRA)
     return True
 
 
@@ -55,13 +67,17 @@ def main() -> None:
     parser.add_argument("--nome", default=f"{socket.gethostname()}-worker")
     parser.add_argument("--massimo", type=int, default=50)
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    if not GESTORI:
+        log.info("nessun gestore registrato: nessun job da prendere")
+        return
 
     with connect() as conn:
         conn.autocommit = True
         with conn.transaction():
             recuperati = recupera_bloccati(conn, piu_vecchi_di=BLOCCATO_DOPO)
         if recuperati:
-            print(f"rimessi in coda {recuperati} job bloccati", flush=True)
+            log.info("recuperati %d job bloccati", recuperati)
         eseguiti = 0
         while eseguiti < args.massimo and esegui_uno(conn, args.nome):
             eseguiti += 1

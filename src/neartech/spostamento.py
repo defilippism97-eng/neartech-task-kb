@@ -38,6 +38,12 @@ def piano_spostamento(conn: psycopg.Connection, org_id: str) -> dict[str, int]:
 
 
 def sposta_testo_cliente(conn: psycopg.Connection, utente_id: str, org_id: str, *, codice: str) -> dict[str, int]:
+    """Copia tutto o niente: una sola transazione (o savepoint)."""
+    with conn.transaction():
+        return _sposta(conn, utente_id, org_id, codice)
+
+
+def _sposta(conn: psycopg.Connection, utente_id: str, org_id: str, codice: str) -> dict[str, int]:
     richiedi(conn, utente_id, "gestire_organizzazioni", org_id, risorsa=f"spostamento:{org_id}")
     riga = conn.execute("SELECT codice FROM organizations WHERE org_id = %s FOR UPDATE", (org_id,)).fetchone()
     if riga is None:
