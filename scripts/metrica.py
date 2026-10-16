@@ -66,8 +66,18 @@ def _scrivi_esportazione(percorso: Path, righe: list[dict]) -> None:
 
 def _leggi_giudizi(percorso: Path) -> list[dict]:
     if percorso.suffix.lower() == ".csv":
-        with percorso.open(encoding="utf-8-sig", newline="") as f:
-            righe = [r for r in csv.DictReader(f, delimiter=";") if (r.get("esito") or "").strip()]
+        # Excel può risalvare il file con un'altra codifica e un altro separatore: si riconoscono entrambi.
+        dati = percorso.read_bytes()
+        try:
+            testo = dati.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            testo = dati.decode("cp1252")
+        intestazione = testo.splitlines()[0] if testo else ""
+        separatore = max(";\t,", key=intestazione.count)
+        lettore = csv.DictReader(testo.splitlines(), delimiter=separatore)
+        if not {"posizione", "esito"} <= set(lettore.fieldnames or []):
+            raise ValueError(f"colonne 'posizione' ed 'esito' non trovate in {percorso.name}")
+        righe = [r for r in lettore if (r.get("esito") or "").strip()]
         return [{"posizione": r["posizione"], "esito": r["esito"].strip().lower(),
                  "nota": (r.get("nota") or "").strip() or None} for r in righe]
     return [json.loads(r) for r in percorso.read_text(encoding="utf-8").splitlines() if r.strip()]
