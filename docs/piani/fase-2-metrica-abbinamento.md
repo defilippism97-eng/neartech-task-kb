@@ -27,7 +27,7 @@ La stessa infrastruttura serve tre tipi di proposta:
 
 ## 3. Passi (test prima del codice)
 
-1. Migrazione `0018`: `campioni_revisione`, `elementi_campione`, `giudizi_revisione`, `misure_precisione`, tutte append-only; permesso `gestire_campioni` ai revisori.
+1. Migrazione `0019` (la 0018 è andata alle correzioni del giro 4 sulla PR della fase 1): `campioni_revisione`, `elementi_campione`, `giudizi_revisione`, `misure_precisione`, tutte append-only; permesso `gestire_campioni` ai revisori.
 2. `neartech.campioni`: creazione del campione con seme, esportazione cieca, importazione e registrazione dei giudizi.
 3. `neartech.metrica`: calcolo della precisione e dell'intervallo, confronto con la soglia, registrazione della misura.
 4. Adattatori per i tre tipi di proposta (crosswalk e fusione subito; abbinamento come interfaccia per la fase 3).
