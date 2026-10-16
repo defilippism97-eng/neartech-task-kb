@@ -48,3 +48,18 @@
 3. Costruire le fondazioni: schema multi-organizzazione, tabella dei ruoli, registro delle decisioni, coda dei job.
 4. Costruire l'abbinamento al database consolidato e la priorità di revisione.
 5. Costruire il calcolo deterministico e gli output aggregati.
+## 5. Decisione: D per organizzazione con punto di partenza condiviso (2026-10-16)
+
+Scelta del responsabile del progetto. D resta un valore dell'organizzazione. Il punto di partenza è condiviso, ma ogni comitato guida lo personalizza.
+
+**Formula:** `D_finale = max( pavimento legale ; base NEARTECH + variazione dell'organizzazione )`, limitato alla scala 0–4.
+
+**Pavimento legale.** Per ogni task, il livello minimo che una norma verificata impone. Non può essere abbassato dall'organizzazione. Oggi nessuna norma è verificata in questo senso, quindi il pavimento è vuoto per tutti i task. Ogni pavimento deve citare la norma.
+
+**Base NEARTECH.** Presentata all'organizzazione come "valutazione basata su dati NEARTECH". Nel record interno l'origine resta esplicita: oggi d1 e d2 sono stime del modello, provvisorie, e d3 e d4 mancano. La dicitura verso il cliente è neutra, ma il record deve dire il vero.
+
+**Variazione dell'organizzazione.** Motivazione obbligatoria, approvazione del comitato guida, registrazione di chi l'ha proposta e quando. I rappresentanti dei lavoratori possono bloccare un ribasso.
+
+**Ribassi forti.** Una variazione che porta D sotto la base di una soglia viene segnalata in revisione e riportata nel report finale. La soglia è un parametro del comitato guida, non una costante del codice.
+
+**Record per task.** Tre valori separati: pavimento legale con norma, base con fonte e versione, variazione con motivazione e approvazione.
