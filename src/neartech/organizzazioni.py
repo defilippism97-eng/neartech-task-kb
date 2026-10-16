@@ -32,12 +32,19 @@ def crea_organizzazione(
     schema = schema_organizzazione(codice)
     richiedi(conn, utente_id, "gestire_organizzazioni", risorsa=f"organizzazione:{codice}")
     org_id = str(conn.execute(
-        "INSERT INTO organizations (name, sector, codice) VALUES (%s, %s, %s) RETURNING org_id",
-        (nome, settore, codice),
+        "INSERT INTO organizations (name, sector) VALUES (%s, %s) RETURNING org_id", (nome, settore)
     ).fetchone()[0])
+    crea_spazio(conn, org_id, codice)
+    return org_id
+
+
+def crea_spazio(conn: psycopg.Connection, org_id: str, codice: str) -> str:
+    """Assegna il codice a un'organizzazione esistente e crea il suo schema. Chi chiama verifica i permessi."""
+    schema = schema_organizzazione(codice)
+    conn.execute("UPDATE organizations SET codice = %s WHERE org_id = %s", (codice, org_id))
     conn.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
     applica(conn, CARTELLA_ORGANIZZAZIONE, schema)
-    return org_id
+    return schema
 
 
 def aggiorna_spazi(conn: psycopg.Connection) -> dict[str, list[str]]:
