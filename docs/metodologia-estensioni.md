@@ -36,6 +36,16 @@ per ora si ignora la questione.
 - Solo le relazioni confermate dal revisore sono marcate `validated = true`.
 - Le relazioni dubbie vengono mantenute come proposte, senza correzione automatica, finché il revisore non indica quella corretta.
 
+## 4. Modifiche alla metodologia per il silver (2026-10-16)
+
+Approvate dal responsabile del progetto, che oggi coincide con il curatore e con il responsabile metodologico. Il comitato di governance non è ancora costituito: questa voce va riesaminata quando il comitato esiste e include la rappresentanza dei lavoratori.
+
+- **r**: misura solo l'affidabilità richiesta. I riferimenti a diritti passano in d2. Il riferimento alla reputazione è spostato in d2 come proposta da confermare. Rubrica bozza-3, vedi `docs/silver/pacchetto-gemini.md`.
+- **Campioni**: 3 run invece di 5 per voce nel silver, per il costo in risorse. Deviazione dalla sezione "Regole di somministrazione" del piano.
+- **d3 e d4**: non si etichettano nel silver. Si raccolgono solo nel golden, con attori reali oltre al responsabile.
+- **Testi dei task**: task canonici (titolo e nota di contesto), senza i documenti originali. Dataset in `docs/silver/dataset/task-silver.jsonl`, 384 task.
+- **Fornitore del modello**: per Società Dolce lo sviluppo è interno, e il responsabile ha permessi completi sull'app. Per un'altra azienda l'invio di testi a un servizio di terzi richiede il processo di governance.
+
 ## 5. Definizione di capacità per N (2026-10-16)
 
 Approvata dal responsabile del progetto. Il piano definisce N rispetto a ciò che la tecnologia "ha dimostrato di saper fare". Con questa decisione, per N si usa la **capacità di test**: la capacità misurata in condizioni controllate, dichiarata come tale e versionata per modello. Questo è uno scostamento dalla definizione del piano, e va registrato come tale.
@@ -43,3 +53,11 @@ Approvata dal responsabile del progetto. Il piano definisce N rispetto a ciò ch
 - Ogni risultato di N riporta il tipo di capacità usato (test) e la versione del modello che l'ha prodotta.
 - La **capacità dimostrata in produzione** resta una grandezza separata. Nessuna fonte disponibile la misura oggi per i task O*NET: quando esisterà, sarà una voce distinta e non sostituirà la capacità di test.
 - La fonte della capacità di test è scelta caso per caso fra quelle in `docs/ricerca/capacita/mappa-fonti.md`. La calibrazione sulla scala 0–4 resta da fare.
+## 6. D per organizzazione con punto di partenza condiviso (2026-10-16)
+
+Approvata dal responsabile del progetto, con la regola del ribasso segnalato. Dettagli in `docs/architettura/stato-e-decisioni.md`, sezione 5. Il comitato guida non è ancora costituito: questa voce va riesaminata quando esiste.
+
+- D è per organizzazione. La base condivisa è il punto di partenza.
+- Pavimento legale per task con norma citata, non modificabile dall'organizzazione. Oggi vuoto.
+- La base è presentata come "valutazione basata su dati NEARTECH", con origine interna esplicita.
+- I ribassi sotto la base di una soglia vanno segnalati in revisione e nel report finale. Soglia da fissare dal comitato guida.

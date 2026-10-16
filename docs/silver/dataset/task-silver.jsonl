@@ -1,0 +1,354 @@
+{"id":"T-0001","titolo":"Contribuire alla definizione del piano marketing annuale","nota_contesto":"Il piano deve essere coerente con gli obiettivi dell\u0027organizzazione."}
+{"id":"T-0002","titolo":"Coordinare l\u0027attuazione delle campagne di comunicazione e promozione","nota_contesto":"Comprende il monitoraggio dell\u0027efficacia delle campagne."}
+{"id":"T-0003","titolo":"Supervisionare la produzione dei materiali promozionali e istituzionali","nota_contesto":"Garantisce qualità e coerenza con l\u0027immagine dell\u0027organizzazione."}
+{"id":"T-0005","titolo":"Monitorare l\u0027andamento dei canali digitali e proporre azioni di miglioramento","nota_contesto":"L\u0027obiettivo è aumentare visibilità e coinvolgimento del pubblico."}
+{"id":"T-0006","titolo":"Coordinare la pubblicazione dei contenuti","nota_contesto":""}
+{"id":"T-0007","titolo":"Approvare testi, grafiche e materiali informativi","nota_contesto":"Approvazione prima della pubblicazione."}
+{"id":"T-0008","titolo":"Analizzare i trend di mercato e le strategie della concorrenza","nota_contesto":"Finalizzata a individuare opportunità di sviluppo."}
+{"id":"T-0009","titolo":"Elaborare report e indicatori di performance delle attività di marketing","nota_contesto":""}
+{"id":"T-0010","titolo":"Supportare la direzione nella definizione delle strategie commerciali e di posizionamento","nota_contesto":""}
+{"id":"T-0011","titolo":"Coordinare il personale dell\u0027ufficio assegnando compiti e supervisionando le attività operative","nota_contesto":"Il team è costituito dagli impiegati dell\u0027ufficio marketing."}
+{"id":"T-0012","titolo":"Favorire la collaborazione e lo sviluppo delle competenze del team","nota_contesto":""}
+{"id":"T-0013","titolo":"Gestire i rapporti con fornitori esterni e valutarne l\u0027efficacia in termini di qualità e costi","nota_contesto":""}
+{"id":"T-0014","titolo":"Gestire le chiamate telefoniche in entrata e in uscita","nota_contesto":""}
+{"id":"T-0015","titolo":"Smistare le chiamate agli interlocutori interni competenti","nota_contesto":"Lo smistamento avviene seguendo le procedure aziendali."}
+{"id":"T-0016","titolo":"Raccogliere e trasmettere messaggi telefonici","nota_contesto":""}
+{"id":"T-0017","titolo":"Accogliere ospiti e visitatori presso la sede","nota_contesto":""}
+{"id":"T-0018","titolo":"Fornire indicazioni e orientamento all\u0027interno della struttura","nota_contesto":""}
+{"id":"T-0019","titolo":"Gestire la corrispondenza in entrata e in uscita, fisica e digitale","nota_contesto":"Attività svolta a supporto della segreteria."}
+{"id":"T-0020","titolo":"Protocollare, archiviare e distribuire documenti","nota_contesto":""}
+{"id":"T-0021","titolo":"Aggiornare elenchi telefonici, rubriche e contatti","nota_contesto":"Attività svolta in collaborazione con altri."}
+{"id":"T-0022","titolo":"Verificare il funzionamento delle linee telefoniche e segnalare guasti","nota_contesto":""}
+{"id":"T-0023","titolo":"Utilizzare correttamente le attrezzature assegnate","nota_contesto":""}
+{"id":"T-0025","titolo":"Gestire le comunicazioni rispettando le priorità informative","nota_contesto":""}
+{"id":"T-0026","titolo":"Gestire l\u0027agenda e le priorità informative della direzione","nota_contesto":"Può riguardare anche altri referenti di vertice."}
+{"id":"T-0028","titolo":"Supportare la predisposizione di documenti per altri uffici e per la direzione","nota_contesto":""}
+{"id":"T-0029","titolo":"Garantire la circolazione delle informazioni tra uffici, reparti e livelli direzionali","nota_contesto":""}
+{"id":"T-0030","titolo":"Promuovere l\u0027adozione di procedure standard per la comunicazione interna","nota_contesto":""}
+{"id":"T-0031","titolo":"Supportare la formazione operativa del personale addetto","nota_contesto":"Riguarda il personale di segreteria e centralino."}
+{"id":"T-0032","titolo":"Monitorare la qualità del servizio e verificare il rispetto delle procedure","nota_contesto":""}
+{"id":"T-0033","titolo":"Assicurare la copertura del servizio in caso di assenza del personale","nota_contesto":"Valido per assenze programmate e straordinarie."}
+{"id":"T-0034","titolo":"Gestire l\u0027agenda della direzione, tra appuntamenti, riunioni e scadenze","nota_contesto":""}
+{"id":"T-0035","titolo":"Organizzare incontri, assemblee e riunioni","nota_contesto":"Comprende convocazioni, prenotazione sale e verbali."}
+{"id":"T-0036","titolo":"Predisporre documenti, report e presentazioni per gli organi societari","nota_contesto":"Destinatari: consiglio di amministrazione e assemblea dei soci."}
+{"id":"T-0037","titolo":"Coordinarsi con le aree operative per il monitoraggio delle attività strategiche","nota_contesto":""}
+{"id":"T-0038","titolo":"Curare i rapporti con soci, stakeholder e partner istituzionali","nota_contesto":""}
+{"id":"T-0039","titolo":"Supportare la preparazione e la diffusione della documentazione per gli organi societari","nota_contesto":""}
+{"id":"T-0040","titolo":"Registrare le operazioni contabili ordinarie","nota_contesto":"Riguarda la contabilità generale delle società partecipate."}
+{"id":"T-0041","titolo":"Verificare la corretta imputazione dei conti e la coerenza tra documenti giustificativi e registrazioni","nota_contesto":""}
+{"id":"T-0042","titolo":"Compilare schede contabili e mastri a supporto del bilancio d\u0027esercizio","nota_contesto":"Attività di supporto al responsabile nella redazione del bilancio."}
+{"id":"T-0043","titolo":"Predisporre estratti conto e report contabili periodici","nota_contesto":"Svolta su richiesta del responsabile."}
+{"id":"T-0044","titolo":"Redigere i modelli per le comunicazioni IVA e le ritenute fiscali","nota_contesto":"Svolta in collaborazione con il responsabile."}
+{"id":"T-0045","titolo":"Compilare e verificare le dichiarazioni fiscali nel rispetto delle scadenze","nota_contesto":""}
+{"id":"T-0046","titolo":"Classificare e archiviare i documenti contabili e fiscali, in formato fisico e digitale","nota_contesto":""}
+{"id":"T-0047","titolo":"Aggiornare i registri contabili obbligatori","nota_contesto":"Attività di supporto."}
+{"id":"T-0048","titolo":"Supportare le comunicazioni con consulenti, fornitori e clienti su aspetti contabili e fiscali","nota_contesto":"Limitata agli aspetti contabili e fiscali di base."}
+{"id":"T-0049","titolo":"Fornire documentazione a revisori, organi di controllo e soggetti esterni autorizzati","nota_contesto":""}
+{"id":"T-0050","titolo":"Ricevere e registrare le richieste di manutenzione","nota_contesto":"Le richieste provengono dalle diverse aree dell\u0027organizzazione."}
+{"id":"T-0051","titolo":"Pianificare e programmare gli interventi manutentivi ordinari, straordinari e preventivi","nota_contesto":""}
+{"id":"T-0052","titolo":"Coordinarsi con tecnici interni e ditte esterne per l\u0027esecuzione degli interventi","nota_contesto":""}
+{"id":"T-0053","titolo":"Gestire e aggiornare la documentazione tecnica degli impianti","nota_contesto":"Comprende schede impianti, libretti e manuali."}
+{"id":"T-0054","titolo":"Inserire e aggiornare i dati nei gestionali delle manutenzioni","nota_contesto":""}
+{"id":"T-0055","titolo":"Emettere ordini di lavoro","nota_contesto":""}
+{"id":"T-0056","titolo":"Controllare l\u0027avanzamento degli interventi di manutenzione","nota_contesto":""}
+{"id":"T-0057","titolo":"Controllare fatture, rapporti d\u0027intervento e preventivi dei fornitori","nota_contesto":""}
+{"id":"T-0058","titolo":"Supportare la gestione del magazzino ricambi e materiali tecnici","nota_contesto":""}
+{"id":"T-0059","titolo":"Supportare le attività di valorizzazione, dismissione o acquisizione di beni patrimoniali","nota_contesto":""}
+{"id":"T-0060","titolo":"Collaborare alla tenuta e all\u0027aggiornamento dell\u0027inventario dei beni immobili e mobili","nota_contesto":""}
+{"id":"T-0062","titolo":"Eseguire attività di manutenzione meccanica, elettrica o elettromeccanica su impianti e macchinari","nota_contesto":""}
+{"id":"T-0063","titolo":"Diagnosticare e riparare guasti e malfunzionamenti","nota_contesto":""}
+{"id":"T-0064","titolo":"Registrare gli interventi effettuati su sistemi informatici o supporti cartacei","nota_contesto":"La registrazione può avvenire sia su sistemi dedicati sia su documentazione cartacea."}
+{"id":"T-0065","titolo":"Segnalare anomalie e necessità di interventi straordinari","nota_contesto":""}
+{"id":"T-0066","titolo":"Redigere i bilanci civilistici con il supporto di consulenti e organi di controllo","nota_contesto":""}
+{"id":"T-0067","titolo":"Monitorare l\u0027evoluzione della normativa fiscale e valutarne l\u0027impatto sull\u0027organizzazione","nota_contesto":""}
+{"id":"T-0068","titolo":"Promuovere l\u0027adozione di strumenti informatici e metodologie per migliorare l\u0027efficienza contabile","nota_contesto":""}
+{"id":"T-0069","titolo":"Assicurare il rispetto dei termini di chiusura contabile periodica e annuale","nota_contesto":""}
+{"id":"T-0070","titolo":"Predisporre report sintetici e analisi contabili per la direzione e gli organi di governo","nota_contesto":"Destinatari: Direzione Amministrativa e organi di governo delle società partecipate."}
+{"id":"T-0071","titolo":"Elaborare dati e prospetti a fini decisionali, programmatici e di controllo","nota_contesto":""}
+{"id":"T-0072","titolo":"Interagire con collegio sindacale, revisore legale e organi di controllo","nota_contesto":""}
+{"id":"T-0073","titolo":"Predisporre e aggiornare i libri contabili e societari","nota_contesto":""}
+{"id":"T-0074","titolo":"Gestire la rete informatica aziendale","nota_contesto":"Rientra nell\u0027area di responsabilità Gestione infrastruttura IT."}
+{"id":"T-0075","titolo":"Controllare l\u0027operatività di server e dispositivi","nota_contesto":""}
+{"id":"T-0076","titolo":"Verificare la disponibilità dei sistemi e la sicurezza dell\u0027accesso alle informazioni","nota_contesto":""}
+{"id":"T-0077","titolo":"Definire l\u0027evoluzione architetturale dei sistemi informativi","nota_contesto":"Rientra nell\u0027area Sviluppo dei sistemi informativi."}
+{"id":"T-0078","titolo":"Proporre l\u0027adozione di nuove tecnologie","nota_contesto":""}
+{"id":"T-0079","titolo":"Coordinare progetti di digitalizzazione dei processi aziendali","nota_contesto":""}
+{"id":"T-0081","titolo":"Implementare misure di sicurezza logica e fisica","nota_contesto":""}
+{"id":"T-0082","titolo":"Eseguire attività di backup e disaster recovery","nota_contesto":""}
+{"id":"T-0083","titolo":"Supportare gli utenti nella risoluzione di problematiche tecniche","nota_contesto":"Rientra nell\u0027area Supporto alle funzioni aziendali."}
+{"id":"T-0084","titolo":"Assicurare la disponibilità delle postazioni di lavoro","nota_contesto":""}
+{"id":"T-0085","titolo":"Coordinare le attività di assistenza e manutenzione","nota_contesto":"Riferito all\u0027assistenza e manutenzione informatica."}
+{"id":"T-0086","titolo":"Verificare la conformità delle forniture","nota_contesto":""}
+{"id":"T-0087","titolo":"Aggiornare i contratti di servizio","nota_contesto":""}
+{"id":"T-0088","titolo":"Monitorare l\u0027evoluzione tecnologica e proporre soluzioni innovative","nota_contesto":"Indicato nello scopo della posizione."}
+{"id":"T-0090","titolo":"Valutare i rischi per la sicurezza e la salubrità degli ambienti di lavoro","nota_contesto":""}
+{"id":"T-0091","titolo":"Elaborare misure preventive e protettive e relativi sistemi di controllo","nota_contesto":""}
+{"id":"T-0092","titolo":"Elaborare le procedure di sicurezza per le attività aziendali","nota_contesto":""}
+{"id":"T-0093","titolo":"Partecipare alle consultazioni in materia di salute e sicurezza sul lavoro","nota_contesto":""}
+{"id":"T-0094","titolo":"Informare i lavoratori in materia di salute e sicurezza sul lavoro","nota_contesto":"Obbligo informativo previsto dalla normativa italiana sulla sicurezza sul lavoro."}
+{"id":"T-0095","titolo":"Fornire supporto interpretativo sulle normative di sicurezza e sulle relative procedure e dispositivi","nota_contesto":"Funge da riferimento interno su procedure, dispositivi, formazione obbligatoria e aggiornamento documentale."}
+{"id":"T-0096","titolo":"Selezionare, qualificare e rivalutare i fornitori di prodotti e servizi","nota_contesto":"Da svolgere secondo le procedure del Sistema Qualità."}
+{"id":"T-0097","titolo":"Aggiornare la banca dati dei fornitori","nota_contesto":""}
+{"id":"T-0098","titolo":"Gestire i contratti di fornitura negoziando prezzi e condizioni","nota_contesto":"Svolto con il supporto della funzione legale."}
+{"id":"T-0099","titolo":"Gestire gli ordini e il ciclo passivo","nota_contesto":"Svolto in collaborazione con la direzione amministrativa."}
+{"id":"T-0100","titolo":"Individuare i fornitori di manutenzione e gestire i relativi contratti, rinnovi e cessazioni","nota_contesto":"Riguarda immobili di proprietà o affidati all\u0027organizzazione e gli impianti presenti, di sicurezza e non."}
+{"id":"T-0101","titolo":"Gestire e verificare il piano di manutenzione ordinaria di immobili e impianti","nota_contesto":""}
+{"id":"T-0102","titolo":"Gestire la realizzazione della manutenzione straordinaria e dei ripristini di immobili e impianti","nota_contesto":"Gli interventi sono attivati su indicazione dei responsabili di area."}
+{"id":"T-0103","titolo":"Collaborare alla definizione delle caratteristiche di impianti e macchinari da acquistare","nota_contesto":""}
+{"id":"T-0104","titolo":"Presidiare lo scadenziario dei rinnovi periodici delle autorizzazioni","nota_contesto":"Svolto con le funzioni aziendali competenti e con consulenza esterna."}
+{"id":"T-0105","titolo":"Garantire i requisiti strutturali per autorizzazioni e accreditamento dei servizi","nota_contesto":""}
+{"id":"T-0106","titolo":"Gestire le coperture assicurative e i sinistri","nota_contesto":"Compare sia per immobili e impianti sia per la flotta aziendale; svolto con il supporto della funzione legale."}
+{"id":"T-0107","titolo":"Definire i contratti con enti terzi certificatori e controllare le scadenze delle verifiche periodiche obbligatorie","nota_contesto":""}
+{"id":"T-0108","titolo":"Valutare l\u0027idoneità professionale degli enti terzi certificatori","nota_contesto":""}
+{"id":"T-0109","titolo":"Gestire lo smaltimento dei rifiuti speciali","nota_contesto":"Include contratti con aziende autorizzate e monitoraggio del processo di smaltimento."}
+{"id":"T-0110","titolo":"Gestire l\u0027approvvigionamento, l\u0027utilizzo e la dismissione della flotta di automezzi","nota_contesto":"Comprende la valutazione tra acquisto, noleggio e leasing."}
+{"id":"T-0111","titolo":"Supportare gli assegnatari dei mezzi aziendali nella gestione della manutenzione dei veicoli","nota_contesto":""}
+{"id":"T-0112","titolo":"Registrare i visitatori all\u0027ingresso","nota_contesto":"La registrazione avviene solo nei casi in cui è prevista."}
+{"id":"T-0113","titolo":"Garantire un\u0027accoglienza professionale nel rispetto dei protocolli","nota_contesto":""}
+{"id":"T-0114","titolo":"Supportare l\u0027archiviazione documentale dell\u0027unità organizzativa","nota_contesto":""}
+{"id":"T-0115","titolo":"Scansionare e trasmettere documenti a soggetti esterni","nota_contesto":""}
+{"id":"T-0116","titolo":"Gestire le piccole forniture d\u0027ufficio e segnalare necessità logistiche","nota_contesto":""}
+{"id":"T-0118","titolo":"Collaborare con le funzioni aziendali per garantire l\u0027applicazione uniforme delle politiche HR","nota_contesto":""}
+{"id":"T-0119","titolo":"Promuovere iniziative di sviluppo organizzativo e di miglioramento del clima aziendale","nota_contesto":""}
+{"id":"T-0120","titolo":"Fornire supporto nella lettura e nell\u0027applicazione delle normative giuslavoristiche","nota_contesto":""}
+{"id":"T-0121","titolo":"Analizzare la normativa di riferimento e verificare l\u0027adeguatezza dei processi aziendali","nota_contesto":""}
+{"id":"T-0122","titolo":"Redigere comunicazioni interne e report tecnico-normativi a supporto della direzione","nota_contesto":""}
+{"id":"T-0123","titolo":"Redigere e aggiornare le procedure di gestione del personale","nota_contesto":""}
+{"id":"T-0124","titolo":"Verificare la coerenza delle procedure con gli standard qualitativi, contrattuali e normativi","nota_contesto":""}
+{"id":"T-0125","titolo":"Effettuare benchmarking per proporre soluzioni innovative in ambito HR","nota_contesto":""}
+{"id":"T-0126","titolo":"Gestire le richieste del personale su tematiche contrattuali, organizzative o di sviluppo","nota_contesto":""}
+{"id":"T-0127","titolo":"Raccogliere ed elaborare i fabbisogni espressi da dipendenti e responsabili di funzione","nota_contesto":""}
+{"id":"T-0128","titolo":"Monitorare l\u0027efficacia degli interventi HR e proporre azioni correttive","nota_contesto":""}
+{"id":"T-0129","titolo":"Raccogliere ed elaborare dati su organico, turn over, formazione e valutazione delle performance","nota_contesto":""}
+{"id":"T-0130","titolo":"Predisporre report periodici a supporto delle decisioni strategiche e delle verifiche di conformità","nota_contesto":""}
+{"id":"T-0131","titolo":"Collaborare alla definizione e al monitoraggio degli indicatori di performance HR","nota_contesto":""}
+{"id":"T-0132","titolo":"Coordinare l\u0027emissione delle fatture attive","nota_contesto":"Fa parte del coordinamento del ciclo attivo."}
+{"id":"T-0133","titolo":"Verificare la congruità dei dati di fatturazione ricevuti dalle funzioni operative","nota_contesto":""}
+{"id":"T-0134","titolo":"Controllare tempistiche e modalità di invio delle fatture elettroniche","nota_contesto":""}
+{"id":"T-0135","titolo":"Supportare la gestione delle contestazioni con clienti e partner","nota_contesto":""}
+{"id":"T-0136","titolo":"Gestire i rapporti operativi con gli istituti di credito","nota_contesto":"Riguarda pagamenti, incassi, condizioni bancarie e affidamenti."}
+{"id":"T-0137","titolo":"Monitorare la liquidità disponibile","nota_contesto":"Il monitoraggio è svolto con cadenza giornaliera."}
+{"id":"T-0138","titolo":"Predisporre previsioni di cassa a breve e medio termine","nota_contesto":""}
+{"id":"T-0139","titolo":"Coordinare e verificare le registrazioni bancarie e i movimenti contabili connessi","nota_contesto":""}
+{"id":"T-0140","titolo":"Predisporre e aggiornare il piano di tesoreria","nota_contesto":""}
+{"id":"T-0141","titolo":"Verificare l\u0027incasso delle fatture emesse","nota_contesto":""}
+{"id":"T-0142","titolo":"Gestire i solleciti di pagamento ai clienti","nota_contesto":""}
+{"id":"T-0143","titolo":"Eseguire le riconciliazioni contabili tra incassi e crediti aperti","nota_contesto":""}
+{"id":"T-0144","titolo":"Collaborare alla gestione del recupero crediti con l\u0027ufficio legale o agenzie esterne","nota_contesto":"Il coinvolgimento è solo eventuale."}
+{"id":"T-0145","titolo":"Aggiornare la situazione creditoria nei sistemi gestionali","nota_contesto":""}
+{"id":"T-0146","titolo":"Supportare la predisposizione dei report periodici sul ciclo attivo e sui flussi di cassa","nota_contesto":""}
+{"id":"T-0147","titolo":"Collaborare con il controllo di gestione alla riconciliazione dei dati economico-finanziari","nota_contesto":""}
+{"id":"T-0148","titolo":"Definire le modalità operative e aggiornare le procedure amministrative","nota_contesto":""}
+{"id":"T-0149","titolo":"Pianificare e verificare l\u0027avanzamento delle attività del team fornendo supporto nelle criticità","nota_contesto":""}
+{"id":"T-0150","titolo":"Garantire la diffusione e il rispetto delle policy in ambito amministrativo e contabile","nota_contesto":""}
+{"id":"T-0152","titolo":"Redigere e verificare atti, pareri, accordi, convenzioni e contratti","nota_contesto":""}
+{"id":"T-0153","titolo":"Gestire i rapporti con consulenti legali esterni","nota_contesto":""}
+{"id":"T-0154","titolo":"Supportare le strutture aziendali nell\u0027interpretazione e nell\u0027applicazione delle norme","nota_contesto":""}
+{"id":"T-0155","titolo":"Monitorare l\u0027evoluzione normativa e giurisprudenziale di interesse","nota_contesto":""}
+{"id":"T-0157","titolo":"Gestire i procedimenti giudiziali e stragiudiziali","nota_contesto":""}
+{"id":"T-0158","titolo":"Raccogliere e trasmettere la documentazione necessaria ai legali incaricati","nota_contesto":""}
+{"id":"T-0159","titolo":"Coordinare le attività difensive dell\u0027ente con le strutture coinvolte","nota_contesto":""}
+{"id":"T-0161","titolo":"Garantire l\u0027applicazione della normativa sulla protezione dei dati personali","nota_contesto":"Il riferimento normativo è il GDPR."}
+{"id":"T-0162","titolo":"Supportare il titolare del trattamento nella definizione e nell\u0027aggiornamento dei registri dei trattamenti","nota_contesto":""}
+{"id":"T-0163","titolo":"Coordinare le attività con il responsabile della protezione dei dati","nota_contesto":""}
+{"id":"T-0164","titolo":"Gestire segnalazioni e richieste degli interessati sul trattamento dei dati","nota_contesto":""}
+{"id":"T-0165","titolo":"Assicurare l\u0027integrazione con le altre unità organizzative","nota_contesto":""}
+{"id":"T-0166","titolo":"Supportare la direzione e le altre funzioni nella valutazione giuridica di progetti e iniziative","nota_contesto":""}
+{"id":"T-0168","titolo":"Supervisionare la predisposizione delle scritture di assestamento, rettifica e integrazione","nota_contesto":""}
+{"id":"T-0169","titolo":"Definire e aggiornare il piano dei conti analitico e la struttura dei centri di costo","nota_contesto":""}
+{"id":"T-0170","titolo":"Coordinare la rilevazione analitica e l\u0027attribuzione dei costi alle unità organizzative","nota_contesto":""}
+{"id":"T-0171","titolo":"Analizzare i dati contabili per centro di costo e proporre azioni di ottimizzazione","nota_contesto":""}
+{"id":"T-0172","titolo":"Controllare la correttezza delle registrazioni contabili effettuate dal personale","nota_contesto":""}
+{"id":"T-0173","titolo":"Gestire riconciliazioni e rettifiche contabili","nota_contesto":""}
+{"id":"T-0174","titolo":"Elaborare dati di sintesi economico-finanziaria a supporto del controllo di gestione","nota_contesto":""}
+{"id":"T-0175","titolo":"Contribuire alla costruzione di strumenti di analisi previsionale (budget e forecast)","nota_contesto":""}
+{"id":"T-0176","titolo":"Coordinare i processi amministrativi e gestionali legati al personale","nota_contesto":"Rientra nell\u0027area di responsabilità del coordinamento delle attività di gestione del personale."}
+{"id":"T-0177","titolo":"Garantire la corretta applicazione dei contratti collettivi nazionali e aziendali","nota_contesto":""}
+{"id":"T-0179","titolo":"Promuovere e coordinare piani formativi per lo sviluppo delle competenze","nota_contesto":""}
+{"id":"T-0180","titolo":"Supportare il management nell\u0027individuazione dei percorsi di crescita e sviluppo professionale","nota_contesto":""}
+{"id":"T-0181","titolo":"Coordinare il monitoraggio del clima organizzativo","nota_contesto":"Attività svolta solo se necessaria (\"eventuali\")."}
+{"id":"T-0182","titolo":"Supportare la direzione nella definizione delle politiche di retention e di soddisfazione del personale","nota_contesto":""}
+{"id":"T-0183","titolo":"Gestire il confronto con le rappresentanze sindacali","nota_contesto":"Il confronto riguarda sia le rappresentanze sindacali aziendali sia quelle territoriali."}
+{"id":"T-0184","titolo":"Partecipare alle trattative e negoziare accordi collettivi","nota_contesto":""}
+{"id":"T-0185","titolo":"Redigere verbali e accordi sindacali e curarne archiviazione e diffusione","nota_contesto":""}
+{"id":"T-0186","titolo":"Supportare l\u0027applicazione dei contratti collettivi nazionali e integrativi","nota_contesto":""}
+{"id":"T-0187","titolo":"Gestire le vertenze individuali e collettive di lavoro","nota_contesto":""}
+{"id":"T-0188","titolo":"Rappresentare l\u0027ente nei procedimenti extragiudiziali","nota_contesto":""}
+{"id":"T-0189","titolo":"Proporre soluzioni di composizione preventiva dei conflitti","nota_contesto":""}
+{"id":"T-0190","titolo":"Analizzare il clima sindacale e individuare i fattori di criticità","nota_contesto":""}
+{"id":"T-0191","titolo":"Promuovere iniziative per costruire relazioni sindacali costruttive","nota_contesto":""}
+{"id":"T-0192","titolo":"Supportare la direzione nella comunicazione al personale su temi di rilevanza collettiva","nota_contesto":""}
+{"id":"T-0193","titolo":"Garantire l\u0027applicazione uniforme delle direttive aziendali in materia di relazioni sindacali","nota_contesto":""}
+{"id":"T-0196","titolo":"Gestire e supervisionare i piani HACCP e l\u0027applicazione delle normative igienico-sanitarie","nota_contesto":"Riferimento al Reg. CE 852/2004 sull\u0027igiene dei prodotti alimentari."}
+{"id":"T-0197","titolo":"Gestire le emergenze e redigere i piani di evacuazione e pronto intervento","nota_contesto":""}
+{"id":"T-0198","titolo":"Promuovere l\u0027adeguatezza dei sistemi e dei comportamenti per la prevenzione e la sicurezza nei luoghi di lavoro","nota_contesto":"Fa riferimento al D.Lgs. 81/08 in materia di salute e sicurezza sul lavoro."}
+{"id":"T-0199","titolo":"Elaborare programmi di informazione e formazione sulla sicurezza sul lavoro","nota_contesto":""}
+{"id":"T-0200","titolo":"Curare il proprio aggiornamento professionale e l\u0027autoformazione","nota_contesto":"Include formazione obbligatoria: corso abilitante per RSPP e formazione HACCP."}
+{"id":"T-0201","titolo":"Produrre dati e analisi sulle attività di prevenzione e sull\u0027andamento degli infortuni per la rendicontazione e l\u0027informazione alla direzione","nota_contesto":"I dati alimentano il preventivo e il consuntivo del bilancio di responsabilità sociale."}
+{"id":"T-0202","titolo":"Imputare i costi ai centri di costo e alle commesse","nota_contesto":"L\u0027imputazione segue la struttura contabile interna."}
+{"id":"T-0203","titolo":"Verificare la corretta assegnazione delle spese a supporto dei report analitici","nota_contesto":""}
+{"id":"T-0204","titolo":"Raccogliere e controllare i documenti fiscali","nota_contesto":""}
+{"id":"T-0205","titolo":"Controllare le scadenze contabili e fiscali e calendarizzare le attività ricorrenti","nota_contesto":""}
+{"id":"T-0206","titolo":"Collaborare alla redazione del bilancio e dei documenti collegati","nota_contesto":"Collaborazione con il coordinatore della contabilità."}
+{"id":"T-0207","titolo":"Raccogliere e verificare le informazioni contabili presso le altre funzioni aziendali","nota_contesto":"Le aree coinvolte sono personale, acquisti e progettazione."}
+{"id":"T-0208","titolo":"Fornire dati contabili e reportistica di base a supporto della gestione di bandi e progetti","nota_contesto":""}
+{"id":"T-0209","titolo":"Rispondere a richieste di chiarimenti e svolgere attività amministrative trasversali","nota_contesto":""}
+{"id":"T-0210","titolo":"Compilare le scritture contabili di assestamento","nota_contesto":""}
+{"id":"T-0211","titolo":"Redigere le scritture contabili del ciclo attivo e passivo secondo i principi contabili","nota_contesto":""}
+{"id":"T-0212","titolo":"Gestire i pagamenti ai fornitori","nota_contesto":""}
+{"id":"T-0213","titolo":"Registrare i movimenti bancari e riconciliare i conti correnti","nota_contesto":""}
+{"id":"T-0214","titolo":"Gestire gli incassi e i relativi solleciti ai clienti","nota_contesto":""}
+{"id":"T-0215","titolo":"Supportare la predisposizione e l\u0027invio delle comunicazioni fiscali periodiche","nota_contesto":"Comprende le comunicazioni IVA, le CU e i modelli F24."}
+{"id":"T-0216","titolo":"Collaborare alla gestione degli adempimenti civilistici legati al bilancio","nota_contesto":""}
+{"id":"T-0217","titolo":"Verificare la regolarità formale e sostanziale dei documenti contabili ricevuti","nota_contesto":""}
+{"id":"T-0218","titolo":"Controllare la quadratura tra contabilità e documentazione bancaria","nota_contesto":""}
+{"id":"T-0219","titolo":"Redigere prospetti riepilogativi delle operazioni contabili a supporto del responsabile","nota_contesto":""}
+{"id":"T-0220","titolo":"Fornire dati e documentazione a supporto delle chiusure contabili periodiche","nota_contesto":"Le chiusure sono mensili, trimestrali e annuali."}
+{"id":"T-0221","titolo":"Redigere prospetti di sintesi e riconciliazioni contabili","nota_contesto":""}
+{"id":"T-0222","titolo":"Supportare la revisione dei dati contabili in vista della validazione","nota_contesto":"La validazione può essere interna o esterna."}
+{"id":"T-0224","titolo":"Analizzare le non conformità e raccogliere dati per verificare l\u0027efficacia dei sistemi di gestione","nota_contesto":""}
+{"id":"T-0225","titolo":"Redigere e aggiornare le procedure operative e la modulistica del sistema qualità","nota_contesto":""}
+{"id":"T-0226","titolo":"Controllare la corretta applicazione delle istruzioni operative da parte delle funzioni","nota_contesto":""}
+{"id":"T-0227","titolo":"Archiviare e conservare la documentazione tecnica e amministrativa secondo le norme ISO","nota_contesto":""}
+{"id":"T-0228","titolo":"Supportare la preparazione e lo svolgimento degli audit interni ed esterni","nota_contesto":"Gli audit riguardano qualità, sicurezza ed etica."}
+{"id":"T-0229","titolo":"Compilare check-list di verifica e raccogliere evidenze documentali","nota_contesto":""}
+{"id":"T-0230","titolo":"Redigere report di non conformità","nota_contesto":""}
+{"id":"T-0231","titolo":"Collaborare con gli auditor alla gestione delle azioni correttive e preventive","nota_contesto":""}
+{"id":"T-0232","titolo":"Compilare report su segnalazioni di rischio, infortuni e quasi infortuni","nota_contesto":""}
+{"id":"T-0233","titolo":"Supportare l\u0027attuazione delle misure previste dal documento di valutazione dei rischi","nota_contesto":""}
+{"id":"T-0234","titolo":"Promuovere attività informative e formative sulla sicurezza e archiviarne la documentazione","nota_contesto":"Comprende la raccolta delle firme di presenza."}
+{"id":"T-0235","titolo":"Verificare la coerenza dei comportamenti organizzativi con gli standard etico-sociali","nota_contesto":""}
+{"id":"T-0236","titolo":"Collaborare alla stesura della documentazione di responsabilità sociale","nota_contesto":""}
+{"id":"T-0237","titolo":"Supportare la raccolta e l\u0027analisi di indicatori sociali per il bilancio di sostenibilità","nota_contesto":""}
+{"id":"T-0238","titolo":"Sollecitare i fornitori e monitorare le scadenze di consegna","nota_contesto":""}
+{"id":"T-0239","titolo":"Registrare le fatture passive e la documentazione di supporto","nota_contesto":""}
+{"id":"T-0240","titolo":"Monitorare le scadenze dei fornitori e supportare la predisposizione dei pagamenti","nota_contesto":"Il ruolo supporta la predisposizione dei pagamenti, non li esegue direttamente."}
+{"id":"T-0241","titolo":"Redigere le scritture di prima nota","nota_contesto":""}
+{"id":"T-0242","titolo":"Collaborare alla rilevazione e classificazione delle spese per la contabilità analitica","nota_contesto":""}
+{"id":"T-0243","titolo":"Segnalare incoerenze nella distribuzione dei costi","nota_contesto":""}
+{"id":"T-0244","titolo":"Controllare la corrispondenza tra ordini, documenti di trasporto e fatture passive","nota_contesto":""}
+{"id":"T-0245","titolo":"Archiviare la documentazione amministrativa garantendo tracciabilità e riservatezza","nota_contesto":""}
+{"id":"T-0246","titolo":"Collaborare con le funzioni interne per allineare le informazioni contabili","nota_contesto":"Le funzioni coinvolte sono acquisti, magazzino e controllo di gestione."}
+{"id":"T-0247","titolo":"Rispondere a richieste di chiarimenti e documentazione su registrazioni e imputazioni","nota_contesto":""}
+{"id":"T-0248","titolo":"Gestire l\u0027organizzazione logistica delle attività formative","nota_contesto":"Riguarda corsi rivolti al personale interno."}
+{"id":"T-0249","titolo":"Redigere la documentazione amministrativa e normativa della formazione","nota_contesto":""}
+{"id":"T-0250","titolo":"Supportare la predisposizione dei contenuti informativi e la comunicazione interna sui corsi","nota_contesto":""}
+{"id":"T-0251","titolo":"Supportare la definizione dei percorsi formativi coerenti con gli obiettivi strategici","nota_contesto":""}
+{"id":"T-0252","titolo":"Collaborare alla stesura del piano formativo annuale","nota_contesto":""}
+{"id":"T-0253","titolo":"Raccogliere e verificare la documentazione richiesta dagli enti finanziatori","nota_contesto":"Gli enti finanziatori includono i Fondi Interprofessionali."}
+{"id":"T-0254","titolo":"Supportare la rendicontazione delle attività formative cofinanziate","nota_contesto":""}
+{"id":"T-0255","titolo":"Compilare e analizzare le schede di valutazione della formazione","nota_contesto":""}
+{"id":"T-0256","titolo":"Elaborare report sintetici sui risultati della formazione","nota_contesto":""}
+{"id":"T-0257","titolo":"Supportare il miglioramento continuo dell\u0027offerta formativa tramite feedback qualitativi e quantitativi","nota_contesto":""}
+{"id":"T-0258","titolo":"Verificare l\u0027adeguatezza delle attività formative rispetto alle normative vigenti","nota_contesto":"Include formazione sulla sicurezza e formazione obbligatoria."}
+{"id":"T-0259","titolo":"Archiviare la documentazione formativa nel rispetto di privacy e trasparenza","nota_contesto":""}
+{"id":"T-0260","titolo":"Aggiornare i registri e le banche dati della formazione","nota_contesto":""}
+{"id":"T-0261","titolo":"Redigere testi promozionali, informativi e istituzionali","nota_contesto":""}
+{"id":"T-0262","titolo":"Elaborare materiali grafici e presentazioni per eventi, progetti e campagne","nota_contesto":""}
+{"id":"T-0263","titolo":"Archiviare e organizzare la documentazione di marketing","nota_contesto":""}
+{"id":"T-0264","titolo":"Supportare l\u0027organizzazione logistica e la comunicazione degli eventi aziendali","nota_contesto":""}
+{"id":"T-0265","titolo":"Verificare la correttezza e l\u0027aggiornamento dei materiali informativi pubblici e interni","nota_contesto":""}
+{"id":"T-0266","titolo":"Proporre aggiornamenti e migliorie grafiche e testuali ai materiali in uso","nota_contesto":""}
+{"id":"T-0267","titolo":"Applicare le linee guida dell\u0027immagine coordinata ai materiali comunicativi","nota_contesto":""}
+{"id":"T-0268","titolo":"Collaborare con fornitori esterni per la produzione di materiali","nota_contesto":"I fornitori sono grafici, tipografie e agenzie."}
+{"id":"T-0269","titolo":"Controllare la qualità dei materiali stampati e digitali","nota_contesto":""}
+{"id":"T-0271","titolo":"Collaborare con il responsabile della prevenzione e protezione per garantire la conformità normativa","nota_contesto":"Il riferimento normativo è il D.Lgs. 81/2008 sulla sicurezza sul lavoro."}
+{"id":"T-0272","titolo":"Gestire e aggiornare la documentazione relativa alla sicurezza","nota_contesto":""}
+{"id":"T-0273","titolo":"Collaborare all\u0027organizzazione di corsi di formazione e informazione sulla sicurezza per i lavoratori","nota_contesto":"I corsi citati riguardano sicurezza generale, antincendio e primo soccorso."}
+{"id":"T-0274","titolo":"Aggiornare il registro degli adempimenti normativi","nota_contesto":""}
+{"id":"T-0275","titolo":"Verificare la corretta tenuta della contabilità generale e analitica","nota_contesto":""}
+{"id":"T-0276","titolo":"Gestire gli adempimenti civilistici e fiscali periodici con il supporto di consulenti esterni","nota_contesto":""}
+{"id":"T-0277","titolo":"Analizzare gli scostamenti economico-finanziari e proporre misure correttive","nota_contesto":"Le misure correttive sono concordate con la direzione."}
+{"id":"T-0278","titolo":"Gestire i rapporti con revisori, consulenti ed enti di controllo","nota_contesto":""}
+{"id":"T-0279","titolo":"Supportare la direzione nei rapporti con le banche e nelle valutazioni finanziarie","nota_contesto":""}
+{"id":"T-0283","titolo":"Verificare la corretta gestione del ciclo attivo e passivo","nota_contesto":""}
+{"id":"T-0284","titolo":"Fungere da referente nelle verifiche ispettive fiscali","nota_contesto":""}
+{"id":"T-0285","titolo":"Sovraintendere all\u0027aggiornamento e all\u0027implementazione dei software gestionali amministrativi e fiscali","nota_contesto":""}
+{"id":"T-0286","titolo":"Validare lo stanziamento delle imposte sui redditi in bilancio e il relativo obbligo dichiarativo","nota_contesto":""}
+{"id":"T-0287","titolo":"Monitorare e validare le dichiarazioni annuali e i pagamenti di imposte, tasse e diritti","nota_contesto":""}
+{"id":"T-0288","titolo":"Validare i bilanci d\u0027esercizio e presentarli alla direzione e al legale rappresentante","nota_contesto":""}
+{"id":"T-0289","titolo":"Supervisionare l\u0027inserimento delle fatture attive e passive","nota_contesto":""}
+{"id":"T-0290","titolo":"Supervisionare e validare la gestione contabile dei beni aziendali","nota_contesto":""}
+{"id":"T-0292","titolo":"Definire le linee guida della contabilità industriale e validarne i contenuti","nota_contesto":""}
+{"id":"T-0293","titolo":"Predisporre report periodici per la direzione e gli organi di governo","nota_contesto":""}
+{"id":"T-0294","titolo":"Predisporre strumenti di analisi di crediti, debiti e posizione finanziaria netta per il controllo dell\u0027attività","nota_contesto":""}
+{"id":"T-0297","titolo":"Verificare la coerenza delle iniziative commerciali con budget e piano strategico","nota_contesto":""}
+{"id":"T-0298","titolo":"Contribuire alla predisposizione del budget annuale","nota_contesto":"Attività svolta insieme ad amministrazione, risorse umane e responsabili di area."}
+{"id":"T-0299","titolo":"Sostenere lo sviluppo e la commercializzazione di progetti e servizi","nota_contesto":""}
+{"id":"T-0300","titolo":"Predisporre i contratti con i clienti","nota_contesto":""}
+{"id":"T-0301","titolo":"Garantire la copertura assicurativa in fase di gara e di gestione del contratto","nota_contesto":""}
+{"id":"T-0303","titolo":"Coordinare le funzioni coinvolte nella formulazione delle offerte di gara","nota_contesto":"Il coordinamento riguarda l\u0027ufficio gare e le aree competenti."}
+{"id":"T-0304","titolo":"Garantire la congruità delle offerte rispetto alle politiche di prezzo concordate con la direzione","nota_contesto":""}
+{"id":"T-0305","titolo":"Monitorare il processo di offerta e facilitare le sinergie interfunzionali","nota_contesto":""}
+{"id":"T-0306","titolo":"Supportare i responsabili di area nello sviluppo delle proposte","nota_contesto":""}
+{"id":"T-0307","titolo":"Coordinare le attività di project financing e di appalti di progettazione, costruzione e gestione","nota_contesto":"Include i progetti speciali e la predisposizione del piano economico-finanziario (PEF)."}
+{"id":"T-0309","titolo":"Garantire l\u0027immagine coordinata dell\u0027organizzazione e delle società collegate","nota_contesto":"Su indirizzo della direzione."}
+{"id":"T-0311","titolo":"Garantire il processo post aggiudicazione fino alla firma del contratto","nota_contesto":""}
+{"id":"T-0312","titolo":"Archiviare i contratti in formato elettronico e cartaceo","nota_contesto":""}
+{"id":"T-0313","titolo":"Monitorare le revisioni e i rinnovi dei contratti","nota_contesto":"In collaborazione con i responsabili di area."}
+{"id":"T-0314","titolo":"Collaborare con l\u0027ufficio legale e privacy alla predisposizione dei contratti dei clienti","nota_contesto":""}
+{"id":"T-0315","titolo":"Garantire il rispetto e l\u0027implementazione del sistema qualità, dei regolamenti e delle procedure aziendali","nota_contesto":""}
+{"id":"T-0316","titolo":"Garantire la conoscenza e l\u0027applicazione delle regole e delle normative vigenti","nota_contesto":""}
+{"id":"T-0317","titolo":"Curare i rapporti con committenti pubblici e privati e con gli stakeholder del territorio","nota_contesto":""}
+{"id":"T-0318","titolo":"Gestire i pagamenti dell\u0027organizzazione","nota_contesto":""}
+{"id":"T-0319","titolo":"Gestire la riscossione dei crediti","nota_contesto":""}
+{"id":"T-0320","titolo":"Definire piani finanziari di breve, medio e lungo periodo","nota_contesto":""}
+{"id":"T-0321","titolo":"Analizzare gli scostamenti rispetto al budget finanziario","nota_contesto":""}
+{"id":"T-0322","titolo":"Supportare la direzione nella definizione degli obiettivi economico-finanziari","nota_contesto":""}
+{"id":"T-0324","titolo":"Negoziare le condizioni di affidamento e monitorare gli oneri finanziari","nota_contesto":""}
+{"id":"T-0325","titolo":"Predisporre documentazione e reportistica finanziaria per enti esterni","nota_contesto":""}
+{"id":"T-0326","titolo":"Verificare la coerenza dei dati finanziari con previsioni e obiettivi strategici","nota_contesto":""}
+{"id":"T-0327","titolo":"Verificare l\u0027avanzamento delle attività dell\u0027ufficio e garantirne l\u0027efficienza","nota_contesto":""}
+{"id":"T-0328","titolo":"Favorire l\u0027aggiornamento professionale e lo sviluppo delle competenze del team","nota_contesto":""}
+{"id":"T-0329","titolo":"Definire proposte economiche e commerciali coerenti con gli obiettivi aziendali","nota_contesto":""}
+{"id":"T-0330","titolo":"Coordinare l\u0027analisi dei bandi e la valutazione di ammissibilità e opportunità","nota_contesto":"Riguarda bandi e gare pubblici o privati."}
+{"id":"T-0331","titolo":"Assicurare la predisposizione della documentazione tecnica, amministrativa ed economica di gara","nota_contesto":"La documentazione serve alla partecipazione a gare e bandi."}
+{"id":"T-0332","titolo":"Verificare la correttezza formale delle domande e dei documenti di gara","nota_contesto":""}
+{"id":"T-0333","titolo":"Garantire la corretta predisposizione e sottoscrizione dei contratti","nota_contesto":"Riguarda i contratti attivi con i committenti."}
+{"id":"T-0334","titolo":"Controllare l\u0027aderenza tra contratti e prestazioni fornite","nota_contesto":""}
+{"id":"T-0335","titolo":"Proporre azioni di miglioramento e innovazione dei servizi","nota_contesto":""}
+{"id":"T-0336","titolo":"Collaborare alla definizione dei budget commerciali","nota_contesto":""}
+{"id":"T-0337","titolo":"Fornire assistenza e consulenza legale alle funzioni aziendali","nota_contesto":"Include la valutazione della necessità di ricorrere a supporti esterni."}
+{"id":"T-0338","titolo":"Coordinare le pratiche legali affidate a professionisti esterni","nota_contesto":""}
+{"id":"T-0339","titolo":"Aggiornare l\u0027archivio informativo delle pratiche legali","nota_contesto":""}
+{"id":"T-0340","titolo":"Gestire il contenzioso extragiudiziale","nota_contesto":""}
+{"id":"T-0341","titolo":"Coordinare le pratiche di recupero crediti affidate a legali esterni","nota_contesto":""}
+{"id":"T-0342","titolo":"Gestire le richieste di risarcimento dei danni presentate dai clienti","nota_contesto":"Da coordinare con le coperture assicurative in essere."}
+{"id":"T-0343","titolo":"Supportare la definizione e la valutazione di proposte assicurative su servizi e patrimonio","nota_contesto":""}
+{"id":"T-0344","titolo":"Supportare le aree di produzione nei progetti speciali che richiedono consulenza legale","nota_contesto":""}
+{"id":"T-0345","titolo":"Preparare l\u0027istruttoria per le azioni legali da concordare con il legale esterno","nota_contesto":""}
+{"id":"T-0346","titolo":"Coordinare la documentazione dei procedimenti di contenzioso","nota_contesto":""}
+{"id":"T-0347","titolo":"Comunicare alle funzioni interessate l\u0027esito delle udienze e dei gradi di giudizio","nota_contesto":""}
+{"id":"T-0348","titolo":"Monitorare le azioni intraprese dai legali esterni","nota_contesto":""}
+{"id":"T-0349","titolo":"Collaborare con le funzioni preposte nei contenziosi di altri rami del diritto","nota_contesto":"Con particolare attenzione ai contenziosi che mettono a rischio l\u0027azienda nel suo complesso."}
+{"id":"T-0350","titolo":"Collaborare alla redazione degli atti societari e dei regolamenti","nota_contesto":"Include il coordinamento con studi legali o notarili incaricati."}
+{"id":"T-0351","titolo":"Collaborare alla redazione dei verbali degli organi di governo","nota_contesto":""}
+{"id":"T-0352","titolo":"Aggiornare il modello organizzativo 231 e il codice etico","nota_contesto":""}
+{"id":"T-0353","titolo":"Partecipare all\u0027Organismo di Vigilanza e presiedere il Comitato Etico","nota_contesto":""}
+{"id":"T-0354","titolo":"Redigere procure e deleghe di responsabilità","nota_contesto":""}
+{"id":"T-0355","titolo":"Valutare l\u0027impatto dei cambiamenti normativi sulle esigenze aziendali","nota_contesto":""}
+{"id":"T-0356","titolo":"Aggiornare direzione e funzioni sull\u0027evoluzione normativa e giurisprudenziale","nota_contesto":"Avviene tramite note interne o riunioni dedicate."}
+{"id":"T-0357","titolo":"Fornire pareri e indicazioni legali su richiesta","nota_contesto":""}
+{"id":"T-0358","titolo":"Redigere la corrispondenza di carattere legale","nota_contesto":""}
+{"id":"T-0359","titolo":"Predisporre contratti e schemi contrattuali","nota_contesto":""}
+{"id":"T-0360","titolo":"Supportare la verifica dei contratti","nota_contesto":""}
+{"id":"T-0361","titolo":"Garantire il rispetto della normativa sul trattamento dei dati anche su supporto informatico","nota_contesto":"Con il supporto della funzione servizi operativi."}
+{"id":"T-0362","titolo":"Individuare e proporre interventi formativi in materia di privacy","nota_contesto":""}
+{"id":"T-0364","titolo":"Monitorare l\u0027applicazione delle procedure del sistema qualità tramite verifiche interne periodiche","nota_contesto":"Include l\u0027aggiornamento dei contenuti del manuale della qualità."}
+{"id":"T-0365","titolo":"Individuare le procedure, le linee guida e le istruzioni da emettere","nota_contesto":""}
+{"id":"T-0366","titolo":"Raccogliere richieste e suggerimenti delle funzioni aziendali","nota_contesto":""}
+{"id":"T-0367","titolo":"Definire gli obiettivi del programma di audit","nota_contesto":""}
+{"id":"T-0368","titolo":"Definire il programma di audit, la sua estensione e la composizione del gruppo di auditor","nota_contesto":""}
+{"id":"T-0369","titolo":"Informare la direzione sul programma e sui risultati degli audit","nota_contesto":""}
+{"id":"T-0370","titolo":"Pianificare e gestire le attività formative per l\u0027adozione del sistema di gestione qualità","nota_contesto":""}
+{"id":"T-0371","titolo":"Promuovere la cultura del lavoro secondo il sistema qualità in tutti i servizi","nota_contesto":""}
+{"id":"T-0373","titolo":"Monitorare la soddisfazione di committenti e stakeholder","nota_contesto":"Sono esclusi utenti e familiari dei servizi."}
+{"id":"T-0374","titolo":"Recepire le modifiche normative in materia di prevenzione e protezione e aggiornare l\u0027organizzazione","nota_contesto":""}
+{"id":"T-0376","titolo":"Organizzare e diffondere i flussi comunicativi per l\u0027applicazione del sistema di gestione della sicurezza","nota_contesto":"Svolta in collaborazione con il datore di lavoro."}
+{"id":"T-0377","titolo":"Partecipare all\u0027Organismo di Vigilanza","nota_contesto":""}
+{"id":"T-0378","titolo":"Partecipare al Comitato Etico","nota_contesto":""}
+{"id":"T-0379","titolo":"Proporre azioni di prevenzione e protezione per strutture, impianti, attrezzature e comportamenti","nota_contesto":"Le proposte sono rivolte al datore di lavoro per la sicurezza, in collaborazione con gli altri servizi."}
+{"id":"T-0380","titolo":"Fungere da referente per la sorveglianza sanitaria degli addetti","nota_contesto":""}
+{"id":"T-0381","titolo":"Gestire i rapporti con i medici competenti","nota_contesto":""}
+{"id":"T-0382","titolo":"Supportare la gestione del contenzioso per infortunio e dei procedimenti penali","nota_contesto":"Si opera in collaborazione con l\u0027amministrazione del personale e la funzione legale e privacy."}
+{"id":"T-0383","titolo":"Consultare il rappresentante dei lavoratori per la sicurezza","nota_contesto":""}
