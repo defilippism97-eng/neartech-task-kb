@@ -298,9 +298,11 @@ def segnala(
     Per parametri e indirizzi l'oggetto deve appartenere all'organizzazione del revisore.
     I dettagli stanno nello schema condiviso: mai testo del cliente (ADR 0001).
     """
+    org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "segnalare", org_id, risorsa=f"{tipo_oggetto}:{oggetto_id}")
         if tipo_oggetto in _OGGETTI:
+            oggetto_id = str(uuid.UUID(str(oggetto_id)))
             tabella, chiave, _ = _OGGETTI[tipo_oggetto]
             proprio = conn.execute(
                 sql.SQL("SELECT EXISTS (SELECT 1 FROM {} WHERE {}::text = %s AND org_id = %s)")

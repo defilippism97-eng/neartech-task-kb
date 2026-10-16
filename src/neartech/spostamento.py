@@ -6,6 +6,8 @@ Le righe in public restano: la rimozione del testo da public è un passo separat
 da approvare. In produzione la copia richiede l'approvazione del responsabile.
 """
 
+import uuid
+
 import psycopg
 from psycopg import sql
 
@@ -40,6 +42,7 @@ def piano_spostamento(conn: psycopg.Connection, org_id: str) -> dict[str, int]:
 
 def sposta_testo_cliente(conn: psycopg.Connection, utente_id: str, org_id: str, *, codice: str) -> dict[str, int]:
     """Copia tutto o niente: una sola transazione (o savepoint)."""
+    org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         return _sposta(conn, utente_id, org_id, codice)
 

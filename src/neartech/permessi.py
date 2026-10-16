@@ -4,6 +4,10 @@ La matrice ruolo-azione sta in permessi_ruolo. Un ruolo globale vale per ogni
 organizzazione; un ruolo di organizzazione solo per la propria. Ogni verifica
 lascia una riga in log_accessi, consentita o negata.
 
+La validità delle assegnazioni si valuta con statement_timestamp(), non con now() (inizio
+della transazione): una revoca confermata da un'altra sessione vale subito anche per le
+transazioni già aperte. I controlli dopo un lock presuppongono READ COMMITTED.
+
 Il log dei rifiuti deve sopravvivere all'annullamento della transazione di chi chiama:
 il livello che serve le richieste (API, script) configura una connessione dedicata in
 autocommit con configura_log. Senza configurazione il log usa la connessione di chi
@@ -34,8 +38,8 @@ class UltimoAmministratore(RuntimeError):
 
 _ADMIN_ATTIVI = """
     SELECT count(DISTINCT utente_id) FROM assegnazioni_ruolo
-    WHERE ruolo = 'amministratore_tecnico' AND valida_dal <= now()
-      AND (valida_al IS NULL OR valida_al > now())
+    WHERE ruolo = 'amministratore_tecnico' AND chiusa_da IS NULL AND valida_dal <= statement_timestamp()
+      AND (valida_al IS NULL OR valida_al > statement_timestamp())
 """
 
 
@@ -99,8 +103,8 @@ def puo(
              JOIN ruoli r ON r.codice = a.ruolo
              JOIN permessi_ruolo p ON p.ruolo = a.ruolo AND p.azione = %(azione)s
              WHERE a.utente_id = %(utente)s::uuid
-               AND a.valida_dal <= now()
-               AND (a.valida_al IS NULL OR a.valida_al > now())
+               AND a.valida_dal <= statement_timestamp()
+               AND (a.valida_al IS NULL OR a.valida_al > statement_timestamp())
                AND (r.ambito = 'globale'
                     OR (%(org)s::uuid IS NOT NULL AND a.org_id = %(org)s::uuid)))""",
         {"azione": azione, "utente": str(utente_id), "org": org_id},
@@ -161,7 +165,7 @@ def assegna_ruolo(
         ).fetchone()[0])
         registra(conn, autore_id=assegnata_da, tipo_oggetto="assegnazione_ruolo", oggetto_id=assegnazione,
                  atto="approvazione", motivazione=motivazione, org_id=org_id,
-                 dettagli={"utente_id": str(utente_id), "ruolo": ruolo})
+                 dettagli={"utente_id": _canonico(utente_id), "ruolo": ruolo})
         return assegnazione
 
 
@@ -170,7 +174,7 @@ def chiudi_assegnazione(conn: psycopg.Connection, assegnazione_id: str, *, chius
     with conn.transaction():
         riga = conn.execute(
             """SELECT org_id, ruolo, utente_id,
-                      chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > now()) AS valida
+                      chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > statement_timestamp()) AS valida
                FROM assegnazioni_ruolo WHERE assegnazione_id = %s""",
             (assegnazione_id,),
         ).fetchone()
@@ -190,8 +194,8 @@ def chiudi_assegnazione(conn: psycopg.Connection, assegnazione_id: str, *, chius
             if altri == 0:
                 raise UltimoAmministratore("serve almeno un altro amministratore tecnico attivo")
         chiusa = conn.execute(
-            """UPDATE assegnazioni_ruolo SET valida_al = now(), chiusa_da = %s
-               WHERE assegnazione_id = %s AND chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > now())""",
+            """UPDATE assegnazioni_ruolo SET valida_al = statement_timestamp(), chiusa_da = %s
+               WHERE assegnazione_id = %s AND chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > statement_timestamp())""",
             (chiusa_da, assegnazione_id),
         ).rowcount
         if chiusa != 1:
