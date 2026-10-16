@@ -1,6 +1,6 @@
 # Istruzioni di revisione: fusioni del Canonicalizer (versione `istruzioni-fusioni-v1`)
 
-**Stato: bozza, da approvare.** Una rubrica di revisione è una decisione di governance: questa versione entra in uso solo dopo l'approvazione del responsabile del progetto, registrata in `docs/metodologia-estensioni.md`. Il codice della versione (`istruzioni-fusioni-v1`) va indicato in ogni campione e in ogni giudizio.
+**Stato: approvata** dal responsabile del progetto il 2026-10-16 (`docs/metodologia-estensioni.md`, sezione 10). Una modifica richiede una versione nuova. Il codice della versione (`istruzioni-fusioni-v1`) va indicato in ogni campione e in ogni giudizio.
 
 ## Cosa si rivede
 

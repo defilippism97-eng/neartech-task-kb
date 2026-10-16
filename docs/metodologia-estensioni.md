@@ -86,3 +86,16 @@ Approvate dal responsabile del progetto.
 - **Regola sui collegamenti parziali** nella metrica di precisione: un esito "parziale" conta come **errore**. Il valore va inserito come parametro comune approvato (`regola_parziali`), non nel codice.
 - **Primo campione per la metrica di abbinamento del pilota:** revisione completa delle **61 fusioni** giudicate "stessa attività" dal Canonicalizer, più un campione casuale delle coppie giudicate "diversa". Il campione del crosswalk (40 giudizi) si importa come misura separata del collegamento alle tassonomie, non come metrica di abbinamento.
 - **Revisione iniziale dei task nuovi:** **a campione**; la quota è un parametro approvato, non un numero nel codice. Si applica nella fase 3.
+
+## 10. Rubrica delle fusioni, parametri comuni, dataset centrale, tracciabilità, spazio dell'organizzazione (2026-10-16)
+
+Approvate dal responsabile del progetto.
+
+- **Istruzioni di revisione delle fusioni** (`docs/revisione/istruzioni-fusioni-v1.md`): approvate così come sono, versione `istruzioni-fusioni-v1`.
+- **Parametri comuni e comitato guida.** L'amministratore tecnico imposta i parametri NEARTECH comuni. Il comitato guida di ogni organizzazione li vede, e le linee guida spiegano come ciascuno influenza il processo. Il comitato può **adottare** i parametri comuni oppure **chiedere una ricalibrazione**, con motivazione obbligatoria. Adozione e richiesta sono atti registrati.
+- **Valori dei parametri comuni:** soglia di precisione 0,9; parziali contati come errori; livello di confidenza 0,95. Vanno inseriti come parametri approvati, non nel codice.
+- **Dataset centrale:** l'amministratore tecnico (super user) può intervenire sullo stato di validazione dei task del dataset condiviso, anche fuori da una singola organizzazione.
+- **Proposta e approvazione dalla stessa persona nel comitato:** ammesse, ma il sistema registra in modo esplicito che proponente e approvatore coincidono. Il contrappeso è nei revisori, che giudicano le classificazioni risultanti e possono segnalare al comitato i bias che derivano dalle sue decisioni, e nella presenza possibile del rappresentante dei lavoratori nel comitato.
+- **Ruoli dell'amministratore tecnico:** può creare utenze di prova e assegnarsi ruoli di organizzazione.
+- **Testi di governance dell'organizzazione:** indirizzi del comitato, descrizioni e motivazioni dei parametri dell'organizzazione vanno nello spazio dell'organizzazione, insieme al resto, così che sia sempre possibile estrarre un unico report di audit dell'analisi e delle decisioni. Vedi ADR 0004.
+- **Produzione:** approvati l'unione delle PR #6 e #7, l'applicazione delle migrazioni, il bootstrap dell'amministratore, la copia del testo di Società Dolce nello spazio dell'organizzazione e la sua rimozione da `public`, la separazione dei ruoli di database (a cura del responsabile), l'inserimento dei parametri comuni e la creazione dei campioni delle fusioni.

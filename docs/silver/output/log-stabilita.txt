@@ -1,0 +1,16 @@
+﻿lotto 1/2 fatto: 10/10 valide
+lotto 2/2 fatto: 10/10 valide
+righe valide: 20. Output: N-v2-run2-2026-10-16.jsonl. Errori: N-v2-run2-2026-10-16.errori.txt
+token input 1452, di cui letti da cache 3248, output 4081
+lotto 1/2 fatto: 10/10 valide
+lotto 2/2 fatto: 10/10 valide
+righe valide: 20. Output: D-v2-run2-2026-10-16.jsonl. Errori: D-v2-run2-2026-10-16.errori.txt
+token input 1452, di cui letti da cache 6496, output 3736
+lotto 1/2 fatto: 10/10 valide
+lotto 2/2 fatto: 10/10 valide
+righe valide: 20. Output: N-v2-run3-2026-10-16.jsonl. Errori: N-v2-run3-2026-10-16.errori.txt
+token input 1452, di cui letti da cache 6496, output 3813
+lotto 1/2 fatto: 10/10 valide
+lotto 2/2 fatto: 10/10 valide
+righe valide: 20. Output: D-v2-run3-2026-10-16.jsonl. Errori: D-v2-run3-2026-10-16.errori.txt
+token input 1452, di cui letti da cache 6496, output 2759
