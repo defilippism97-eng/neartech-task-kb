@@ -46,6 +46,13 @@ Approvate dal responsabile del progetto, che oggi coincide con il curatore e con
 - **Testi dei task**: task canonici (titolo e nota di contesto), senza i documenti originali. Dataset in `docs/silver/dataset/task-silver.jsonl`, 384 task.
 - **Fornitore del modello**: per Società Dolce lo sviluppo è interno, e il responsabile ha permessi completi sull'app. Per un'altra azienda l'invio di testi a un servizio di terzi richiede il processo di governance.
 
+## 5. Definizione di capacità per N (2026-10-16)
+
+Approvata dal responsabile del progetto. Il piano definisce N rispetto a ciò che la tecnologia "ha dimostrato di saper fare". Con questa decisione, per N si usa la **capacità di test**: la capacità misurata in condizioni controllate, dichiarata come tale e versionata per modello. Questo è uno scostamento dalla definizione del piano, e va registrato come tale.
+
+- Ogni risultato di N riporta il tipo di capacità usato (test) e la versione del modello che l'ha prodotta.
+- La **capacità dimostrata in produzione** resta una grandezza separata. Nessuna fonte disponibile la misura oggi per i task O*NET: quando esisterà, sarà una voce distinta e non sostituirà la capacità di test.
+- La fonte della capacità di test è scelta caso per caso fra quelle in `docs/ricerca/capacita/mappa-fonti.md`. La calibrazione sulla scala 0–4 resta da fare.
 ## 6. D per organizzazione con punto di partenza condiviso (2026-10-16)
 
 Approvata dal responsabile del progetto, con la regola del ribasso segnalato. Dettagli in `docs/architettura/stato-e-decisioni.md`, sezione 5. Il comitato guida non è ancora costituito: questa voce va riesaminata quando esiste.
