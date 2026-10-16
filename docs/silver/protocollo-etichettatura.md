@@ -84,3 +84,11 @@ Il modello non è versionato come un'API: la versione va scritta dalla chat, qua
 2. **Regola di d2 per riserva di legge**: quale livello minimo imporre quando la riserva è citata e verificata. È un valore di governance, non di codice.
 3. **Invio di testi a un servizio di terzi**: confermare che il contratto e la policy consentano di incollare i documenti in chat.
 4. **Campo fonte della riserva**: la fonte deve essere una norma verificabile. Chi verifica?
+
+## Aggiornamento 2026-10-16
+
+- Decisione su r: approvata come descritta in `docs/metodologia-estensioni.md`, sezione 4. Rubrica bozza-3.
+- Campioni: 3 run per voce nel silver, deviazione registrata.
+- d3 e d4: fuori dal silver, solo nel golden.
+- Testi per Gemini: task canonici da `docs/silver/dataset/task-silver.jsonl`. Il pacchetto di istruzioni è in `docs/silver/pacchetto-gemini.md`.
+- Verifica dei testi prima di ogni invio: solo titolo e nota di contesto, nessun nome di persona.
