@@ -258,7 +258,8 @@ def test_contenuto_degli_indirizzi_verificato(conn, org):
 
 @pytest.mark.parametrize("tabella", ["parametri_governance", "indirizzi_comitato", "stati_validazione_task"])
 def test_truncate_vietato(conn, tabella):
-    with pytest.raises(psycopg.errors.RaiseException):
+    # Rifiutato dal trigger, o prima ancora dalle chiavi esterne che puntano alla tabella (es. misure_precisione).
+    with pytest.raises((psycopg.errors.RaiseException, psycopg.errors.FeatureNotSupported)):
         conn.execute(f"TRUNCATE {tabella}")
 
 

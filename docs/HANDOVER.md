@@ -17,9 +17,10 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 | Branch | Stato | Contenuto |
 |---|---|---|
 | `main` | PR #1–#5 unite | Fonti e tassonomie, relazione su N, silver (dataset, etichette, workflow rivisto, schema AI Act), base di conoscenza sulla capacità (`docs/ricerca/capacita/`) |
-| `fondazioni` | in corso, da `main` | ADR 0001 e 0002, verifica del database, piano e costruzione delle fondazioni |
+| `fondazioni` | PR #6 aperta verso `main`, da approvare | Fase 1: fondazioni (sezione 4.1) |
+| `fase-2-metrica` | da `fondazioni`, PR verso `fondazioni` | Fase 2: campioni, giudizi e metrica di precisione (sezione 4.2) |
 
-**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Per riprendere il lavoro: `git checkout fondazioni`.
+**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Per riprendere il lavoro: `git checkout fase-2-metrica`.
 
 ---
 
@@ -91,13 +92,34 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 
 **Ordine di costruzione:**
 1. ~~Fondazioni: schema multi-organizzazione, ruoli, registro decisioni, coda job~~: costruite sul branch `fondazioni` (sezione 4.1), in attesa di unione e di applicazione in produzione.
-2. **Metrica di abbinamento** sul campione rivisto. Prima di tutto il resto.
+2. ~~**Metrica di abbinamento** sul campione rivisto~~: software costruito sul branch `fase-2-metrica` (sezione 4.2); mancano i giudizi delle persone sulle 61 fusioni.
 3. Abbinamento al database consolidato e priorità di revisione.
 4. Calcolo deterministico di N (con capacità di test, quando calibrata) e D (con pavimento e variazioni).
 5. Output aggregati e dashboard del comitato.
 6. Survey per d3 e d4, in un modulo separato.
 
 **Non costruire ora:** app mobile, integrazioni con i sistemi HR del cliente, dati individuali di alcun tipo.
+
+### 4.2 Fase 2, metrica di precisione (2026-10-16)
+
+Piano: `docs/piani/fase-2-metrica-abbinamento.md`. Decisioni: `docs/metodologia-estensioni.md`, sezione 9. Istruzioni di revisione delle fusioni: `docs/revisione/istruzioni-fusioni-v1.md` (**bozza, da approvare**).
+
+| Componente | Dove | Note |
+|---|---|---|
+| Parametri NEARTECH comuni | `0019`, `neartech.governance` | Li propone e approva l'amministratore tecnico; un parametro dell'organizzazione prevale |
+| Campioni, elementi, giudizi | `0019`, `0020`, `neartech.campioni` | Censimento o casuale con seme; revisione cieca; elementi bloccati dopo i giudizi; fotografia di modello e prompt |
+| Metrica di precisione | `0019`, `0020`, `neartech.metrica` | Regola sui parziali, intervallo di Wilson e soglia da parametri; si ferma su campioni incompleti e disaccordi; la misura porta rubrica, parametri e origine |
+| Riga di comando | `scripts/metrica.py` | `anteprima` in sola lettura; gli altri comandi scrivono |
+
+Test: 209 passati (1 saltato). Revisioni Python e database fatte, problemi alti corretti (0020).
+
+**Popolazioni in produzione (lettura del 2026-10-16):** 61 fusioni "stessa attività", 1.684 "diversa", 5.672 collegamenti del crosswalk.
+
+**Prossimi passi per avere la prima misura** (tutti scritture in produzione, da approvare, dopo i passi della sezione 4.1):
+1. Approvare le istruzioni di revisione delle fusioni.
+2. L'amministratore tecnico propone e approva i parametri comuni `soglia_precisione_abbinamento` (oggi 0,9 nel piano), `regola_parziali` (`errore`, deciso) e `livello_confidenza`.
+3. Un revisore crea il campione completo delle 61 fusioni e un campione casuale delle "diversa", li esporta, li rivede e importa i giudizi.
+4. Calcolo della misura. Il campione del crosswalk si importa a parte (`importa-crosswalk --popolazione-originale 6520`): la sua revisione non era cieca (mostrava la motivazione del modello) e misura il collegamento alle tassonomie, non l'abbinamento.
 
 ### 4.1 Fase 1, fondazioni (2026-10-16)
 
@@ -195,17 +217,19 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 **Da fare, in ordine:**
 1. ~~Verificare in sola lettura i task attivi rispetto al dataset~~: fatto il 2026-10-16, vedi sezione 5.
 2. Misurare la precisione dell'abbinamento sul campione rivisto (≥90%). Il campione per l'abbinamento al database consolidato va ancora creato.
-3. Decidere il livello di revisione iniziale del revisore (campione, completa o nulla) e registrarlo nel sistema.
+3. ~~Livello di revisione iniziale del revisore~~: a campione, quota come parametro (sezione 9); si applica nella fase 3.
 4. ~~Costruire le fondazioni del software~~: fatto sul branch `fondazioni` (sezione 4.1). Restano l'unione in `main` e i passi di produzione elencati in 4.1, tutti da approvare.
 5. ~~Unire `protocollo-silver` e `capacita-mappa-fonti` in `main`~~: fatto (PR #4 e #5).
-6. Decidere la regola sui collegamenti "parziali". I 59 task non attivi sono decisi: `docs/metodologia-estensioni.md`, sezione 8.
+6. ~~Regola sui collegamenti "parziali"~~: contano come errori (sezione 9 del registro di metodo). I 59 task non attivi sono decisi: sezione 8.
 7. Piano della fase 1: `docs/piani/fase-1-fondazioni.md`.
 8. Decisioni di governance emerse nella fase 1:
    - chi propone e approva i parametri NEARTECH comuni (`org_id` vuoto): oggi nessun ruolo può farlo;
    - chi valida i task del dataset condiviso presenti in più organizzazioni: oggi un revisore può cambiare lo stato solo dei task della propria organizzazione;
    - se nel comitato guida chi propone un parametro o un indirizzo può anche approvarlo;
    - se l'amministratore tecnico può assegnarsi un ruolo di organizzazione (oggi sì);
-   - il testo degli indirizzi del comitato e le descrizioni dei parametri stanno nello schema condiviso e restano dopo l'uscita del cliente: va deciso se è accettabile (ADR 0001 non li elenca fra i testi del cliente).
+   - il testo degli indirizzi del comitato e le descrizioni dei parametri stanno nello schema condiviso e restano dopo l'uscita del cliente: va deciso se è accettabile (ADR 0001 non li elenca fra i testi del cliente);
+   - i parametri comuni a tutte le organizzazioni li propone e li approva la stessa persona (l'amministratore tecnico): le regole di progetto parlano di approvazione del comitato di governance; va confermato o previsto un secondo approvatore;
+   - approvazione delle istruzioni di revisione delle fusioni (`docs/revisione/istruzioni-fusioni-v1.md`).
 
 **Decisioni ancora aperte nel tempo:**
 - Costituzione del comitato guida e individuazione dei rappresentanti dei lavoratori.
@@ -221,7 +245,7 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 Incolla questo testo come primo messaggio:
 
 ```
-Lavoriamo sul progetto Neartech nel repo C:\neartech, branch fondazioni.
+Lavoriamo sul progetto Neartech nel repo C:\neartech, branch fase-2-metrica.
 
 Leggi in quest'ordine: docs/HANDOVER.md, CLAUDE.md, docs/architettura/stato-e-decisioni.md.
 
