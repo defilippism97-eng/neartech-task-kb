@@ -15,7 +15,7 @@ non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel
   `claude-haiku-5-5` (`scorer.py`, 5 campioni per voce, ogni campione salvato come record `llm`).
 - **Caricatore completo** (`scripts/carica_tassonomie.py`): carica O*NET 31.0, Atlante (API v2)
   ed ESCO 1.2.1 in italiano con la gerarchia, poi gli embedding bge-m3.
-- **Test**: 14 test passano su PostgreSQL 16 + pgvector; 1 test richiede `ANTHROPIC_API_KEY`.
+- **Test**: 14 test passano su PostgreSQL 16 + pgvector; 1 test richiede `NEARTECH_ANTHROPIC_API_KEY`.
 - **Workflow manuale** (`.github/workflows/test-scorer-reale.yml`): esegue i test con il modello reale
   usando il segreto GitHub `Claude`. Ultimo run riuscito: run #2.
 - **Licenze**: confermate dal responsabile del progetto il 2026-10-10. Il testo di ciascuna licenza
@@ -35,7 +35,7 @@ Controllo rapido: i vicini di un task O*NET sono coerenti tra lingue e fonti.
 **Attenzione:** i file sorgente e i vettori sono in `/tmp/claude-0/` e spariscono con la sessione.
 Il database locale `neartech_kb` non è persistente.
 
-## Recupero dopo il cambio di sessione (importante)
+## Recupero dopo il cambio di sessione (storico)
 
 - **Gli embedding non sono salvati da nessuna parte.** I vettori (circa 190 MB) sono in `/tmp/claude-0/kb_work/out/`
   e spariscono con la sessione. Il connettore Google Drive non è adatto: il contenuto passa per il contesto
@@ -77,32 +77,79 @@ Il caricatore `scripts/carica_tassonomie.py` legge questi nomi e converte i vett
 usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con gli hash di
 `docs/dati/fonti-manifest.json`. Gli embedding ricaricati evitano i circa 40 minuti di calcolo.
 
+## Stato del database (aggiornato al 2026-10-10, sera)
+
+- Database Neon (Francoforte) con pgvector attivo, schema e migrazione 0002 applicati.
+- Tassonomie caricate: O*NET 31.0 (18.838), Atlante API v2 (10.572, con genitori collegati), ESCO 1.2.1 (16.978).
+- Embedding bge-m3 caricati per tutti i 46.388 nodi (`taxonomy_embeddings`). Calcolati da etichetta del nodo.
+- Il collegamento al database passa dall'endpoint HTTPS di Neon: `NEARTECH_DB_VIA=https`. Le scritture non sono
+  in transazione interattiva: i caricamenti sono idempotenti e si rilanciano se si interrompono.
+
+## Scomposizione job description Dolce (completata 2026-10-11)
+
+- 36 job description caricate dalle proposte approvate (file `docs/dati/scomposizione-approvata-2026-10-11.jsonl`,
+  sha256 `a86b6304...`). Il file contiene le attività verificate sul testo, e il caricamento le usa senza
+  chiamare il modello (`scripts/scomponi_job.py --da-file`).
+- Database di produzione: 384 task canonici, 530 occorrenze (ruolo x task), 36 ruoli, 36 fonti `org_document`.
+- Noto: 5 titoli compaiono due volte nello stesso ruolo; la base dati ne tiene una sola occorrenza (vincolo unico task-ruolo).
+- Il documento `Job_Responsabile Qualità e Altri Sistemi -.docx` è vuoto: escluso.
+- Il crosswalk non è ancora stato eseguito sui task di Dolce: `scripts/esegui_crosswalk.py` ora ha i task da mappare.
+
+## Crosswalk dei task Dolce (eseguito in produzione, 2026-10-11)
+
+- 6.520 relazioni su 382 task canonici: 346 esatte, 823 più ampie, 1.018 più strette, 4.333 affini.
+  Tutte con `validated = false`: la revisione del campione del 10% e la soglia di precisione devono ancora essere fatte.
+- Due task restano senza relazioni perché il modello ha citato candidati inesistenti, due volte di fila:
+  "Gestire le richieste del personale su tematiche contrattuali, organizzative o di sviluppo" e
+  "Predisporre e aggiornare il piano di tesoreria". Si rilanciano con `scripts/esegui_crosswalk.py` dopo un controllo.
+- Un task senza relazioni viene riprocessato a ogni rilancio dello script, anche quando il modello non trova corrispondenze.
+
+## Revisione del campione del crosswalk (2026-10-12)
+
+- Campione di 40 relazioni (`docs/dati/revisione-crosswalk-2026-10-11.md`): 36 OK, 2 PARZIALE, 2 NO. Precisione 90%.
+- Esiti registrati in `revisioni_crosswalk` (migrazione 0005), un record per relazione, mai sovrascritti.
+- Validate (`validated = true`): le 36 relazioni confermate. Le altre 6.484 restano non validate.
+- Da correggere, senza decisione ancora presa sulla relazione corretta:
+  - "Elaborare le procedure di sicurezza per le attività aziendali" -> ONET 9442, parziale (confidenza da alzare o relazione da confermare)
+  - "Monitorare l'efficacia degli interventi HR e proporre azioni correttive" -> ONET 11214, parziale (relazione troppo forte)
+  - "Gestire l'approvvigionamento, l'utilizzo e la dismissione della flotta di automezzi" -> ATLANTE 2320, no
+  - "Definire piani finanziari di breve, medio e lungo periodo" -> ESCO 56ff27ef, no
+
+## Strappi approvati alla metodologia (2026-10-12)
+
+Registrati su indicazione del responsabile del progetto. Dettagli in `docs/metodologia-estensioni.md`.
+- Validazione di 36 relazioni del crosswalk sul solo campione attuale (40 relazioni), approvata dal responsabile.
+- Task senza corrispondenza nelle tassonomie: restano nella KB, con origine tracciata (`v_task_origine`).
+- Aree di responsabilità (granularità 3): non sono task. Ritirate e fuori dal crosswalk; 658 relazioni eliminate.
+- Canonicalizer: fusioni applicate prima della revisione a campione del curatore, su indicazione del responsabile.
+
+## Stato del crosswalk e del Canonicalizer (2026-10-12)
+
+- Crosswalk: tutti i task attivi di granularità 1–2 hanno un giudizio per schema (`crosswalk_giudizi`); i 2 task rimasti sono stati completati.
+- Canonicalizer in produzione: 349 task giudicati, 1.745 decisioni (`fusioni_proposte`), 54 task fusi in 35 gruppi.
+  Task attivi: 295. Elenco per la revisione del curatore: `fusioni_da_verificare.md`.
+- Da fare: revisione a campione delle fusioni; decisione su soglia e campione di governance (vedi sopra).
+
 ## Da fare, in ordine
 
-1. **Database persistente.** Scegliere PostgreSQL con pgvector in regione UE (consigliato:
-   Supabase, regione Frankfurt; alternativa: Neon, Frankfurt). Fornire la stringa di connessione
-   come variabile d'ambiente `DATABASE_URL`. Chiedere il contratto di trattamento dei dati (DPA).
-2. **Applicare schema e migrazione** al database persistente:
-   `psql "$DATABASE_URL" -f db/schema.sql` poi `-f db/migrations/0002_livelli_atlante_e_embedding_tassonomie.sql`.
-3. **Ricaricare le tassonomie.** Servono le fonti (O*NET zip, Atlante via API, ESCO CSV zip,
-   scaricabili di nuovo) e gli embedding, che vanno ricalcolati (circa 40 minuti su CPU con bge-m3).
-   Comando:
-   `DATABASE_URL=... python scripts/carica_tassonomie.py --onet-zip ... --atlante-json ... --esco-csv-zip ... --embeddings-dir ...`
-   Prima di rilanciarlo, controllare che il database sia vuoto o che le versioni siano già registrate.
-4. **Chiave del modello per il Crosswalk Mapper.** Creare una chiave nuova su console.anthropic.com
-   (nome `neartech-f0`, con limite di spesa mensile). Metterla come variabile d'ambiente
-   `ANTHROPIC_API_KEY` nell'ambiente della sessione, poi aprire una sessione nuova.
-   La chiave non va mai scritta in chat né nel repository.
-5. **Crosswalk Mapper**: non ancora implementato. Per ogni task canonico cerca i 20 nodi più vicini
+1. **Crosswalk Mapper**: implementato e provato su un task di prova. Per ogni task canonico cerca i 20 nodi più vicini
    per tassonomia, poi il modello assegna la relazione (esatta, più ampia, più stretta, affine, nessuna)
    con una motivazione. Si salvano solo le relazioni diverse da "nessuna".
-6. **Job description Dolce**: cartella Drive "Job Società Dolce" (id `1g2LGTbuEfNml6a9McwjvEkHQGgFzLwFx`),
+2. **Job description Dolce**: cartella Drive "Job Società Dolce" (id `1g2LGTbuEfNml6a9McwjvEkHQGgFzLwFx`),
    circa 35 file .docx, uno per ruolo; la lista è paginata, quindi verificare il totale.
    Passo successivo: scomposizione in task canonici (con il modello) e collegamento alle tassonomie.
-7. **Allegare i testi delle licenze** di O*NET, Atlante ed ESCO al progetto, e aggiornare la colonna
+3. **Allegare i testi delle licenze** di O*NET, Atlante ed ESCO al progetto, e aggiornare la colonna
    `license` in `sources`.
-8. **Job di calcolo di N e D** (Monte Carlo, quadranti, baricentro e dispersione): non ancora costruito.
-   Si può scrivere con dati sintetici, senza chiavi.
+4. **Job di calcolo di N e D** (Monte Carlo, quadranti, baricentro e dispersione): non ancora costruito.
+   Si può scrivere con dati sintetici, senza chiavi. Modifica di policy: va approvato in modalità plan.
+5. **Primo test reale dello Scorer** sul gold standard, con `NEARTECH_ANTHROPIC_API_KEY`.
+
+## Note tecniche
+
+- Gli embedding ricalcolati usano solo l'etichetta del nodo (`scripts/calcola_embedding.py`).
+- Il caricatore `scripts/carica_tassonomie.py` accetta gli embedding anche da file; i file del vecchio calcolo
+  non servono più perché i vettori sono nel database.
+- Correzione applicata: il genitore di ATLANTE_RA è cercato tra gli ADA, quello di ATLANTE_ATTIVITA tra i RA.
 
 ## Decisioni prese
 
@@ -123,5 +170,7 @@ usarlo servono anche i file sorgente (O*NET zip, Atlante JSON, ESCO CSV zip) con
 
 ```bash
 uv venv -p 3.12 .venv && uv pip install -p .venv -e ".[dev]"
-NEARTECH_TEST_DSN="postgresql://.../neartech_test" .venv/bin/pytest
+# Test: serve un PostgreSQL 16 con pgvector locale (nella sandbox: apt install postgresql-16 postgresql-16-pgvector)
+NEARTECH_TEST_DSN="postgresql://postgres:test@localhost:5432/neartech_test" .venv/bin/pytest
+# Il test con il modello reale richiede anche NEARTECH_ANTHROPIC_API_KEY (consuma token).
 ```
