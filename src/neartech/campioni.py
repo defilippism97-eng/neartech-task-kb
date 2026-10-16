@@ -4,7 +4,8 @@ Un campione estrae elementi da un insieme di proposte (crosswalk verso le tasson
 fusioni del Canonicalizer; in fase 3 gli abbinamenti) con un criterio registrato: tutti,
 oppure casuale con seme. Il revisore vede la proposta senza la motivazione né la fonte
 del modello (revisione cieca). Ogni giudizio è un record; un ripensamento è un record nuovo.
-Gli elementi contengono solo identificativi del dataset condiviso, mai testo del cliente.
+Gli elementi contengono solo identificativi del dataset condiviso, mai testo del cliente,
+più la fotografia del modello e del prompt che hanno prodotto la proposta.
 Non va confuso con crosswalk.registra_giudizio, che registra i giudizi del modello.
 """
 
@@ -27,8 +28,23 @@ _FILTRI = {
 }
 _ESITI_CROSSWALK = {"ok": "corretto", "parziale": "parziale", "no": "errato"}
 
+Elemento = tuple[dict[str, str], dict[str, str]]  # (riferimento, origine)
 
-def _popolazione(conn: psycopg.Connection, tipo: str, filtro: dict[str, Any]) -> list[dict[str, str]]:
+
+class ElementoMancante(LookupError):
+    """Una proposta del campione non esiste più (per esempio dopo una fusione di task)."""
+
+    def __init__(self, posizioni: list[int]):
+        super().__init__(f"proposte non più presenti alle posizioni {posizioni}")
+        self.posizioni = posizioni
+
+
+class GiaImportato(RuntimeError):
+    """Il campione già rivisto è stato importato in precedenza."""
+
+
+def popolazione(conn: psycopg.Connection, tipo: str, filtro: dict[str, Any]) -> list[Elemento]:
+    """Proposte candidate, in ordine stabile per identificativo. Sola lettura."""
     if tipo not in _FILTRI:
         raise ValueError(f"tipo di proposta non gestito: {tipo!r}")
     sconosciuti = set(filtro) - set(_FILTRI[tipo])
@@ -37,13 +53,18 @@ def _popolazione(conn: psycopg.Connection, tipo: str, filtro: dict[str, Any]) ->
     condizioni = " AND ".join(f"{_FILTRI[tipo][chiave]} = %({chiave})s" for chiave in sorted(filtro)) or "true"
     if tipo == "fusione":
         righe = conn.execute(
-            f"SELECT proposal_id FROM fusioni_proposte WHERE {condizioni} ORDER BY proposal_id", filtro
+            f"""SELECT proposal_id, model_name, prompt_hash FROM fusioni_proposte
+                WHERE {condizioni} ORDER BY proposal_id""",
+            filtro,
         ).fetchall()
-        return [{"proposal_id": str(r[0])} for r in righe]
+        return [({"proposal_id": str(r[0])}, {"model_name": r[1], "prompt_hash": r[2]}) for r in righe]
     righe = conn.execute(
-        f"SELECT task_id, node_id FROM task_mappings WHERE {condizioni} ORDER BY task_id, node_id", filtro
+        f"""SELECT task_id, node_id, model_name, prompt_hash FROM task_mappings
+            WHERE {condizioni} ORDER BY task_id, node_id""",
+        filtro,
     ).fetchall()
-    return [{"task_id": str(r[0]), "node_id": str(r[1])} for r in righe]
+    return [({"task_id": str(r[0]), "node_id": str(r[1])}, {"model_name": r[2], "prompt_hash": r[3]})
+            for r in righe]
 
 
 def _salva_campione(
@@ -55,30 +76,31 @@ def _salva_campione(
     filtro: dict[str, Any],
     criterio: str,
     seme: int | None,
-    popolazione: int,
-    elementi: list[dict[str, str]],
+    popolazione_totale: int,
+    elementi: list[Elemento],
     versione_istruzioni: str,
     motivazione: str,
+    dettagli: dict[str, Any] | None = None,
 ) -> str:
     campione_id = str(uuid.uuid4())
     decisione = registra(
         conn, autore_id=utente_id, tipo_oggetto="campione_revisione", oggetto_id=campione_id,
         atto="approvazione", motivazione=motivazione, org_id=org_id,
         dettagli={"tipo": tipo, "filtro": filtro, "criterio": criterio, "seme": seme,
-                  "popolazione": popolazione, "dimensione": len(elementi)},
+                  "popolazione": popolazione_totale, "dimensione": len(elementi), **(dettagli or {})},
     )
     conn.execute(
         """INSERT INTO campioni_revisione
              (campione_id, org_id, tipo_proposta, filtro, criterio, seme, popolazione, dimensione,
               versione_istruzioni, decisione_id)
            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
-        (campione_id, org_id, tipo, Jsonb(filtro), criterio, seme, popolazione, len(elementi),
+        (campione_id, org_id, tipo, Jsonb(filtro), criterio, seme, popolazione_totale, len(elementi),
          versione_istruzioni, decisione),
     )
-    for posizione, riferimento in enumerate(elementi, start=1):
+    for posizione, (riferimento, origine) in enumerate(elementi, start=1):
         conn.execute(
-            "INSERT INTO elementi_campione (campione_id, posizione, riferimento) VALUES (%s, %s, %s)",
-            (campione_id, posizione, Jsonb(riferimento)),
+            "INSERT INTO elementi_campione (campione_id, posizione, riferimento, origine) VALUES (%s, %s, %s, %s)",
+            (campione_id, posizione, Jsonb(riferimento), Jsonb(origine)),
         )
     return campione_id
 
@@ -99,38 +121,46 @@ def crea_campione(
     """Estrae il campione e lo registra. 'tutte' prende l'intera popolazione; 'casuale' richiede dimensione e seme."""
     if criterio not in CRITERI:
         raise ValueError(f"criterio sconosciuto: {criterio!r}")
+    if criterio == "tutte" and (dimensione is not None or seme is not None):
+        raise ValueError("con il criterio 'tutte' dimensione e seme non si indicano")
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_campioni", org_id, risorsa=f"campione:{tipo}")
-        popolazione = _popolazione(conn, tipo, filtro)
-        if not popolazione:
+        candidati = popolazione(conn, tipo, filtro)
+        if not candidati:
             raise ValueError("la popolazione delle proposte è vuota")
         if criterio == "tutte":
-            scelti, seme = popolazione, None
+            scelti = candidati
         else:
             if dimensione is None or seme is None:
                 raise ValueError("il campione casuale richiede dimensione e seme")
-            if not 0 < dimensione <= len(popolazione):
-                raise ValueError(f"dimensione {dimensione} fuori dalla popolazione di {len(popolazione)}")
-            scelti = random.Random(seme).sample(popolazione, dimensione)
+            if not 0 < dimensione <= len(candidati):
+                raise ValueError(f"dimensione {dimensione} fuori dalla popolazione di {len(candidati)}")
+            scelti = random.Random(seme).sample(candidati, dimensione)
         return _salva_campione(conn, utente_id, org_id=org_id, tipo=tipo, filtro=filtro, criterio=criterio,
-                               seme=seme, popolazione=len(popolazione), elementi=scelti,
+                               seme=seme, popolazione_totale=len(candidati), elementi=scelti,
                                versione_istruzioni=versione_istruzioni, motivazione=motivazione)
 
 
-def _org_e_tipo(conn: psycopg.Connection, campione_id: str) -> tuple[str, str]:
+def _campione(conn: psycopg.Connection, campione_id: str) -> tuple[str, str, int, str]:
     riga = conn.execute(
-        "SELECT org_id, tipo_proposta FROM campioni_revisione WHERE campione_id = %s", (campione_id,)
+        """SELECT org_id, tipo_proposta, dimensione, versione_istruzioni
+           FROM campioni_revisione WHERE campione_id = %s""",
+        (campione_id,),
     ).fetchone()
     if riga is None:
         raise LookupError(f"campione {campione_id} inesistente")
-    return str(riga[0]), riga[1]
+    return str(riga[0]), riga[1], riga[2], riga[3]
 
 
 def esporta_campione(conn: psycopg.Connection, utente_id: str, campione_id: str) -> list[dict[str, Any]]:
-    """Elementi da rivedere, senza motivazione, modello o versione del prompt (revisione cieca)."""
+    """Elementi da rivedere, senza motivazione, modello o versione del prompt (revisione cieca).
+
+    Se una proposta del campione non esiste più l'esportazione si ferma: il revisore deve vedere
+    tutti gli elementi che la misura conterà.
+    """
     campione_id = str(uuid.UUID(str(campione_id)))
-    org_id, tipo = _org_e_tipo(conn, campione_id)
+    org_id, tipo, dimensione, _ = _campione(conn, campione_id)
     richiedi(conn, utente_id, "leggere", org_id, risorsa=f"campione:{campione_id}")
     if tipo == "fusione":
         righe = conn.execute(
@@ -142,25 +172,30 @@ def esporta_campione(conn: psycopg.Connection, utente_id: str, campione_id: str)
                WHERE e.campione_id = %s ORDER BY e.posizione""",
             (campione_id,),
         ).fetchall()
-        return [
+        esportati = [
             {"posizione": r[0], "task_a": r[1], "task_b": r[2],
              "proposta": "stessa attività" if r[3] == "stessa_attivita" else "attività diverse"}
             for r in righe
         ]
-    righe = conn.execute(
-        """SELECT e.posizione, t.title_it, n.scheme, n.code, n.label, m.relation
-           FROM elementi_campione e
-           JOIN task_mappings m ON m.task_id = (e.riferimento ->> 'task_id')::uuid
-                               AND m.node_id = (e.riferimento ->> 'node_id')::uuid
-           JOIN canonical_tasks t ON t.task_id = m.task_id
-           JOIN taxonomy_nodes n ON n.node_id = m.node_id
-           WHERE e.campione_id = %s ORDER BY e.posizione""",
-        (campione_id,),
-    ).fetchall()
-    return [
-        {"posizione": r[0], "task": r[1], "nodo": f"{r[2]} {r[3]}: {r[4]}", "proposta": f"relazione {r[5]}"}
-        for r in righe
-    ]
+    else:
+        righe = conn.execute(
+            """SELECT e.posizione, t.title_it, n.scheme, n.code, n.label, m.relation
+               FROM elementi_campione e
+               JOIN task_mappings m ON m.task_id = (e.riferimento ->> 'task_id')::uuid
+                                   AND m.node_id = (e.riferimento ->> 'node_id')::uuid
+               JOIN canonical_tasks t ON t.task_id = m.task_id
+               JOIN taxonomy_nodes n ON n.node_id = m.node_id
+               WHERE e.campione_id = %s ORDER BY e.posizione""",
+            (campione_id,),
+        ).fetchall()
+        esportati = [
+            {"posizione": r[0], "task": r[1], "nodo": f"{r[2]} {r[3]}: {r[4]}", "proposta": f"relazione {r[5]}"}
+            for r in righe
+        ]
+    if len(esportati) != dimensione:
+        presenti = {r["posizione"] for r in esportati}
+        raise ElementoMancante([p for p in range(1, dimensione + 1) if p not in presenti])
+    return esportati
 
 
 def registra_giudizio(
@@ -177,8 +212,10 @@ def registra_giudizio(
         raise ValueError(f"esito sconosciuto: {esito!r}")
     campione_id = str(uuid.UUID(str(campione_id)))
     with conn.transaction():
-        org_id, _ = _org_e_tipo(conn, campione_id)
+        org_id, _, _, versione_campione = _campione(conn, campione_id)
         richiedi(conn, revisore_id, "giudicare_task", org_id, risorsa=f"campione:{campione_id}:{posizione}")
+        if versione_istruzioni != versione_campione:
+            raise ValueError(f"il campione usa le istruzioni {versione_campione!r}, non {versione_istruzioni!r}")
         return conn.execute(
             """INSERT INTO giudizi_revisione (campione_id, posizione, esito, nota, revisore_id, versione_istruzioni)
                VALUES (%s, %s, %s, %s, %s, %s) RETURNING giudizio_id""",
@@ -188,28 +225,46 @@ def registra_giudizio(
 
 def importa_revisioni_crosswalk(
     conn: psycopg.Connection, revisore_id: str, *, org_id: str, campione: str,
+    popolazione_originale: int | None = None,
     versione_istruzioni: str = "revisione-crosswalk-2026-10-11",
 ) -> str:
     """Porta un campione già rivisto in revisioni_crosswalk nel modello generale di campioni e giudizi.
 
-    Chi importa dichiara di essere il revisore originale: i giudizi portano il suo identificativo.
+    Chi importa dichiara di essere il revisore originale: i giudizi portano il suo identificativo,
+    e il nome registrato all'epoca resta nei dettagli dell'atto. popolazione_originale è il numero
+    di relazioni da cui il campione era stato estratto; se manca si registra la dimensione.
     """
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, revisore_id, "gestire_campioni", org_id, risorsa=f"importazione:{campione}")
+        conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (f"importazione:{campione}",))
+        if conn.execute(
+            """SELECT EXISTS (SELECT 1 FROM campioni_revisione
+                              WHERE tipo_proposta = 'crosswalk' AND criterio = 'importato'
+                                AND filtro ->> 'campione' = %s)""",
+            (campione,),
+        ).fetchone()[0]:
+            raise GiaImportato(f"il campione {campione!r} è già stato importato")
         righe = conn.execute(
-            """SELECT task_id, node_id, esito, nota FROM revisioni_crosswalk
-               WHERE campione = %s ORDER BY task_id, node_id""",
+            """SELECT r.task_id, r.node_id, r.esito, r.nota, r.revisore, m.model_name, m.prompt_hash
+               FROM revisioni_crosswalk r
+               LEFT JOIN task_mappings m ON m.task_id = r.task_id AND m.node_id = r.node_id
+               WHERE r.campione = %s ORDER BY r.task_id, r.node_id""",
             (campione,),
         ).fetchall()
         if not righe:
             raise LookupError(f"nessuna revisione per il campione {campione!r}")
-        elementi = [{"task_id": str(r[0]), "node_id": str(r[1])} for r in righe]
+        elementi = [
+            ({"task_id": str(r[0]), "node_id": str(r[1])},
+             {"model_name": r[5], "prompt_hash": r[6]} if r[5] else {})
+            for r in righe
+        ]
         campione_id = _salva_campione(
             conn, revisore_id, org_id=org_id, tipo="crosswalk", filtro={"campione": campione},
-            criterio="importato", seme=None, popolazione=len(elementi), elementi=elementi,
-            versione_istruzioni=versione_istruzioni,
+            criterio="importato", seme=None, popolazione_totale=popolazione_originale or len(elementi),
+            elementi=elementi, versione_istruzioni=versione_istruzioni,
             motivazione=f"importazione del campione già rivisto {campione}",
+            dettagli={"revisori_originali": sorted({r[4] for r in righe}), "revisione_cieca": False},
         )
         for posizione, riga in enumerate(righe, start=1):
             registra_giudizio(conn, revisore_id, campione_id, posizione, _ESITI_CROSSWALK[riga[2]],

@@ -63,35 +63,26 @@ def intervallo_wilson(successi: int, totale: int, livello: float) -> tuple[float
     return max(0.0, centro - margine), min(1.0, centro + margine)
 
 
-def _valore(parametro, ammessi=None) -> float | str:
+def _valore(parametro, ammessi=None, *, estremi_inclusi: bool = False) -> float | str:
     valore = parametro.valore.get("valore") if isinstance(parametro.valore, dict) else None
     if ammessi is not None:
         if valore not in ammessi:
             raise ValueError(f"valore non ammesso per {parametro.codice}: {valore!r}")
         return valore
-    if not isinstance(valore, (int, float)) or not 0 < valore < 1:
-        raise ValueError(f"valore non valido per {parametro.codice}: {valore!r}")
+    if isinstance(valore, bool) or not isinstance(valore, (int, float)):
+        raise ValueError(f"valore non numerico per {parametro.codice}: {valore!r}")
+    if not (0 <= valore <= 1 if estremi_inclusi else 0 < valore < 1):
+        raise ValueError(f"valore fuori intervallo per {parametro.codice}: {valore!r}")
     return float(valore)
 
 
-def _origine(conn: psycopg.Connection, campione_id: str, tipo: str) -> list[dict[str, str]]:
-    if tipo == "fusione":
-        righe = conn.execute(
-            """SELECT DISTINCT f.model_name, f.prompt_hash
-               FROM elementi_campione e
-               JOIN fusioni_proposte f ON f.proposal_id = (e.riferimento ->> 'proposal_id')::uuid
-               WHERE e.campione_id = %s ORDER BY 1, 2""",
-            (campione_id,),
-        ).fetchall()
-    else:
-        righe = conn.execute(
-            """SELECT DISTINCT m.model_name, m.prompt_hash
-               FROM elementi_campione e
-               JOIN task_mappings m ON m.task_id = (e.riferimento ->> 'task_id')::uuid
-                                   AND m.node_id = (e.riferimento ->> 'node_id')::uuid
-               WHERE e.campione_id = %s ORDER BY 1, 2""",
-            (campione_id,),
-        ).fetchall()
+def _origine(conn: psycopg.Connection, campione_id: str) -> list[dict[str, str]]:
+    """Modelli e prompt che hanno prodotto le proposte, dalla fotografia salvata all'estrazione."""
+    righe = conn.execute(
+        """SELECT DISTINCT origine ->> 'model_name', origine ->> 'prompt_hash'
+           FROM elementi_campione WHERE campione_id = %s AND origine ? 'model_name' ORDER BY 1, 2""",
+        (campione_id,),
+    ).fetchall()
     return [{"model_name": r[0], "prompt_hash": r[1]} for r in righe]
 
 
@@ -99,18 +90,19 @@ def calcola_precisione(conn: psycopg.Connection, utente_id: str, campione_id: st
     campione_id = str(uuid.UUID(str(campione_id)))
     with conn.transaction():
         riga = conn.execute(
-            "SELECT org_id, tipo_proposta, dimensione FROM campioni_revisione WHERE campione_id = %s",
+            """SELECT org_id, dimensione, criterio, versione_istruzioni
+               FROM campioni_revisione WHERE campione_id = %s""",
             (campione_id,),
         ).fetchone()
         if riga is None:
             raise LookupError(f"campione {campione_id} inesistente")
-        org_id, tipo, dimensione = str(riga[0]), riga[1], riga[2]
+        org_id, dimensione, criterio, versione_istruzioni = str(riga[0]), riga[1], riga[2], riga[3]
         richiedi(conn, utente_id, "gestire_campioni", org_id, risorsa=f"misura:{campione_id}")
 
         soglia_p = parametro_vigente(conn, PARAMETRO_SOGLIA, org_id)
         regola_p = parametro_vigente(conn, PARAMETRO_REGOLA, org_id)
         livello_p = parametro_vigente(conn, PARAMETRO_LIVELLO, org_id)
-        soglia, livello = _valore(soglia_p), _valore(livello_p)
+        soglia, livello = _valore(soglia_p, estremi_inclusi=True), _valore(livello_p)
         regola = _valore(regola_p, REGOLE_PARZIALI)
 
         ultimi = conn.execute(
@@ -142,6 +134,8 @@ def calcola_precisione(conn: psycopg.Connection, utente_id: str, campione_id: st
         precisione = successi / totale
         intervallo = intervallo_wilson(successi, totale, livello)
         esito = "sopra_soglia" if precisione >= soglia else "sotto_soglia"
+        # Con la soglia dentro l'intervallo l'esito non è conclusivo: lo si registra, non lo si nasconde.
+        soglia_nell_intervallo = intervallo[0] <= soglia <= intervallo[1]
 
         misura_id = str(uuid.uuid4())
         conn.execute(
@@ -149,10 +143,12 @@ def calcola_precisione(conn: psycopg.Connection, utente_id: str, campione_id: st
                  (misura_id, campione_id, n_elementi, n_corretti, n_parziali, n_errati,
                   regola_parziali, parametro_regola_id, precisione, intervallo_basso, intervallo_alto,
                   livello_confidenza, parametro_confidenza_id, soglia, parametro_soglia_id, esito,
-                  origine_proposte, versione_calcolo, calcolata_da)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                  origine_proposte, versione_calcolo, calcolata_da, versione_istruzioni, censimento,
+                  soglia_nell_intervallo)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
             (misura_id, campione_id, dimensione, corretti, parziali, errati, regola, regola_p.parametro_id,
              precisione, intervallo[0], intervallo[1], livello, livello_p.parametro_id, soglia,
-             soglia_p.parametro_id, esito, Jsonb(_origine(conn, campione_id, tipo)), VERSIONE_CALCOLO, utente_id),
+             soglia_p.parametro_id, esito, Jsonb(_origine(conn, campione_id)), VERSIONE_CALCOLO, utente_id,
+             versione_istruzioni, criterio == "tutte", soglia_nell_intervallo),
         )
         return Misura(misura_id, dimensione, corretti, parziali, errati, precisione, intervallo, esito)

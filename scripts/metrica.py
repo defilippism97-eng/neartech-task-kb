@@ -7,30 +7,34 @@ Uso (l'utente è indicato dal soggetto SSO; DATABASE_URL dall'ambiente):
   python scripts/metrica.py crea-campione ... --criterio casuale --dimensione 60 --seme 20261016
   python scripts/metrica.py esporta --utente-sso S --campione C --file campione.jsonl
   python scripts/metrica.py importa-giudizi --utente-sso S --campione C --file giudizi.jsonl --istruzioni v1
-  python scripts/metrica.py importa-crosswalk --utente-sso S --org ORG --campione crosswalk-2026-10-11
+  python scripts/metrica.py importa-crosswalk --utente-sso S --org ORG --campione crosswalk-2026-10-11       --popolazione-originale 6520
   python scripts/metrica.py calcola --utente-sso S --campione C
 
 'anteprima' è in sola lettura. Gli altri comandi scrivono: su produzione richiedono
 l'approvazione del responsabile del progetto. Il file dei giudizi ha una riga JSON per
 elemento: {"posizione": 1, "esito": "corretto|parziale|errato", "nota": "..."}.
+Serve la connessione diretta: il collegamento HTTPS (NEARTECH_DB_VIA=https) non ha transazioni.
+Il log di accesso usa una connessione dedicata, così i rifiuti restano anche se l'operazione fallisce.
 """
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from neartech.campioni import (  # noqa: E402
-    _popolazione,
     crea_campione,
     esporta_campione,
     importa_revisioni_crosswalk,
+    popolazione,
     registra_giudizio,
 )
 from neartech.db import connect  # noqa: E402
 from neartech.metrica import calcola_precisione  # noqa: E402
+from neartech.permessi import configura_log  # noqa: E402
 
 
 def _filtro(coppie: list[str]) -> dict[str, str]:
@@ -78,47 +82,70 @@ def main() -> None:
     crosswalk = comandi.add_parser("importa-crosswalk")
     for nome in ("--utente-sso", "--org", "--campione"):
         crosswalk.add_argument(nome, required=True)
+    crosswalk.add_argument("--popolazione-originale", type=int, required=True)
 
     calcola = comandi.add_parser("calcola")
     for nome in ("--utente-sso", "--campione"):
         calcola.add_argument(nome, required=True)
 
     args = parser.parse_args()
+    if os.environ.get("NEARTECH_DB_VIA", "").lower() == "https":
+        raise SystemExit("questo script richiede la connessione diretta: il collegamento HTTPS non ha transazioni")
+    try:
+        _esegui(args)
+    except (LookupError, ValueError, PermissionError, RuntimeError, KeyError, json.JSONDecodeError) as errore:
+        raise SystemExit(f"errore ({type(errore).__name__}): {errore}") from None
+
+
+def _esegui(args: argparse.Namespace) -> None:
     with connect() as conn:
         if args.comando == "anteprima":
             conn.read_only = True
-            print(f"proposte nella popolazione: {len(_popolazione(conn, args.tipo, _filtro(args.filtro)))}")
+            print(f"proposte nella popolazione: {len(popolazione(conn, args.tipo, _filtro(args.filtro)))}")
             return
-        utente = _utente(conn, args.utente_sso)
-        if args.comando == "crea-campione":
-            campione = crea_campione(
-                conn, utente, org_id=args.org, tipo=args.tipo, filtro=_filtro(args.filtro), criterio=args.criterio,
-                versione_istruzioni=args.istruzioni, motivazione=args.motivazione,
-                dimensione=args.dimensione, seme=args.seme,
-            )
-            print(f"campione creato: {campione}")
-        elif args.comando == "esporta":
-            righe = esporta_campione(conn, utente, args.campione)
-            Path(args.file).write_text(
-                "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe), encoding="utf-8"
-            )
-            print(f"elementi esportati: {len(righe)}")
-        elif args.comando == "importa-giudizi":
-            righe = [json.loads(r) for r in Path(args.file).read_text(encoding="utf-8").splitlines() if r.strip()]
-            with conn.transaction():
-                for riga in righe:
-                    registra_giudizio(conn, utente, args.campione, int(riga["posizione"]), riga["esito"],
-                                      nota=riga.get("nota"), versione_istruzioni=args.istruzioni)
-            print(f"giudizi registrati: {len(righe)}")
-        elif args.comando == "importa-crosswalk":
-            campione = importa_revisioni_crosswalk(conn, utente, org_id=args.org, campione=args.campione)
-            print(f"campione importato: {campione}")
-        else:
-            misura = calcola_precisione(conn, utente, args.campione)
-            print(f"precisione {misura.precisione:.3f} (intervallo {misura.intervallo[0]:.3f}-"
-                  f"{misura.intervallo[1]:.3f}), {misura.esito}; corretti {misura.n_corretti}, "
-                  f"parziali {misura.n_parziali}, errati {misura.n_errati}; misura {misura.misura_id}")
-        conn.commit()
+        with connect() as conn_log:
+            conn_log.autocommit = True
+            configura_log(conn_log)
+            try:
+                _scrivi(conn, args)
+            finally:
+                configura_log(None)
+
+
+def _scrivi(conn, args: argparse.Namespace) -> None:
+    utente = _utente(conn, args.utente_sso)
+    if args.comando == "crea-campione":
+        campione = crea_campione(
+            conn, utente, org_id=args.org, tipo=args.tipo, filtro=_filtro(args.filtro), criterio=args.criterio,
+            versione_istruzioni=args.istruzioni, motivazione=args.motivazione,
+            dimensione=args.dimensione, seme=args.seme,
+        )
+        print(f"campione creato: {campione}")
+    elif args.comando == "esporta":
+        if Path(args.file).exists():
+            raise SystemExit(f"il file {args.file} esiste già: scegliere un altro nome")
+        righe = esporta_campione(conn, utente, args.campione)
+        Path(args.file).write_text(
+            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe), encoding="utf-8"
+        )
+        print(f"elementi esportati: {len(righe)}")
+    elif args.comando == "importa-giudizi":
+        righe = [json.loads(r) for r in Path(args.file).read_text(encoding="utf-8").splitlines() if r.strip()]
+        with conn.transaction():
+            for riga in righe:
+                registra_giudizio(conn, utente, args.campione, int(riga["posizione"]), riga["esito"],
+                                  nota=riga.get("nota"), versione_istruzioni=args.istruzioni)
+        print(f"giudizi registrati: {len(righe)}")
+    elif args.comando == "importa-crosswalk":
+        campione = importa_revisioni_crosswalk(conn, utente, org_id=args.org, campione=args.campione,
+                                               popolazione_originale=args.popolazione_originale)
+        print(f"campione importato: {campione}")
+    else:
+        misura = calcola_precisione(conn, utente, args.campione)
+        print(f"precisione {misura.precisione:.3f} (intervallo {misura.intervallo[0]:.3f}-"
+              f"{misura.intervallo[1]:.3f}), {misura.esito}; corretti {misura.n_corretti}, "
+              f"parziali {misura.n_parziali}, errati {misura.n_errati}; misura {misura.misura_id}")
+    conn.commit()
 
 
 if __name__ == "__main__":
