@@ -33,6 +33,8 @@
 
 4. **Lacune da non eliminare con il software.** La capacità di test sulla scala 0–4 richiede un campione etichettato da persone. D3 e d4 richiedono survey su lavoratori e utenti reali. Il software può essere costruito con queste lacune marcate. Non può farle sparire.
 
+**Esito (2026-10-16).** Punto 1 deciso nella sezione 5. Punto 2 deciso in `docs/adr/0001-testo-cliente-fuori-dal-dataset-condiviso.md`: nel dataset condiviso entra solo la rielaborazione del task, non il testo del cliente. Punto 3 deciso in `docs/adr/0002-indirizzi-del-comitato-e-revisione-per-task.md`: il comitato guida dà indirizzi di alto livello, i revisori giudicano i singoli task e segnalano le ricadute anomale. Punto 4: il software si costruisce con le lacune marcate.
+
 ## 3. Cosa resta valido
 
 - Gli agenti propongono, il calcolo è deterministico, le persone decidono.

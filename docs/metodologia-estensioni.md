@@ -61,3 +61,10 @@ Approvata dal responsabile del progetto, con la regola del ribasso segnalato. De
 - Pavimento legale per task con norma citata, non modificabile dall'organizzazione. Oggi vuoto.
 - La base è presentata come "valutazione basata su dati NEARTECH", con origine interna esplicita.
 - I ribassi sotto la base di una soglia vanno segnalati in revisione e nel report finale. Soglia da fissare dal comitato guida.
+
+## 7. Testo del cliente e livelli di decisione (2026-10-16)
+
+Approvate dal responsabile del progetto. Dettagli negli ADR.
+
+- **Dataset condiviso:** contiene solo la rielaborazione del task (titolo canonico e dati derivati). Il testo originale del cliente resta nello spazio dell'organizzazione. Vedi `docs/adr/0001-testo-cliente-fuori-dal-dataset-condiviso.md`.
+- **Comitato guida e revisori:** il comitato guida emette indirizzi di alto livello, non giudica il singolo task. I revisori valutano la classificazione dei singoli task, verificano le ricadute degli indirizzi e segnalano le situazioni anomale. La variazione di D per task deriva quindi dagli indirizzi e dal giudizio dei revisori, non da un'approvazione del comitato task per task. Vedi `docs/adr/0002-indirizzi-del-comitato-e-revisione-per-task.md`.

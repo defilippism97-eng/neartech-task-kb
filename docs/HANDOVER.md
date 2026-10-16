@@ -16,11 +16,10 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 
 | Branch | Stato | Contenuto |
 |---|---|---|
-| `main` | PR #1, #2, #3 unite | Fonti e tassonomie, relazione su N, guida ai prossimi passi (`docs/PROSSIMI-PASSI.md`) |
-| `protocollo-silver` | **PR #4 aperta, non unita** | Silver: dataset, pacchetto istruzioni, output, script di etichettatura, workflow rivisto, architettura, schema AI Act |
-| `capacita-mappa-fonti` | **PR #5 aperta, non unita** | Base di conoscenza sulla capacità tecnologica e sull'uso dell'AI (`docs/ricerca/capacita/`) |
+| `main` | PR #1–#5 unite | Fonti e tassonomie, relazione su N, silver (dataset, etichette, workflow rivisto, schema AI Act), base di conoscenza sulla capacità (`docs/ricerca/capacita/`) |
+| `fondazioni` | in corso, da `main` | ADR 0001 e 0002, verifica del database, piano e costruzione delle fondazioni |
 
-**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Il lavoro più recente sta in `protocollo-silver`: per riprendere il lavoro, fare `git checkout protocollo-silver`.
+**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Per riprendere il lavoro: `git checkout fondazioni`.
 
 ---
 
@@ -61,6 +60,10 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 - **Revisori:** controllano che il sistema funzioni e valutano D sul piano soggettivo. La visibilità è configurabile.
 - **Auditor:** vede tutto come il super user, solo in lettura.
 - Se una decisione del comitato cambia una regola della rubrica, il revisore analizza la classificazione aggiornata e il comitato riapprova la restituzione finale.
+- **Livelli di decisione (ADR 0002):** il comitato guida emette indirizzi di alto livello, non giudica il singolo task. I revisori valutano la classificazione dei singoli task, verificano le ricadute degli indirizzi e segnalano le situazioni anomale.
+
+### Dati del cliente (ADR 0001)
+- Nel dataset condiviso entra solo la rielaborazione del task. Il testo originale del cliente resta nello spazio dell'organizzazione.
 
 ### Regole non negoziabili (da `CLAUDE.md`)
 - Gli agenti propongono, il calcolo è deterministico, le persone decidono.
@@ -101,7 +104,9 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 ## 5. Stato dei dati
 
 - **Dataset silver:** `docs/silver/dataset/task-silver.jsonl`, **354 task**. Derivato dalla scomposizione approvata del 2026-10-11 (384 attività, di cui 30 solo come aree di responsabilità ritirate). Gli id originali sono conservati.
-- **Non verificato:** il dataset non corrisponde necessariamente ai task attivi nel database dopo le fusioni del Canonicalizer. Serve una verifica di sola lettura, che richiede la variabile `DATABASE_URL`.
+- **Verifica sul database (2026-10-16, sola lettura):** 295 task attivi (29 di granularità 1, 266 di granularità 2), tutti presenti nel dataset con titolo identico. Il dataset ha **59 task in più**: 54 fusi dal Canonicalizer e 5 ritirati. Le etichette v2 coprono anche questi 59. Da decidere: escluderli o tenerli come giudizi aggiuntivi sul task in cui sono stati fusi.
+- **Campioni rivisti da persone:** solo il crosswalk (`crosswalk-2026-10-11`, 40 collegamenti su 37 task: 36 ok, 2 parziali, 2 no; 90% se i parziali contano come errori, 95% altrimenti; la regola sui parziali è da decidere). Per l'abbinamento al database consolidato non esiste ancora un campione rivisto. Le 1.745 proposte di fusione (61 "stessa attività") sono solo giudizi del modello.
+- **Testo del cliente nel database:** `task_occurrences.raw_snippet` e `context_note` contengono testo dei documenti di Società Dolce. Con l'ADR 0001 vanno spostati nello spazio dell'organizzazione; è una scrittura in produzione, da approvare.
 - **Etichette v2 (Haiku 5.5):** `docs/silver/output/N-v2-final.jsonl` e `D-v2-final.jsonl`, 354 righe ciascuno, senza errori di schema.
 - **Stabilità:** 3 run su 20 task. k1 identico in 16/20, k2 in 18/20, k3 in 15/20, **r in 8/20** (voce più instabile), d1 in 13/20, d2 in 12/20. La riserva di legge non risulta mai `true`.
 - **Campione di prova:** 10 task marketing (T-0001–T-0010). T-0004 non è più nel dataset, quindi restano 9.
@@ -123,9 +128,9 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 
 ## 7. Ambiente di lavoro
 
-- **Repo locale:** `C:\neartech`, su branch `protocollo-silver`.
+- **Repo locale:** `C:\neartech`, su branch `fondazioni`. Ambiente Python del progetto in `.venv` (escluso da git).
 - **Variabile della chiave API:** `NEARTECH_ANTHROPIC_API_KEY`, impostata come variabile utente di Windows. Il nome non è `ANTHROPIC_API_KEY` per non cambiare l'autenticazione di Claude Code. Non stamparne mai il valore.
-- **Variabile del database:** `DATABASE_URL` **non impostata**. Va impostata dal terminale del responsabile, come la chiave. Non chiedere il valore in chat.
+- **Variabile del database:** `DATABASE_URL` è impostata come variabile utente di Windows. Una sessione avviata prima dell'impostazione non la vede nel processo: va letta dalle variabili utente. Non stamparne né chiederne il valore. Le letture usano una sessione `read only`.
 - **Strumenti installati:** `gh` (GitHub CLI, autenticato come `defilippism97-eng`), pacchetto `anthropic` 1.15.0, `pypdf` 6.21.0, Python 3.15.
 - **Non tentare** di elencare segreti o variabili su GitHub: il classificatore di sicurezza lo blocca come ricerca di credenziali.
 - **Script di etichettatura:** `scripts/etichetta_silver.py`. Opzioni: `--asse N|D`, `--run`, `--limite`, `--dry-run`. Scrive in `docs/silver/output/` con versione del prompt nel nome.
@@ -160,11 +165,13 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 - Verifica legale dello schema AI Act.
 
 **Da fare, in ordine:**
-1. Impostare `DATABASE_URL` sul PC e verificare, in sola lettura, l'elenco dei task attivi rispetto al dataset.
-2. Misurare la precisione dell'abbinamento sul campione rivisto (≥90%).
+1. ~~Verificare in sola lettura i task attivi rispetto al dataset~~: fatto il 2026-10-16, vedi sezione 5.
+2. Misurare la precisione dell'abbinamento sul campione rivisto (≥90%). Il campione per l'abbinamento al database consolidato va ancora creato.
 3. Decidere il livello di revisione iniziale del revisore (campione, completa o nulla) e registrarlo nel sistema.
-4. Costruire le fondazioni del software (sezione 4).
-5. Decidere se unire `protocollo-silver` e `capacita-mappa-fonti` in `main`.
+4. Costruire le fondazioni del software (sezione 4). In corso sul branch `fondazioni`.
+5. ~~Unire `protocollo-silver` e `capacita-mappa-fonti` in `main`~~: fatto (PR #4 e #5).
+6. Decidere il trattamento dei 59 task non attivi del dataset e la regola sui collegamenti "parziali".
+7. Decidere se una stessa persona può essere membro del comitato guida e revisore nella stessa organizzazione (ADR 0002).
 
 **Decisioni ancora aperte nel tempo:**
 - Costituzione del comitato guida e individuazione dei rappresentanti dei lavoratori.
@@ -180,7 +187,7 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 Incolla questo testo come primo messaggio:
 
 ```
-Lavoriamo sul progetto Neartech nel repo C:\neartech, branch protocollo-silver.
+Lavoriamo sul progetto Neartech nel repo C:\neartech, branch fondazioni.
 
 Leggi in quest'ordine: docs/HANDOVER.md, CLAUDE.md, docs/architettura/stato-e-decisioni.md.
 
