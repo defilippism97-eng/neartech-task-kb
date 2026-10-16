@@ -301,3 +301,47 @@ def test_log_accessi_senza_chiavi_esterne(conn):
            WHERE table_name = 'log_accessi' AND constraint_type = 'FOREIGN KEY'"""
     ).fetchone()[0]
     assert vincoli == 0
+
+
+# --- santa-loop, giro 4 -----------------------------------------------------------
+
+@pytest.mark.parametrize("malformato", [
+    "urn:uuid:00000000-0000-0000-0000-000000000001",
+    "uuid:00000000000000000000000000000001",
+    "0-0000000-0000-0000-0000-000000000001",
+])
+def test_identificativi_accettati_da_python_ma_non_da_postgres(conn, scenario, malformato):
+    assert not puo(conn, malformato, "leggere", scenario["a"])
+    assert not puo(conn, scenario["auditor"], "leggere", malformato)
+    assert conn.execute(
+        "SELECT esito FROM log_accessi ORDER BY accesso_id DESC LIMIT 1"
+    ).fetchone()[0] == "negato"
+
+
+def test_chiusura_con_data_futura_rifiutata(conn, scenario):
+    assegnazione = conn.execute(
+        "SELECT assegnazione_id FROM assegnazioni_ruolo WHERE utente_id = %s", (scenario["revisore"],)
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            """UPDATE assegnazioni_ruolo SET valida_al = statement_timestamp() + interval '30 days', chiusa_da = %s
+               WHERE assegnazione_id = %s""",
+            (scenario["admin"], assegnazione),
+        )
+
+
+def test_il_database_protegge_l_ultimo_amministratore(conn, scenario):
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            """UPDATE assegnazioni_ruolo SET valida_al = statement_timestamp(), chiusa_da = %s
+               WHERE utente_id = %s AND ruolo = 'amministratore_tecnico'""",
+            (scenario["admin"], scenario["admin"]),
+        )
+
+
+def test_il_database_rifiuta_un_secondo_bootstrap(conn, scenario):
+    altro = crea_utente(conn, "sso|bootstrap-diretto")
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            "INSERT INTO assegnazioni_ruolo (utente_id, ruolo) VALUES (%s, 'amministratore_tecnico')", (altro,)
+        )

@@ -69,3 +69,42 @@ def test_soggetto_sso_non_si_cambia(conn):
     utente = crea_utente(conn, "sso|originale")
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute("UPDATE utenti SET soggetto_sso = 'sso|altro' WHERE utente_id = %s", (utente,))
+
+
+
+def test_chi_viene_revocato_mentre_aspetta_il_lock_non_chiude(dsn_isolato):
+    """A attende il lock per chiudere C; intanto B revoca A. A non deve riuscire a chiudere."""
+    import threading
+
+    from neartech.permessi import PermessoNegato
+
+    with psycopg.connect(dsn_isolato) as setup:
+        a = inizializza_amministratore(setup, "sso|admin-a")
+        b = crea_utente(setup, "sso|admin-b")
+        c = crea_utente(setup, "sso|admin-c")
+        assegna_ruolo(setup, b, "amministratore_tecnico", assegnata_da=a)
+        assegna_ruolo(setup, c, "amministratore_tecnico", assegnata_da=a)
+        setup.commit()
+        ass_a = _assegnazione(setup, a, "amministratore_tecnico")
+        ass_c = _assegnazione(setup, c, "amministratore_tecnico")
+        setup.commit()
+    esito = []
+    with psycopg.connect(dsn_isolato) as revoca, psycopg.connect(dsn_isolato) as attesa:
+        revoca.execute("SELECT 1")
+        chiudi_assegnazione(revoca, ass_a, chiusa_da=b, motivazione="revoca di A")  # tiene il lock
+
+        def a_chiude_c():
+            try:
+                chiudi_assegnazione(attesa, ass_c, chiusa_da=a, motivazione="A chiude C")
+                attesa.commit()
+                esito.append("chiusa")
+            except PermessoNegato:
+                attesa.rollback()
+                esito.append("negato")
+
+        filo = threading.Thread(target=a_chiude_c)
+        filo.start()
+        filo.join(timeout=2)
+        revoca.commit()
+        filo.join(timeout=10)
+    assert esito == ["negato"]
