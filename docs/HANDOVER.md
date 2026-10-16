@@ -142,7 +142,9 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Santa-loop** (due revisori Claude indipendenti; nessun modello esterno installato): 3 giri, tutti con esito negativo, ogni volta su problemi nuovi e più sottili (giro 3: validità dei ruoli valutata con l'ora di inizio della transazione). Il problema del giro 3 è corretto e coperto da test, ma non è stato rivisto da un quarto giro.
 
-**In produzione non è stato applicato nulla.** Passi da approvare, in ordine:
+**Stato in produzione (2026-10-16, PostgreSQL 18.6):** PR #6 e #7 unite in `main`; registro inizializzato e migrazioni 0007–0020 applicate; amministratore tecnico `locale|responsabile-neartech` (pseudonimo provvisorio, da sostituire con l'utente SSO); testo di Società Dolce copiato in `org_societa_dolce` (36 ruoli, 500 occorrenze, 36 documenti); parametri comuni in vigore; campione delle 61 fusioni creato ed esportato in `docs/revisione/campioni/`. Ancora del registro: `docs/audit/ancore-registro.md`. **Restano:** rimozione del testo di Società Dolce da `public` (serve una migrazione nuova e l'aggiornamento di `scomposizione.py`), ruoli di database separati (a cura del responsabile).
+
+Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
 2. `scripts/migra.py --applica` (0008–0017 e gli spazi delle organizzazioni).
 3. Bootstrap dell'amministratore tecnico (`neartech.permessi.inizializza_amministratore`) con il soggetto SSO del responsabile.
