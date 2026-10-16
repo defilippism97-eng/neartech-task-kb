@@ -96,6 +96,8 @@ def _decidi(
             raise LookupError(f"{tipo} {oggetto_id} inesistente")
         org_id = str(riga[0]) if riga[0] is not None else None
         codice, versione = riga[1], riga[2]
+        if tipo == "parametro" and org_id is None:
+            permesso = "approvare_parametro_comune"  # parametri NEARTECH comuni: metodologia, sezione 9
         richiedi(conn, utente_id, permesso, org_id, risorsa=f"{tipo}:{oggetto_id}")
         _blocca(conn, f"decisione:{tipo}:{oggetto_id}")
         if atto == "approvazione":
@@ -139,7 +141,8 @@ def proponi_parametro(
 ) -> str:
     org_id = str(uuid.UUID(str(org_id))) if org_id is not None else None
     with conn.transaction():
-        richiedi(conn, utente_id, "proporre_parametro", org_id, risorsa=f"parametro:{codice}")
+        azione = "proporre_parametro_comune" if org_id is None else "proporre_parametro"
+        richiedi(conn, utente_id, azione, org_id, risorsa=f"parametro:{codice}")
         parametro_id = str(uuid.uuid4())
         versione = _prossima_versione(conn, "parametri_governance", codice, org_id)
         proposta = registra(

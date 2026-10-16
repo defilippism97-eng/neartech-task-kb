@@ -233,8 +233,8 @@ def test_importa_revisioni_crosswalk(conn, base):
     ).fetchone()[0] for i in range(3)]
     for nodo, esito in zip(nodi, ("ok", "parziale", "no")):
         conn.execute(
-            """INSERT INTO task_mappings (task_id, node_id, relation, confidence, rationale)
-               VALUES (%s, %s, 'exact', 0.9, 'motivazione')""",
+            """INSERT INTO task_mappings (task_id, node_id, relation, confidence, rationale, model_name, prompt_hash)
+               VALUES (%s, %s, 'exact', 0.9, 'motivazione', 'modello-crosswalk', 'hash-crosswalk')""",
             (base["task"][0], nodo),
         )
         conn.execute(
@@ -248,4 +248,8 @@ def test_importa_revisioni_crosswalk(conn, base):
     ).fetchall()]
     assert sorted(esiti) == ["corretto", "errato", "parziale"]
     _parametri_comuni(conn, base["admin"])
-    assert calcola_precisione(conn, base["revisore"], campione).precisione == pytest.approx(1 / 3)
+    misura = calcola_precisione(conn, base["revisore"], campione)
+    assert misura.precisione == pytest.approx(1 / 3)
+    assert conn.execute(
+        "SELECT origine_proposte FROM misure_precisione WHERE misura_id = %s", (misura.misura_id,)
+    ).fetchone()[0] == [{"model_name": "modello-crosswalk", "prompt_hash": "hash-crosswalk"}]
