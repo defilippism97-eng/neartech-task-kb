@@ -10,6 +10,7 @@ import pytest
 from neartech.governance import (
     DecisioneGiaPresa,
     ParametroAssente,
+    ParametroRitirato,
     approva_indirizzo,
     approva_parametro,
     indirizzi_vigenti,
@@ -19,9 +20,10 @@ from neartech.governance import (
     rifiuta_parametro,
     ritira_parametro,
     segnala,
+    verifica_contenuti,
 )
-from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente
-from neartech.registro import registra, verifica_catena
+from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
+from neartech.registro import ancora_catena, registra, verifica_catena
 
 
 @pytest.fixture
@@ -29,11 +31,12 @@ def org(conn):
     org_id = str(conn.execute(
         "INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id"
     ).fetchone()[0])
+    admin = inizializza_amministratore(conn, "sso|admin")
     comitato = crea_utente(conn, "sso|comitato")
     revisore = crea_utente(conn, "sso|revisore")
-    assegna_ruolo(conn, comitato, "comitato_guida", org_id)
-    assegna_ruolo(conn, revisore, "revisore", org_id)
-    return {"id": org_id, "comitato": comitato, "revisore": revisore}
+    assegna_ruolo(conn, comitato, "comitato_guida", org_id, assegnata_da=admin)
+    assegna_ruolo(conn, revisore, "revisore", org_id, assegnata_da=admin)
+    return {"id": org_id, "comitato": comitato, "revisore": revisore, "admin": admin}
 
 
 # --- registro --------------------------------------------------------------
@@ -200,3 +203,60 @@ def test_comitato_non_segnala(conn, org):
     with pytest.raises(PermessoNegato):
         segnala(conn, org["comitato"], org_id=org["id"], tipo_oggetto="indirizzo",
                 oggetto_id="x", motivazione="x")
+
+
+# --- rafforzamenti dopo la revisione ---------------------------------------------
+
+def test_coda_cancellata_rilevata_con_l_ancora(conn, org):
+    _atto(conn, org)
+    ancora = ancora_catena(conn)
+    _atto(conn, org, oggetto_id="y")
+    conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
+    conn.execute("DELETE FROM registro_decisioni WHERE posizione >= %s", (ancora[0],))
+    assert verifica_catena(conn, ancora=ancora) == ancora[0]
+
+
+def test_atto_decisivo_senza_oggetto_rifiutato(conn, org):
+    with pytest.raises(psycopg.errors.RaiseException):
+        _atto(conn, org, tipo_oggetto="parametro", oggetto_id="00000000-0000-0000-0000-000000000009",
+              atto="approvazione")
+
+
+def test_seconda_decisione_rifiutata_dal_database(conn, org):
+    parametro = _proponi(conn, org, {"valore": 0.9})
+    approva_parametro(conn, org["comitato"], parametro, motivazione="ok")
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        _atto(conn, org, tipo_oggetto="parametro", oggetto_id=parametro, atto="rifiuto")
+
+
+def test_ritiro_dell_organizzazione_non_ricade_sul_valore_comune(conn, org):
+    comune = "00000000-0000-0000-0000-0000000000cc"
+    proposta = registra(conn, autore_id=org["admin"], tipo_oggetto="parametro", oggetto_id=comune,
+                        atto="proposta", motivazione="valore comune sintetico")
+    conn.execute(
+        """INSERT INTO parametri_governance (parametro_id, codice, org_id, versione, valore, descrizione, proposta_id)
+           VALUES (%s, 'soglia_prova', NULL, 1, '{"valore": 0.8}', 'comune', %s)""",
+        (comune, proposta),
+    )
+    registra(conn, autore_id=org["admin"], tipo_oggetto="parametro", oggetto_id=comune,
+             atto="approvazione", motivazione="approvato")
+    propria = _proponi(conn, org, {"valore": 0.9})
+    approva_parametro(conn, org["comitato"], propria, motivazione="ok")
+    ritira_parametro(conn, org["comitato"], propria, motivazione="ritirata")
+    with pytest.raises(ParametroRitirato):
+        parametro_vigente(conn, "soglia_prova", org["id"])
+
+
+def test_contenuto_degli_indirizzi_verificato(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="x", testo="testo originale",
+                                  ambito="ambito", motivazione="x")
+    assert verifica_contenuti(conn) == []
+    conn.execute("ALTER TABLE indirizzi_comitato DISABLE TRIGGER indirizzi_append_only")
+    conn.execute("UPDATE indirizzi_comitato SET testo = 'testo cambiato' WHERE indirizzo_id = %s", (indirizzo,))
+    assert verifica_contenuti(conn) == [("indirizzo", indirizzo)]
+
+
+@pytest.mark.parametrize("tabella", ["parametri_governance", "indirizzi_comitato", "stati_validazione_task"])
+def test_truncate_vietato(conn, tabella):
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(f"TRUNCATE {tabella}")

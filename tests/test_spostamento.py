@@ -6,14 +6,13 @@ La rimozione del testo da public è un passo separato, con approvazione.
 
 import pytest
 
-from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente
+from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
 from neartech.spostamento import GiaSpostata, piano_spostamento, sposta_testo_cliente
 
 
 @pytest.fixture
 def dati(conn):
-    admin = crea_utente(conn, "sso|admin")
-    assegna_ruolo(conn, admin, "amministratore_tecnico")
+    admin = inizializza_amministratore(conn, "sso|admin")
     org = str(conn.execute("INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id").fetchone()[0])
     ruolo = conn.execute(
         "INSERT INTO roles (org_id, name, family) VALUES (%s, 'Coordinatore sintetico', 'servizi') RETURNING role_id",
@@ -68,6 +67,6 @@ def test_non_si_ripete(conn, dati):
 
 def test_serve_l_amministratore(conn, dati):
     revisore = crea_utente(conn, "sso|revisore")
-    assegna_ruolo(conn, revisore, "revisore", dati["org"])
+    assegna_ruolo(conn, revisore, "revisore", dati["org"], assegnata_da=dati["admin"])
     with pytest.raises(PermessoNegato):
         sposta_testo_cliente(conn, revisore, dati["org"], codice="sintetica")

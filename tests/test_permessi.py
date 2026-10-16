@@ -1,12 +1,20 @@
 """Utenti, ruoli e permessi. I permessi stanno in tabella, ogni verifica lascia
 una riga nel log di accesso, e il log non si modifica."""
 
-from datetime import timedelta
-
 import psycopg
 import pytest
 
-from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, puo, richiedi
+from neartech.permessi import (
+    AmministratoreGiaPresente,
+    PermessoNegato,
+    assegna_ruolo,
+    chiudi_assegnazione,
+    configura_log,
+    crea_utente,
+    inizializza_amministratore,
+    puo,
+    richiedi,
+)
 
 
 def _org(conn, nome: str) -> str:
@@ -19,17 +27,19 @@ def _org(conn, nome: str) -> str:
 def scenario(conn):
     a = _org(conn, "Org A sintetica")
     b = _org(conn, "Org B sintetica")
+    admin = inizializza_amministratore(conn, "sso|admin")
     utenti = {nome: crea_utente(conn, f"sso|{nome}") for nome in
-              ("admin", "auditor", "comitato", "revisore", "rappresentante", "scaduto")}
-    assegna_ruolo(conn, utenti["admin"], "amministratore_tecnico")
-    assegna_ruolo(conn, utenti["auditor"], "auditor")
-    assegna_ruolo(conn, utenti["comitato"], "comitato_guida", a)
-    assegna_ruolo(conn, utenti["revisore"], "revisore", a)
-    assegna_ruolo(conn, utenti["rappresentante"], "rappresentante_lavoratori", a)
-    adesso = conn.execute("SELECT now()").fetchone()[0]
-    assegna_ruolo(conn, utenti["scaduto"], "revisore", a,
-                  valida_dal=adesso - timedelta(days=1), valida_al=adesso - timedelta(seconds=1))
-    return {"a": a, "b": b, **utenti}
+              ("auditor", "comitato", "revisore", "rappresentante", "scaduto")}
+    assegna_ruolo(conn, utenti["auditor"], "auditor", assegnata_da=admin)
+    assegna_ruolo(conn, utenti["comitato"], "comitato_guida", a, assegnata_da=admin)
+    assegna_ruolo(conn, utenti["revisore"], "revisore", a, assegnata_da=admin)
+    assegna_ruolo(conn, utenti["rappresentante"], "rappresentante_lavoratori", a, assegnata_da=admin)
+    conn.execute(
+        """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, org_id, valida_dal, valida_al, assegnata_da)
+           VALUES (%s, 'revisore', %s, now() - interval '1 day', now() - interval '1 second', %s)""",
+        (utenti["scaduto"], a, admin),
+    )
+    return {"a": a, "b": b, "admin": admin, **utenti}
 
 
 def test_ruolo_di_organizzazione_vale_solo_nella_propria(conn, scenario):
@@ -72,6 +82,14 @@ def test_azione_sconosciuta_e_negata(conn, scenario):
     assert not puo(conn, scenario["admin"], "azione_inesistente")
 
 
+@pytest.mark.parametrize("utente", ["00000000-0000-0000-0000-000000000001", "non-un-uuid"])
+def test_utente_sconosciuto_o_malformato_e_negato(conn, scenario, utente):
+    assert not puo(conn, utente, "leggere", scenario["a"])
+    assert conn.execute(
+        "SELECT esito FROM log_accessi WHERE utente_id IS NULL ORDER BY accesso_id DESC LIMIT 1"
+    ).fetchone()[0] == "negato"
+
+
 def test_richiedi_solleva_permesso_negato(conn, scenario):
     with pytest.raises(PermessoNegato):
         richiedi(conn, scenario["revisore"], "gestire_utenti")
@@ -87,33 +105,93 @@ def test_ogni_verifica_scrive_il_log(conn, scenario):
     assert righe == [("giudicare_task", "consentito"), ("giudicare_task", "negato")]
 
 
-@pytest.mark.parametrize("comando", ["UPDATE log_accessi SET esito = 'consentito'", "DELETE FROM log_accessi"])
-def test_log_accessi_non_si_modifica(conn, scenario, comando):
+def test_il_rifiuto_resta_nel_log_anche_se_la_transazione_viene_annullata(dsn):
+    with psycopg.connect(dsn, autocommit=True) as log_conn:
+        configura_log(log_conn)
+        try:
+            with psycopg.connect(dsn) as conn:
+                utente = crea_utente(conn, "sso|log-durevole")
+                with pytest.raises(PermessoNegato):
+                    richiedi(conn, utente, "gestire_utenti", risorsa="prova-log-durevole")
+                conn.rollback()
+            righe = log_conn.execute(
+                "SELECT esito FROM log_accessi WHERE risorsa = 'prova-log-durevole'"
+            ).fetchall()
+            assert righe == [("negato",)]
+        finally:
+            configura_log(None)
+
+
+@pytest.mark.parametrize("comando", [
+    "UPDATE log_accessi SET esito = 'consentito'",
+    "DELETE FROM log_accessi",
+    "TRUNCATE log_accessi",
+    "TRUNCATE assegnazioni_ruolo",
+    "UPDATE permessi_ruolo SET azione = 'gestire_utenti'",
+    "DELETE FROM ruoli",
+    "TRUNCATE permessi_ruolo",
+])
+def test_tabelle_protette_non_si_modificano(conn, scenario, comando):
     puo(conn, scenario["revisore"], "gestire_utenti")
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute(comando)
 
 
-def test_ruolo_di_organizzazione_richiede_organizzazione(conn):
+def test_ruolo_di_organizzazione_richiede_organizzazione(conn, scenario):
     utente = crea_utente(conn, "sso|senza-org")
     with pytest.raises(psycopg.errors.RaiseException):
-        assegna_ruolo(conn, utente, "revisore")
+        assegna_ruolo(conn, utente, "revisore", assegnata_da=scenario["admin"])
 
 
-def test_ruolo_globale_non_ammette_organizzazione(conn):
-    org = _org(conn, "Org sintetica")
+def test_ruolo_globale_non_ammette_organizzazione(conn, scenario):
     utente = crea_utente(conn, "sso|globale")
     with pytest.raises(psycopg.errors.RaiseException):
-        assegna_ruolo(conn, utente, "auditor", org)
+        assegna_ruolo(conn, utente, "auditor", scenario["a"], assegnata_da=scenario["admin"])
 
 
-def test_assegnazione_si_chiude_ma_non_si_riscrive(conn):
-    org = _org(conn, "Org sintetica")
-    utente = crea_utente(conn, "sso|revisore")
-    assegnazione = assegna_ruolo(conn, utente, "revisore", org)
-    conn.execute("UPDATE assegnazioni_ruolo SET valida_al = now() WHERE assegnazione_id = %s", (assegnazione,))
+def test_solo_chi_gestisce_utenti_assegna_ruoli(conn, scenario):
+    nuovo = crea_utente(conn, "sso|nuovo")
+    with pytest.raises(PermessoNegato):
+        assegna_ruolo(conn, nuovo, "revisore", scenario["a"], assegnata_da=scenario["comitato"])
+
+
+def test_assegnazione_registrata_nel_registro(conn, scenario):
+    nuovo = crea_utente(conn, "sso|nuovo")
+    assegnazione = assegna_ruolo(conn, nuovo, "revisore", scenario["a"], assegnata_da=scenario["admin"])
+    assert conn.execute(
+        "SELECT atto FROM registro_decisioni WHERE tipo_oggetto = 'assegnazione_ruolo' AND oggetto_id = %s",
+        (assegnazione,),
+    ).fetchall() == [("approvazione",)]
+
+
+def test_nessuna_assegnazione_attiva_duplicata(conn, scenario):
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        assegna_ruolo(conn, scenario["revisore"], "revisore", scenario["a"], assegnata_da=scenario["admin"])
+
+
+def test_amministratore_iniziale_solo_una_volta(conn, scenario):
+    with pytest.raises(AmministratoreGiaPresente):
+        inizializza_amministratore(conn, "sso|secondo-admin")
+
+
+def test_assegnazione_si_chiude_una_volta_e_non_si_riscrive(conn, scenario):
+    nuovo = crea_utente(conn, "sso|nuovo")
+    assegnazione = assegna_ruolo(conn, nuovo, "revisore", scenario["a"], assegnata_da=scenario["admin"])
+    chiudi_assegnazione(conn, assegnazione, chiusa_da=scenario["admin"], motivazione="fine incarico")
+    assert not puo(conn, nuovo, "giudicare_task", scenario["a"])
+    assert conn.execute(
+        "SELECT chiusa_da FROM assegnazioni_ruolo WHERE assegnazione_id = %s", (assegnazione,)
+    ).fetchone()[0] is not None
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute("UPDATE assegnazioni_ruolo SET ruolo = 'auditor' WHERE assegnazione_id = %s", (assegnazione,))
+
+
+def test_solo_chi_gestisce_utenti_chiude_assegnazioni(conn, scenario):
+    assegnazione = conn.execute(
+        "SELECT assegnazione_id FROM assegnazioni_ruolo WHERE utente_id = %s", (scenario["revisore"],)
+    ).fetchone()[0]
+    with pytest.raises(PermessoNegato):
+        chiudi_assegnazione(conn, assegnazione, chiusa_da=scenario["comitato"], motivazione="x")
 
 
 def test_utente_identificato_solo_da_soggetto_sso(conn):

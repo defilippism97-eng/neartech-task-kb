@@ -11,15 +11,13 @@ from neartech.organizzazioni import (
     crea_organizzazione,
     schema_organizzazione,
 )
-from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente
-from neartech.stato_task import imposta_stato, stato_corrente
+from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
+from neartech.stato_task import TaskNonCollegato, imposta_stato, stato_corrente
 
 
 @pytest.fixture
 def admin(conn):
-    utente = crea_utente(conn, "sso|admin")
-    assegna_ruolo(conn, utente, "amministratore_tecnico")
-    return utente
+    return inizializza_amministratore(conn, "sso|admin")
 
 
 def _tabelle(conn, schema: str) -> set[str]:
@@ -77,7 +75,7 @@ def test_codice_non_valido_rifiutato_prima_del_database(conn, admin, codice):
 def test_solo_l_amministratore_crea_organizzazioni(conn, admin):
     org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
     revisore = crea_utente(conn, "sso|revisore")
-    assegna_ruolo(conn, revisore, "revisore", org)
+    assegna_ruolo(conn, revisore, "revisore", org, assegnata_da=admin)
     with pytest.raises(PermessoNegato):
         crea_organizzazione(conn, revisore, nome="Altra", codice="altra")
 
@@ -93,10 +91,17 @@ def test_aggiorna_spazi_non_riapplica(conn, admin):
 def revisione(conn, admin):
     org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
     revisore = crea_utente(conn, "sso|revisore")
-    assegna_ruolo(conn, revisore, "revisore", org)
+    assegna_ruolo(conn, revisore, "revisore", org, assegnata_da=admin)
     task = str(conn.execute(
         "INSERT INTO canonical_tasks (title_it, granularity) VALUES ('Task sintetico', 2) RETURNING task_id"
     ).fetchone()[0])
+    ruolo = conn.execute(
+        "INSERT INTO org_sintetica.ruoli_organizzativi (nome) VALUES ('Ruolo sintetico') RETURNING ruolo_id"
+    ).fetchone()[0]
+    conn.execute(
+        "INSERT INTO org_sintetica.occorrenze (task_id, ruolo_id, estratto) VALUES (%s, %s, 'frammento')",
+        (task, ruolo),
+    )
     return {"org": org, "revisore": revisore, "task": task}
 
 
@@ -145,3 +150,25 @@ def test_profili_di_peso_senza_default_di_policy(conn):
            WHERE table_name = 'weight_profiles' AND column_name IN ('lambda_r', 'theta_n', 'theta_d')"""
     ).fetchall())
     assert default == {"lambda_r": None, "theta_n": None, "theta_d": None}
+
+
+def test_revisore_cambia_solo_task_presenti_nella_propria_organizzazione(conn, revisione):
+    estraneo = conn.execute(
+        "INSERT INTO canonical_tasks (title_it, granularity) VALUES ('Task estraneo', 2) RETURNING task_id"
+    ).fetchone()[0]
+    with pytest.raises(TaskNonCollegato):
+        imposta_stato(conn, revisione["revisore"], str(estraneo), "validato",
+                      org_id=revisione["org"], motivazione="x")
+
+
+def test_stato_legato_alla_decisione_dello_stesso_task(conn, revisione):
+    decisione = imposta_stato(conn, revisione["revisore"], revisione["task"], "validato",
+                              org_id=revisione["org"], motivazione="x")
+    altro = conn.execute(
+        "INSERT INTO canonical_tasks (title_it, granularity) VALUES ('Altro task', 2) RETURNING task_id"
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            "INSERT INTO stati_validazione_task (task_id, stato, decisione_id) VALUES (%s, 'validato', %s)",
+            (altro, decisione),
+        )

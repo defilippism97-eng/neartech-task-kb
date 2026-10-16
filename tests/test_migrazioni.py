@@ -4,6 +4,7 @@ e una migrazione già applicata non può essere modificata in silenzio."""
 import shutil
 from pathlib import Path
 
+import psycopg
 import pytest
 
 from neartech.migrazioni import (
@@ -12,6 +13,8 @@ from neartech.migrazioni import (
     applica,
     da_applicare,
     hash_migrazione,
+    inizializza_registro,
+    percorso_migrazione,
     registra_senza_eseguire,
 )
 
@@ -86,3 +89,26 @@ def test_registra_senza_eseguire_non_tocca_lo_schema(conn, tmp_path):
 
     assert da_applicare(conn, cartella) == []
     assert conn.execute("SELECT to_regclass('public.prova_migrazione')").fetchone()[0] is None
+
+
+
+def test_inizializza_registro_su_database_gia_migrato_a_mano(conn):
+    """Produzione: 0002-0006 applicate a mano, registro assente."""
+    conn.execute("DROP TABLE public.migrazioni_applicate")
+    gia_applicate = [p.name for p in sorted(CARTELLA_CONDIVISA.glob("*.sql")) if p.name < "0007"]
+    inizializza_registro(conn, gia_applicate)
+    registrate = [r[0] for r in conn.execute(
+        "SELECT nome FROM public.migrazioni_applicate ORDER BY nome"
+    ).fetchall()]
+    assert registrate == gia_applicate + ["0007_registro_migrazioni.sql"]
+
+
+@pytest.mark.parametrize("nome", ["../schema.sql", "0002_x.txt", "nonesiste.sql", "0099_inesistente.sql"])
+def test_nome_di_migrazione_non_valido(nome):
+    with pytest.raises(ValueError):
+        percorso_migrazione(nome)
+
+
+def test_registro_delle_migrazioni_non_si_modifica(conn):
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("DELETE FROM public.migrazioni_applicate")
