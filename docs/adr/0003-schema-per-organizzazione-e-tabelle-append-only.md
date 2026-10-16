@@ -44,4 +44,4 @@ L'ADR 0001 richiede che il testo del cliente resti fuori dal dataset condiviso. 
 
 ### Rischi
 - Le tabelle `public.roles` e `public.task_occurrences` contengono ancora il testo di Società Dolce. Lo spostamento nello spazio dell'organizzazione è una scrittura in produzione e richiede l'approvazione del responsabile.
-- In produzione le migrazioni 0002–0006 sono applicate ma non registrate: vanno registrate con `scripts/migra.py --registra-esistenti` dopo una verifica, anche questa con approvazione.
+- In produzione le migrazioni 0002–0006 sono applicate ma non registrate: vanno registrate con `scripts/migra.py --inizializza` dopo una verifica, anche questa con approvazione.

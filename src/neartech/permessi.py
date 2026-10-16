@@ -28,6 +28,17 @@ class AmministratoreGiaPresente(RuntimeError):
     """Esiste già un amministratore tecnico attivo: il bootstrap non si ripete."""
 
 
+class UltimoAmministratore(RuntimeError):
+    """Chiudere l'assegnazione lascerebbe il sistema senza amministratore tecnico."""
+
+
+_ADMIN_ATTIVI = """
+    SELECT count(*) FROM assegnazioni_ruolo
+    WHERE ruolo = 'amministratore_tecnico' AND valida_dal <= now()
+      AND (valida_al IS NULL OR valida_al > now())
+"""
+
+
 def configura_log(connessione: psycopg.Connection | None) -> None:
     """Connessione in autocommit dedicata al log di accesso; None torna alla connessione di chi chiama."""
     global _connessione_log
@@ -69,6 +80,13 @@ def puo(
     utente_noto = _uuid_valido(utente_id) and conn.execute(
         "SELECT EXISTS (SELECT 1 FROM utenti WHERE utente_id = %s::uuid)", (str(utente_id),)
     ).fetchone()[0]
+    if org_id is not None and not (_uuid_valido(org_id) and conn.execute(
+        "SELECT EXISTS (SELECT 1 FROM organizations WHERE org_id = %s::uuid)", (str(org_id),)
+    ).fetchone()[0]):
+        # Organizzazione sconosciuta: negato, e nel log va nella risorsa, non nella chiave esterna.
+        _scrivi_log(conn, str(utente_id) if utente_noto else None, None, azione,
+                    f"organizzazione sconosciuta:{org_id}", "negato")
+        return False
     consentito = bool(utente_noto) and conn.execute(
         """SELECT EXISTS (
              SELECT 1
@@ -102,11 +120,7 @@ def inizializza_amministratore(conn: psycopg.Connection, soggetto_sso: str) -> s
     """Primo amministratore tecnico, senza chi lo concede. Ammesso solo se non ce n'è uno attivo."""
     with conn.transaction():
         conn.execute("SELECT pg_advisory_xact_lock(hashtext('inizializza_amministratore'))")
-        if conn.execute(
-            """SELECT EXISTS (SELECT 1 FROM assegnazioni_ruolo
-                              WHERE ruolo = 'amministratore_tecnico' AND valida_dal <= now()
-                                AND (valida_al IS NULL OR valida_al > now()))"""
-        ).fetchone()[0]:
+        if conn.execute(_ADMIN_ATTIVI).fetchone()[0] > 0:
             raise AmministratoreGiaPresente("esiste già un amministratore tecnico attivo")
         utente_id = crea_utente(conn, soggetto_sso)
         assegnazione = str(conn.execute(
@@ -146,15 +160,23 @@ def assegna_ruolo(
 def chiudi_assegnazione(conn: psycopg.Connection, assegnazione_id: str, *, chiusa_da: str, motivazione: str) -> None:
     with conn.transaction():
         riga = conn.execute(
-            "SELECT org_id FROM assegnazioni_ruolo WHERE assegnazione_id = %s", (assegnazione_id,)
+            "SELECT org_id, ruolo FROM assegnazioni_ruolo WHERE assegnazione_id = %s", (assegnazione_id,)
         ).fetchone()
         if riga is None:
             raise LookupError(f"assegnazione {assegnazione_id} inesistente")
         org_id = str(riga[0]) if riga[0] else None
         richiedi(conn, chiusa_da, "gestire_utenti", org_id, risorsa=f"assegnazione:{assegnazione_id}")
-        conn.execute(
-            "UPDATE assegnazioni_ruolo SET valida_al = now(), chiusa_da = %s WHERE assegnazione_id = %s",
+        if riga[1] == "amministratore_tecnico":
+            # Stesso lock del bootstrap: due chiusure contemporanee non lasciano il sistema senza amministratore.
+            conn.execute("SELECT pg_advisory_xact_lock(hashtext('inizializza_amministratore'))")
+            if conn.execute(_ADMIN_ATTIVI).fetchone()[0] <= 1:
+                raise UltimoAmministratore("serve almeno un altro amministratore tecnico attivo")
+        chiusa = conn.execute(
+            """UPDATE assegnazioni_ruolo SET valida_al = now(), chiusa_da = %s
+               WHERE assegnazione_id = %s AND chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > now())""",
             (chiusa_da, assegnazione_id),
-        )
+        ).rowcount
+        if chiusa != 1:
+            raise LookupError(f"assegnazione {assegnazione_id} già chiusa o scaduta")
         registra(conn, autore_id=chiusa_da, tipo_oggetto="assegnazione_ruolo", oggetto_id=str(assegnazione_id),
                  atto="ritiro", motivazione=motivazione, org_id=org_id)

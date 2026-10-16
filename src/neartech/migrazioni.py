@@ -33,6 +33,10 @@ class MigrazioneModificata(RuntimeError):
     """Un file di migrazione già applicato è stato modificato."""
 
 
+class SchemaAssente(LookupError):
+    """Lo schema di destinazione non esiste: gli oggetti finirebbero in public."""
+
+
 def hash_migrazione(percorso: Path) -> str:
     contenuto = percorso.read_bytes().replace(b"\r\n", b"\n")
     return hashlib.sha256(contenuto).hexdigest()
@@ -86,7 +90,11 @@ def registra_senza_eseguire(
 
 def inizializza_registro(conn: psycopg.Connection, gia_applicate: Iterable[str]) -> None:
     """Crea il registro (0007) su un database migrato a mano e vi segna le migrazioni indicate."""
-    percorsi = [percorso_migrazione(nome) for nome in gia_applicate]
+    nomi = list(gia_applicate)
+    successive = [nome for nome in nomi if nome >= MIGRAZIONE_REGISTRO]
+    if successive:
+        raise ValueError(f"solo migrazioni precedenti al registro: {', '.join(successive)}")
+    percorsi = [percorso_migrazione(nome) for nome in nomi]
     registro = percorso_migrazione(MIGRAZIONE_REGISTRO)
     with conn.transaction():
         if _registro_presente(conn):
@@ -100,29 +108,42 @@ def applica(conn: psycopg.Connection, cartella: Path, schema: str = SCHEMA_CONDI
 
     Ogni file gira in conn.transaction(): una transazione propria se la connessione è in
     autocommit, un savepoint se chi chiama ha già una transazione aperta (in quel caso
-    il commit finale è di chi chiama). Un lock di sessione impedisce due applicazioni
-    contemporanee sullo stesso database.
+    il commit finale è di chi chiama). Un lock impedisce due applicazioni contemporanee
+    sullo stesso database: di transazione se chi chiama ne ha una aperta, altrimenti di
+    sessione, rilasciato alla fine. Uno schema di organizzazione deve esistere.
     """
+    if schema != SCHEMA_CONDIVISO and conn.execute(
+        "SELECT to_regnamespace(%s)", (schema,)
+    ).fetchone()[0] is None:
+        raise SchemaAssente(f"lo schema {schema} non esiste")
     eseguite: list[Path] = []
-    in_attesa: list[Path] = []
+    if conn.info.transaction_status == psycopg.pq.TransactionStatus.INTRANS:
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (_LOCK_MIGRAZIONI,))
+        _applica_in_ordine(conn, cartella, schema, eseguite)
+        return eseguite
     conn.execute("SELECT pg_advisory_lock(%s)", (_LOCK_MIGRAZIONI,))
     try:
-        for percorso in da_applicare(conn, cartella, schema):
-            with conn.transaction():
-                precedente = conn.execute("SELECT current_setting('search_path')").fetchone()[0]
-                if schema != SCHEMA_CONDIVISO:
-                    percorso_ricerca = sql.SQL("{}, public").format(sql.Identifier(schema)).as_string(conn)
-                    conn.execute("SELECT set_config('search_path', %s, true)", (percorso_ricerca,))
-                conn.execute(percorso.read_text(encoding="utf-8"))
-                conn.execute("SELECT set_config('search_path', %s, true)", (precedente,))
-                in_attesa.append(percorso)
-                # Le migrazioni che precedono la creazione del registro vengono registrate appena esiste.
-                if _registro_presente(conn):
-                    registra_senza_eseguire(conn, in_attesa, schema)
-                    in_attesa.clear()
-            eseguite.append(percorso)
+        _applica_in_ordine(conn, cartella, schema, eseguite)
     finally:
-        # Con la transazione di chi chiama in errore il lock si libera alla chiusura della connessione.
+        # Con la transazione in errore il lock si libera alla chiusura della connessione.
         if conn.info.transaction_status != psycopg.pq.TransactionStatus.INERROR:
             conn.execute("SELECT pg_advisory_unlock(%s)", (_LOCK_MIGRAZIONI,))
     return eseguite
+
+
+def _applica_in_ordine(conn: psycopg.Connection, cartella: Path, schema: str, eseguite: list[Path]) -> None:
+    in_attesa: list[Path] = []
+    for percorso in da_applicare(conn, cartella, schema):
+        with conn.transaction():
+            precedente = conn.execute("SELECT current_setting('search_path')").fetchone()[0]
+            if schema != SCHEMA_CONDIVISO:
+                percorso_ricerca = sql.SQL("{}, public").format(sql.Identifier(schema)).as_string(conn)
+                conn.execute("SELECT set_config('search_path', %s, true)", (percorso_ricerca,))
+            conn.execute(percorso.read_text(encoding="utf-8"))
+            conn.execute("SELECT set_config('search_path', %s, true)", (precedente,))
+            in_attesa.append(percorso)
+            # Le migrazioni che precedono la creazione del registro vengono registrate appena esiste.
+            if _registro_presente(conn):
+                registra_senza_eseguire(conn, in_attesa, schema)
+                in_attesa.clear()
+        eseguite.append(percorso)

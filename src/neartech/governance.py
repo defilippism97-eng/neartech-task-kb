@@ -87,14 +87,30 @@ def _decidi(
     tabella, chiave, permesso = _OGGETTI[tipo]
     with conn.transaction():
         riga = conn.execute(
-            sql.SQL("SELECT org_id FROM {} WHERE {} = %s").format(sql.Identifier(tabella), sql.Identifier(chiave)),
+            sql.SQL("SELECT org_id, codice, versione FROM {} WHERE {} = %s")
+            .format(sql.Identifier(tabella), sql.Identifier(chiave)),
             (oggetto_id,),
         ).fetchone()
         if riga is None:
             raise LookupError(f"{tipo} {oggetto_id} inesistente")
         org_id = str(riga[0]) if riga[0] is not None else None
+        codice, versione = riga[1], riga[2]
         richiedi(conn, utente_id, permesso, org_id, risorsa=f"{tipo}:{oggetto_id}")
         _blocca(conn, f"decisione:{tipo}:{oggetto_id}")
+        if atto == "approvazione":
+            # Lo stesso lock delle nuove versioni: nessuna versione nuova si inserisce durante il controllo.
+            _blocca(conn, f"versione:{tabella}:{codice}:{org_id}")
+            superata = conn.execute(
+                sql.SQL("""SELECT EXISTS (
+                             SELECT 1 FROM {} t JOIN stato_oggetti_governance s
+                               ON s.tipo_oggetto = %s AND s.oggetto_id = t.{}::text
+                             WHERE t.codice = %s AND t.org_id IS NOT DISTINCT FROM %s AND t.versione > %s
+                               AND s.ultimo_atto IN ('approvazione', 'ritiro'))""")
+                .format(sql.Identifier(tabella), sql.Identifier(chiave)),
+                (tipo, codice, org_id, versione),
+            ).fetchone()[0]
+            if superata:
+                raise DecisioneGiaPresa(f"{tipo} {oggetto_id}: esiste una versione successiva già decisa")
         ultimo = conn.execute(
             "SELECT ultimo_atto FROM stato_oggetti_governance WHERE tipo_oggetto = %s AND oggetto_id = %s",
             (tipo, str(oggetto_id)),
@@ -162,26 +178,38 @@ def _vigente(conn: psycopg.Connection, codice: str, org_id: str | None) -> Param
 
 
 def parametro_vigente(conn: psycopg.Connection, codice: str, org_id: str | None) -> Parametro:
-    """Versione vigente per l'organizzazione; se l'organizzazione non ne ha mai decisa una, quella comune."""
-    if org_id is not None:
-        proprio = _vigente(conn, codice, org_id)
-        if proprio is not None:
-            return proprio
-        ultimo = conn.execute(
-            """SELECT s.ultimo_atto
-               FROM parametri_governance p
-               JOIN stato_oggetti_governance s
-                 ON s.tipo_oggetto = 'parametro' AND s.oggetto_id = p.parametro_id::text
-               WHERE p.codice = %s AND p.org_id = %s AND s.ultimo_atto IN ('approvazione', 'ritiro')
-               ORDER BY p.versione DESC LIMIT 1""",
-            (codice, org_id),
-        ).fetchone()
-        if ultimo is not None:
-            raise ParametroRitirato(f"'{codice}' ritirato dall'organizzazione, nessuna versione nuova approvata")
-    comune = _vigente(conn, codice, None)
-    if comune is None:
+    """Versione vigente per l'organizzazione; se l'organizzazione non ne ha mai decisa una, quella comune.
+
+    Una sola query: la scelta fra valore proprio, ritiro e valore comune vede un'unica fotografia.
+    """
+    riga = conn.execute(
+        """WITH proprio AS (
+             SELECT parametro_id, codice, org_id, versione, valore, approvazione_id
+             FROM parametri_vigenti WHERE codice = %(codice)s AND org_id = %(org)s::uuid
+           ), deciso_proprio AS (
+             SELECT 1 FROM parametri_governance p
+             JOIN stato_oggetti_governance s
+               ON s.tipo_oggetto = 'parametro' AND s.oggetto_id = p.parametro_id::text
+             WHERE p.codice = %(codice)s AND p.org_id = %(org)s::uuid
+               AND s.ultimo_atto IN ('approvazione', 'ritiro')
+           ), comune AS (
+             SELECT parametro_id, codice, org_id, versione, valore, approvazione_id
+             FROM parametri_vigenti WHERE codice = %(codice)s AND org_id IS NULL
+           )
+           SELECT 'proprio', * FROM proprio
+           UNION ALL
+           SELECT 'ritirato', NULL, NULL, NULL, NULL, NULL, NULL
+           WHERE NOT EXISTS (SELECT 1 FROM proprio) AND EXISTS (SELECT 1 FROM deciso_proprio)
+           UNION ALL
+           SELECT 'comune', * FROM comune
+           WHERE NOT EXISTS (SELECT 1 FROM proprio) AND NOT EXISTS (SELECT 1 FROM deciso_proprio)""",
+        {"codice": codice, "org": org_id},
+    ).fetchone()
+    if riga is None:
         raise ParametroAssente(f"nessun valore approvato per '{codice}'")
-    return comune
+    if riga[0] == "ritirato":
+        raise ParametroRitirato(f"'{codice}' ritirato dall'organizzazione, nessuna versione nuova approvata")
+    return Parametro(str(riga[1]), riga[2], str(riga[3]) if riga[3] else None, riga[4], riga[5], riga[6])
 
 
 # --- indirizzi del comitato -------------------------------------------------------
@@ -244,6 +272,7 @@ def verifica_contenuti(conn: psycopg.Connection) -> list[tuple[str, str]]:
             """SELECT 'parametro', p.parametro_id
                FROM parametri_governance p JOIN registro_decisioni r ON r.decisione_id = p.proposta_id
                WHERE r.dettagli -> 'valore' IS DISTINCT FROM p.valore
+                  OR r.org_id IS DISTINCT FROM p.org_id
                   OR r.dettagli ->> 'codice' IS DISTINCT FROM p.codice
                   OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM p.versione
                UNION ALL
@@ -251,6 +280,7 @@ def verifica_contenuti(conn: psycopg.Connection) -> list[tuple[str, str]]:
                FROM indirizzi_comitato i JOIN registro_decisioni r ON r.decisione_id = i.proposta_id
                WHERE r.dettagli ->> 'hash_contenuto' IS DISTINCT FROM
                      encode(sha256(convert_to(i.testo || chr(31) || i.ambito, 'UTF8')), 'hex')
+                  OR r.org_id IS DISTINCT FROM i.org_id
                   OR r.dettagli ->> 'codice' IS DISTINCT FROM i.codice
                   OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM i.versione
                ORDER BY 1, 2"""
@@ -270,8 +300,21 @@ def segnala(
     motivazione: str,
     dettagli: dict[str, Any] | None = None,
 ) -> int:
-    """Segnalazione di un revisore, visibile a comitato guida, auditor e rappresentanti."""
+    """Segnalazione di un revisore, visibile a comitato guida, auditor e rappresentanti.
+
+    Per parametri e indirizzi l'oggetto deve appartenere all'organizzazione del revisore.
+    I dettagli stanno nello schema condiviso: mai testo del cliente (ADR 0001).
+    """
     with conn.transaction():
         richiedi(conn, utente_id, "segnalare", org_id, risorsa=f"{tipo_oggetto}:{oggetto_id}")
+        if tipo_oggetto in _OGGETTI:
+            tabella, chiave, _ = _OGGETTI[tipo_oggetto]
+            proprio = conn.execute(
+                sql.SQL("SELECT EXISTS (SELECT 1 FROM {} WHERE {}::text = %s AND org_id = %s)")
+                .format(sql.Identifier(tabella), sql.Identifier(chiave)),
+                (str(oggetto_id), org_id),
+            ).fetchone()[0]
+            if not proprio:
+                raise LookupError(f"{tipo_oggetto} {oggetto_id} non appartiene all'organizzazione")
         return registra(conn, autore_id=utente_id, tipo_oggetto=tipo_oggetto, oggetto_id=str(oggetto_id),
                         atto="segnalazione", motivazione=motivazione, org_id=org_id, dettagli=dettagli)

@@ -9,8 +9,9 @@ da approvare. In produzione la copia richiede l'approvazione del responsabile.
 import psycopg
 from psycopg import sql
 
-from neartech.organizzazioni import crea_spazio
+from neartech.organizzazioni import _crea_spazio
 from neartech.permessi import richiedi
+from neartech.registro import registra
 
 _OCCORRENZE_ORG = """
     SELECT o.* FROM task_occurrences o JOIN roles r ON r.role_id = o.role_id WHERE r.org_id = %s
@@ -50,7 +51,7 @@ def _sposta(conn: psycopg.Connection, utente_id: str, org_id: str, codice: str) 
         raise LookupError(f"organizzazione {org_id} inesistente")
     if riga[0] is not None:
         raise GiaSpostata(f"l'organizzazione ha già lo spazio org_{riga[0]}")
-    schema = crea_spazio(conn, org_id, codice)
+    schema = _crea_spazio(conn, org_id, codice)
     destinazione = sql.Identifier(schema)
 
     conn.execute(
@@ -74,4 +75,8 @@ def _sposta(conn: psycopg.Connection, utente_id: str, org_id: str, codice: str) 
                    FROM (""" + _OCCORRENZE_ORG + """) o""").format(destinazione),
         (org_id,),
     )
-    return piano_spostamento(conn, org_id)
+    conteggi = piano_spostamento(conn, org_id)
+    registra(conn, autore_id=utente_id, tipo_oggetto="spostamento_testo_cliente", oggetto_id=str(org_id),
+             atto="approvazione", motivazione="copia del testo del cliente nello spazio dell'organizzazione (ADR 0001)",
+             org_id=org_id, dettagli={"codice": codice, **conteggi})
+    return conteggi
