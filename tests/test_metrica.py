@@ -7,7 +7,14 @@ li approva l'amministratore tecnico come parametri comuni (metodologia, sezione 
 import psycopg
 import pytest
 
-from neartech.campioni import crea_campione, esporta_campione, importa_revisioni_crosswalk, registra_giudizio
+from neartech.campioni import (
+    ElementoMancante,
+    GiaImportato,
+    crea_campione,
+    esporta_campione,
+    importa_revisioni_crosswalk,
+    registra_giudizio,
+)
 from neartech.governance import ParametroAssente, approva_parametro, parametro_vigente, proponi_parametro
 from neartech.metrica import CampioneIncompleto, DisaccordoRevisori, calcola_precisione, intervallo_wilson
 from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
@@ -103,13 +110,13 @@ def test_campione_casuale_ripetibile_con_lo_stesso_seme(conn, base):
 def test_dimensione_oltre_la_popolazione_rifiutata(conn, base):
     with pytest.raises(ValueError):
         crea_campione(conn, base["revisore"], org_id=base["org"], tipo="fusione", filtro={"decisione": "diversa"},
-                      criterio="casuale", dimensione=5, seme=1, versione_istruzioni="v1", motivazione="x")
+                      criterio="casuale", dimensione=5, seme=1, versione_istruzioni="istruzioni-v1", motivazione="x")
 
 
 def test_solo_i_revisori_creano_campioni(conn, base):
     with pytest.raises(PermessoNegato):
         crea_campione(conn, base["comitato"], org_id=base["org"], tipo="fusione", filtro={}, criterio="tutte",
-                      versione_istruzioni="v1", motivazione="x")
+                      versione_istruzioni="istruzioni-v1", motivazione="x")
 
 
 def test_esportazione_cieca(conn, base):
@@ -126,13 +133,13 @@ def test_esportazione_cieca(conn, base):
 def test_esito_sconosciuto_rifiutato(conn, base):
     campione = _campione_fusioni(conn, base)
     with pytest.raises(ValueError):
-        registra_giudizio(conn, base["revisore"], campione, 1, "forse", nota=None, versione_istruzioni="v1")
+        registra_giudizio(conn, base["revisore"], campione, 1, "forse", nota=None, versione_istruzioni="istruzioni-v1")
 
 
 def test_solo_chi_giudica_i_task_registra_giudizi(conn, base):
     campione = _campione_fusioni(conn, base)
     with pytest.raises(PermessoNegato):
-        registra_giudizio(conn, base["comitato"], campione, 1, "corretto", nota=None, versione_istruzioni="v1")
+        registra_giudizio(conn, base["comitato"], campione, 1, "corretto", nota=None, versione_istruzioni="istruzioni-v1")
 
 
 def test_giudizi_non_si_modificano(conn, base):
@@ -206,7 +213,7 @@ def test_conta_l_ultimo_giudizio_di_ciascun_revisore(conn, base):
     _parametri_comuni(conn, base["admin"])
     campione = _campione_fusioni(conn, base)
     _giudica(conn, base["revisore"], campione, ["corretto", "errato", "corretto"])
-    registra_giudizio(conn, base["revisore"], campione, 2, "corretto", nota="ripensamento", versione_istruzioni="v1")
+    registra_giudizio(conn, base["revisore"], campione, 2, "corretto", nota="ripensamento", versione_istruzioni="istruzioni-v1")
     assert calcola_precisione(conn, base["revisore"], campione).precisione == pytest.approx(1.0)
 
 
@@ -253,3 +260,127 @@ def test_importa_revisioni_crosswalk(conn, base):
     assert conn.execute(
         "SELECT origine_proposte FROM misure_precisione WHERE misura_id = %s", (misura.misura_id,)
     ).fetchone()[0] == [{"model_name": "modello-crosswalk", "prompt_hash": "hash-crosswalk"}]
+
+
+
+# --- revisioni della fase 2 -----------------------------------------------------------
+
+def test_giudizio_con_altra_versione_delle_istruzioni_rifiutato(conn, base):
+    campione = _campione_fusioni(conn, base)
+    with pytest.raises(ValueError):
+        registra_giudizio(conn, base["revisore"], campione, 1, "corretto", nota=None, versione_istruzioni="istruzioni-v2")
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            """INSERT INTO giudizi_revisione (campione_id, posizione, esito, revisore_id, versione_istruzioni)
+               VALUES (%s, 1, 'corretto', %s, 'istruzioni-v2')""",
+            (campione, base["revisore"]),
+        )
+
+
+def test_la_misura_porta_la_versione_delle_istruzioni_e_il_tipo_di_campione(conn, base):
+    _parametri_comuni(conn, base["admin"])
+    campione = _campione_fusioni(conn, base)
+    _giudica(conn, base["revisore"], campione, ["corretto", "corretto", "corretto"])
+    misura = calcola_precisione(conn, base["revisore"], campione)
+    riga = conn.execute(
+        "SELECT versione_istruzioni, censimento, soglia_nell_intervallo FROM misure_precisione WHERE misura_id = %s",
+        (misura.misura_id,),
+    ).fetchone()
+    assert riga[0] == "istruzioni-v1"
+    assert riga[1] is True  # criterio 'tutte': tutta la popolazione, non un campione
+    assert riga[2] is True  # 3/3 con soglia 0.9: la soglia cade nell'intervallo, esito non conclusivo
+
+
+def test_elementi_aggiunti_dopo_i_giudizi_rifiutati(conn, base):
+    campione = _campione_fusioni(conn, base)
+    _giudica(conn, base["revisore"], campione, ["corretto"])
+    proposta = conn.execute(
+        "SELECT proposal_id FROM fusioni_proposte WHERE decisione = 'diversa' LIMIT 1"
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            "INSERT INTO elementi_campione (campione_id, posizione, riferimento) VALUES (%s, 4, %s)",
+            (campione, psycopg.types.json.Jsonb({"proposal_id": str(proposta)})),
+        )
+
+
+def test_riferimento_con_chiavi_estranee_rifiutato(conn, base):
+    campione = _campione_fusioni(conn, base)
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            "INSERT INTO elementi_campione (campione_id, posizione, riferimento) VALUES (%s, 9, %s)",
+            (campione, psycopg.types.json.Jsonb({"proposal_id": "non-un-uuid", "extra": 1})),
+        )
+
+
+def test_campione_con_meno_elementi_della_dimensione_rifiutato_al_commit(conn, base):
+    """Il controllo è differito a fine transazione: qui lo si forza con SET CONSTRAINTS."""
+    decisione = conn.execute(
+        """INSERT INTO registro_decisioni (tipo_oggetto, oggetto_id, atto, autore_id, motivazione, org_id)
+           VALUES ('campione_revisione', '00000000-0000-0000-0000-0000000000aa', 'approvazione', %s, 'x', %s)
+           RETURNING decisione_id""",
+        (base["revisore"], base["org"]),
+    ).fetchone()[0]
+    conn.execute(
+        """INSERT INTO campioni_revisione (campione_id, org_id, tipo_proposta, criterio, popolazione, dimensione,
+                                           versione_istruzioni, decisione_id)
+           VALUES ('00000000-0000-0000-0000-0000000000aa', %s, 'fusione', 'tutte', 2, 2, 'istruzioni-v1', %s)""",
+        (base["org"], decisione),
+    )
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_esportazione_segnala_le_proposte_scomparse(conn, base):
+    fonte = conn.execute(
+        """INSERT INTO sources (kind, name, version, license, content_hash)
+           VALUES ('taxonomy', 'T', '1', 'aperta', 'h') RETURNING source_id"""
+    ).fetchone()[0]
+    nodo = conn.execute(
+        """INSERT INTO taxonomy_nodes (scheme, code, label, lang, source_id)
+           VALUES ('ONET_TASK', 'N1', 'Nodo', 'en', %s) RETURNING node_id""",
+        (fonte,),
+    ).fetchone()[0]
+    conn.execute(
+        """INSERT INTO task_mappings (task_id, node_id, relation, confidence, rationale, model_name, prompt_hash)
+           VALUES (%s, %s, 'exact', 0.9, 'x', 'm', 'h')""",
+        (base["task"][0], nodo),
+    )
+    campione = crea_campione(conn, base["revisore"], org_id=base["org"], tipo="crosswalk", filtro={},
+                             criterio="tutte", versione_istruzioni="istruzioni-v1", motivazione="x")
+    conn.execute("DELETE FROM task_mappings")  # come fa il Canonicalizer quando fonde due task
+    with pytest.raises(ElementoMancante):
+        esporta_campione(conn, base["revisore"], campione)
+
+
+def test_dimensione_o_seme_con_criterio_tutte_rifiutati(conn, base):
+    with pytest.raises(ValueError):
+        crea_campione(conn, base["revisore"], org_id=base["org"], tipo="fusione", filtro={}, criterio="tutte",
+                      dimensione=2, versione_istruzioni="istruzioni-v1", motivazione="x")
+
+
+def test_soglia_al_cento_per_cento_ammessa(conn, base):
+    _parametri_comuni(conn, base["admin"], soglia=1.0)
+    campione = _campione_fusioni(conn, base)
+    _giudica(conn, base["revisore"], campione, ["corretto", "corretto", "corretto"])
+    assert calcola_precisione(conn, base["revisore"], campione).esito == "sopra_soglia"
+
+
+def test_importazione_del_crosswalk_non_si_ripete(conn, base):
+    fonte = conn.execute(
+        """INSERT INTO sources (kind, name, version, license, content_hash)
+           VALUES ('taxonomy', 'T', '1', 'aperta', 'h') RETURNING source_id"""
+    ).fetchone()[0]
+    nodo = conn.execute(
+        """INSERT INTO taxonomy_nodes (scheme, code, label, lang, source_id)
+           VALUES ('ONET_TASK', 'N1', 'Nodo', 'en', %s) RETURNING node_id""",
+        (fonte,),
+    ).fetchone()[0]
+    conn.execute(
+        """INSERT INTO revisioni_crosswalk (task_id, node_id, relazione_proposta, esito, revisore, campione)
+           VALUES (%s, %s, 'exact', 'ok', 'responsabile', 'crosswalk-unico')""",
+        (base["task"][0], nodo),
+    )
+    importa_revisioni_crosswalk(conn, base["revisore"], org_id=base["org"], campione="crosswalk-unico")
+    with pytest.raises(GiaImportato):
+        importa_revisioni_crosswalk(conn, base["revisore"], org_id=base["org"], campione="crosswalk-unico")
