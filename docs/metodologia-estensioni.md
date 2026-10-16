@@ -35,3 +35,11 @@ per ora si ignora la questione.
 - Gli esiti della revisione umana sono registrati in `revisioni_crosswalk` (un record per relazione, mai sovrascritto).
 - Solo le relazioni confermate dal revisore sono marcate `validated = true`.
 - Le relazioni dubbie vengono mantenute come proposte, senza correzione automatica, finché il revisore non indica quella corretta.
+
+## 5. Definizione di capacità per N (2026-10-16)
+
+Approvata dal responsabile del progetto. Il piano definisce N rispetto a ciò che la tecnologia "ha dimostrato di saper fare". Con questa decisione, per N si usa la **capacità di test**: la capacità misurata in condizioni controllate, dichiarata come tale e versionata per modello. Questo è uno scostamento dalla definizione del piano, e va registrato come tale.
+
+- Ogni risultato di N riporta il tipo di capacità usato (test) e la versione del modello che l'ha prodotta.
+- La **capacità dimostrata in produzione** resta una grandezza separata. Nessuna fonte disponibile la misura oggi per i task O*NET: quando esisterà, sarà una voce distinta e non sostituirà la capacità di test.
+- La fonte della capacità di test è scelta caso per caso fra quelle in `docs/ricerca/capacita/mappa-fonti.md`. La calibrazione sulla scala 0–4 resta da fare.
