@@ -42,6 +42,26 @@ def dsn() -> Iterator[str]:
 
 
 @pytest.fixture
+def dsn_isolato(dsn):
+    """Database nuovo e vuoto per i test che confermano davvero (concorrenza fra transazioni).
+
+    Creato accanto a quello della sessione e distrutto a fine test. Richiede il permesso CREATEDB.
+    """
+    base, _, _ = dsn.rpartition("/")
+    nome = "neartech_test_isolato"
+    with psycopg.connect(f"{base}/postgres", autocommit=True) as admin:
+        admin.execute(f"DROP DATABASE IF EXISTS {nome}")
+        admin.execute(f"CREATE DATABASE {nome}")
+    url = f"{base}/{nome}"
+    try:
+        _prepara(url)
+        yield url
+    finally:
+        with psycopg.connect(f"{base}/postgres", autocommit=True) as admin:
+            admin.execute(f"DROP DATABASE IF EXISTS {nome} WITH (FORCE)")
+
+
+@pytest.fixture
 def conn(dsn):
     # Transazione esterna sempre annullata: le conn.transaction() del codice diventano
     # savepoint e niente di un test resta nel database della sessione.
