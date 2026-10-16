@@ -1,0 +1,264 @@
+"""Testi di governance nello spazio dell'organizzazione (ADR 0004) e parametri comuni visti dal comitato.
+
+Decisioni del 2026-10-16 (metodologia, sezione 10): i testi degli atti di un'organizzazione stanno nel suo
+spazio, il registro condiviso ne tiene l'hash; il comitato guida vede i parametri comuni e li adotta o
+chiede una ricalibrazione motivata.
+"""
+
+import psycopg
+import pytest
+from psycopg import sql
+
+from neartech.governance import (
+    DecisioneGiaPresa,
+    adotta_parametro_comune,
+    approva_indirizzo,
+    approva_parametro,
+    chiedi_ricalibrazione,
+    indirizzi_vigenti,
+    parametri_comuni,
+    parametro_vigente,
+    proponi_indirizzo,
+    proponi_parametro,
+    richieste_ricalibrazione,
+    segnala,
+    verifica_contenuti,
+)
+from neartech.organizzazioni import crea_organizzazione
+from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
+from neartech.registro import MARCATORE_SPAZIO, registra, verifica_testi
+
+SPAZIO = sql.Identifier("org_sintetica")
+
+
+@pytest.fixture
+def org(conn):
+    admin = inizializza_amministratore(conn, "sso|admin")
+    org_id = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
+    comitato = crea_utente(conn, "sso|comitato")
+    revisore = crea_utente(conn, "sso|revisore")
+    assegna_ruolo(conn, comitato, "comitato_guida", org_id, assegnata_da=admin)
+    assegna_ruolo(conn, revisore, "revisore", org_id, assegnata_da=admin)
+    return {"id": org_id, "admin": admin, "comitato": comitato, "revisore": revisore}
+
+
+def _comune(conn, org, valore=0.9, codice="soglia_prova"):
+    parametro = proponi_parametro(conn, org["admin"], codice=codice, valore={"valore": valore},
+                                  descrizione="soglia comune di prova", motivazione="valore iniziale", org_id=None)
+    approva_parametro(conn, org["admin"], parametro, motivazione="approvato")
+    return parametro
+
+
+def _atto(conn, decisione_id):
+    return conn.execute(
+        "SELECT motivazione, dettagli FROM registro_decisioni WHERE decisione_id = %s", (decisione_id,)
+    ).fetchone()
+
+
+def _testo(conn, decisione_id):
+    return conn.execute(
+        sql.SQL("SELECT motivazione, dettagli FROM {}.testi_atti WHERE decisione_id = %s").format(SPAZIO),
+        (decisione_id,),
+    ).fetchone()
+
+
+# --- testi degli atti nello spazio -------------------------------------------------
+
+def test_motivazione_di_un_atto_dell_organizzazione_sta_nello_spazio(conn, org):
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="testo scritto dal comitato", org_id=org["id"], dettagli={"codice": "x"},
+                    dettagli_riservati={"nota": "testo libero"})
+    motivazione, dettagli = _atto(conn, atto)
+    assert motivazione == MARCATORE_SPAZIO
+    assert dettagli["codice"] == "x" and "nota" not in dettagli and len(dettagli["hash_testo"]) == 64
+    assert _testo(conn, atto) == ("testo scritto dal comitato", {"nota": "testo libero"})
+    assert verifica_testi(conn, org["id"]) == []
+
+
+def test_atti_comuni_restano_in_public(conn, org):
+    atto = registra(conn, autore_id=org["admin"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="atto NEARTECH")
+    assert _atto(conn, atto)[0] == "atto NEARTECH"
+
+
+def test_database_rifiuta_testo_in_public_per_un_organizzazione_con_spazio(conn, org):
+    with pytest.raises(psycopg.errors.RaiseException, match="spazio"):
+        conn.execute(
+            """INSERT INTO registro_decisioni (org_id, tipo_oggetto, oggetto_id, atto, autore_id, motivazione)
+               VALUES (%s, 'prova', 'x', 'proposta', %s, 'testo in chiaro')""",
+            (org["id"], org["comitato"]),
+        )
+
+
+def test_testo_alterato_nello_spazio_rilevato(conn, org):
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="originale", org_id=org["id"])
+    conn.execute(sql.SQL("ALTER TABLE {}.testi_atti DISABLE TRIGGER testi_atti_append_only").format(SPAZIO))
+    conn.execute(sql.SQL("UPDATE {}.testi_atti SET motivazione = 'alterata' WHERE decisione_id = %s")
+                 .format(SPAZIO), (atto,))
+    assert verifica_testi(conn, org["id"]) == [(atto, "hash diverso")]
+
+
+def test_testo_mancante_nello_spazio_rilevato(conn, org):
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="originale", org_id=org["id"])
+    conn.execute(sql.SQL("ALTER TABLE {}.testi_atti DISABLE TRIGGER testi_atti_append_only").format(SPAZIO))
+    conn.execute(sql.SQL("DELETE FROM {}.testi_atti WHERE decisione_id = %s").format(SPAZIO), (atto,))
+    assert verifica_testi(conn, org["id"]) == [(atto, "testo mancante")]
+
+
+def test_testi_dello_spazio_non_si_modificano(conn, org):
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="originale", org_id=org["id"])
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(sql.SQL("UPDATE {}.testi_atti SET motivazione = 'x' WHERE decisione_id = %s")
+                     .format(SPAZIO), (atto,))
+
+
+# --- indirizzi, parametri dell'organizzazione, segnalazioni --------------------------
+
+def test_testo_degli_indirizzi_sta_nello_spazio(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="relazione",
+                                  testo="Tutelare la relazione diretta", ambito="Accoglienza", motivazione="m")
+    approva_indirizzo(conn, org["comitato"], indirizzo, motivazione="ok")
+    assert conn.execute("SELECT testo, ambito FROM indirizzi_comitato WHERE indirizzo_id = %s",
+                        (indirizzo,)).fetchone() == (None, None)
+    vigenti = indirizzi_vigenti(conn, org["id"])
+    assert [(i.testo, i.ambito) for i in vigenti] == [("Tutelare la relazione diretta", "Accoglienza")]
+    assert verifica_contenuti(conn) == []
+
+
+def test_indirizzo_alterato_nello_spazio_rilevato(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="relazione",
+                                  testo="originale", ambito="a", motivazione="m")
+    conn.execute(sql.SQL("ALTER TABLE {}.testi_indirizzi DISABLE TRIGGER testi_indirizzi_append_only")
+                 .format(SPAZIO))
+    conn.execute(sql.SQL("UPDATE {}.testi_indirizzi SET testo = 'alterato'").format(SPAZIO))
+    assert verifica_contenuti(conn) == [("indirizzo", indirizzo)]
+
+
+def test_descrizione_dei_parametri_dell_organizzazione_sta_nello_spazio(conn, org):
+    parametro = proponi_parametro(conn, org["comitato"], codice="quota_prova", valore={"valore": 0.2},
+                                  descrizione="quota decisa dal comitato", motivazione="m", org_id=org["id"])
+    assert conn.execute("SELECT descrizione FROM parametri_governance WHERE parametro_id = %s",
+                        (parametro,)).fetchone()[0] is None
+    assert conn.execute(sql.SQL("SELECT descrizione FROM {}.testi_parametri WHERE parametro_id = %s")
+                        .format(SPAZIO), (parametro,)).fetchone()[0] == "quota decisa dal comitato"
+    assert verifica_contenuti(conn) == []
+
+
+def test_descrizione_dei_parametri_comuni_resta_in_public(conn, org):
+    parametro = _comune(conn, org)
+    assert conn.execute("SELECT descrizione FROM parametri_governance WHERE parametro_id = %s",
+                        (parametro,)).fetchone()[0] == "soglia comune di prova"
+
+
+def test_dettagli_della_segnalazione_nello_spazio(conn, org):
+    atto = segnala(conn, org["revisore"], org_id=org["id"], tipo_oggetto="task_canonico", oggetto_id="t1",
+                   motivazione="ricaduta anomala", dettagli={"nota": "testo libero del revisore"})
+    assert "nota" not in _atto(conn, atto)[1]
+    assert _testo(conn, atto) == ("ricaduta anomala", {"nota": "testo libero del revisore"})
+
+
+def test_uscita_del_cliente_non_lascia_testo_in_public(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="relazione",
+                                  testo="testo riservato", ambito="ambito riservato", motivazione="motivo riservato")
+    approva_indirizzo(conn, org["comitato"], indirizzo, motivazione="approvazione riservata")
+    conn.execute("DROP SCHEMA org_sintetica CASCADE")
+    testi = conn.execute(
+        """SELECT count(*) FROM registro_decisioni
+           WHERE org_id = %s AND (motivazione LIKE '%%riservat%%' OR dettagli::text LIKE '%%riservat%%')""",
+        (org["id"],),
+    ).fetchone()[0]
+    assert testi == 0
+
+
+# --- parametri comuni e comitato guida (decisione b) ---------------------------------
+
+def test_comitato_vede_i_parametri_comuni_da_esaminare(conn, org):
+    parametro = _comune(conn, org)
+    stato = parametri_comuni(conn, org["comitato"], org["id"])
+    assert [(s.parametro_id, s.descrizione, s.valore, s.stato) for s in stato] == [
+        (parametro, "soglia comune di prova", {"valore": 0.9}, "da_esaminare")
+    ]
+
+
+def test_comitato_adotta_il_parametro_comune(conn, org):
+    parametro = _comune(conn, org)
+    atto = adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=parametro,
+                                   motivazione="coerente con l'organizzazione")
+    assert parametro_vigente(conn, "soglia_prova", org["id"]).adozione_id == atto
+    assert [s.stato for s in parametri_comuni(conn, org["comitato"], org["id"])] == ["adottato"]
+
+
+def test_versione_comune_nuova_va_adottata_di_nuovo(conn, org):
+    adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=_comune(conn, org),
+                            motivazione="ok")
+    _comune(conn, org, valore=0.85)
+    vigente = parametro_vigente(conn, "soglia_prova", org["id"])
+    assert (vigente.versione, vigente.adozione_id) == (2, None)
+
+
+def test_parametro_dell_organizzazione_non_ha_adozione(conn, org):
+    parametro = proponi_parametro(conn, org["comitato"], codice="soglia_prova", valore={"valore": 0.95},
+                                  descrizione="d", motivazione="m", org_id=org["id"])
+    approva_parametro(conn, org["comitato"], parametro, motivazione="ok")
+    assert parametro_vigente(conn, "soglia_prova", org["id"]).adozione_id is None
+
+
+def test_si_adotta_solo_la_versione_comune_vigente(conn, org):
+    prima = _comune(conn, org)
+    _comune(conn, org, valore=0.85)
+    with pytest.raises(ValueError, match="vigente"):
+        adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=prima, motivazione="ok")
+
+
+def test_parametro_dell_organizzazione_non_si_adotta(conn, org):
+    parametro = proponi_parametro(conn, org["comitato"], codice="soglia_prova", valore={"valore": 0.95},
+                                  descrizione="d", motivazione="m", org_id=org["id"])
+    with pytest.raises(ValueError, match="comune"):
+        adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=parametro, motivazione="ok")
+
+
+def test_adozione_una_volta_per_versione(conn, org):
+    parametro = _comune(conn, org)
+    adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=parametro, motivazione="ok")
+    with pytest.raises(DecisioneGiaPresa):
+        adotta_parametro_comune(conn, org["comitato"], org_id=org["id"], parametro_id=parametro, motivazione="ok")
+
+
+def test_revisore_non_adotta(conn, org):
+    parametro = _comune(conn, org)
+    with pytest.raises(PermessoNegato):
+        adotta_parametro_comune(conn, org["revisore"], org_id=org["id"], parametro_id=parametro, motivazione="ok")
+
+
+def test_richiesta_di_ricalibrazione_motivata_arriva_all_amministratore(conn, org):
+    parametro = _comune(conn, org)
+    atto = chiedi_ricalibrazione(conn, org["comitato"], org_id=org["id"], parametro_id=parametro,
+                                 motivazione="la soglia è troppo alta per un'organizzazione piccola")
+    assert _atto(conn, atto)[0] == MARCATORE_SPAZIO
+    assert [s.stato for s in parametri_comuni(conn, org["comitato"], org["id"])] == ["ricalibrazione_richiesta"]
+    richieste = richieste_ricalibrazione(conn, org["admin"])
+    assert [(r["org_id"], r["parametro_id"], r["motivazione"]) for r in richieste] == [
+        (org["id"], parametro, "la soglia è troppo alta per un'organizzazione piccola")
+    ]
+
+
+def test_ricalibrazione_senza_motivazione_rifiutata(conn, org):
+    parametro = _comune(conn, org)
+    with pytest.raises(ValueError, match="motivazione"):
+        chiedi_ricalibrazione(conn, org["comitato"], org_id=org["id"], parametro_id=parametro, motivazione="  ")
+
+
+def test_solo_l_amministratore_vede_tutte_le_richieste(conn, org):
+    with pytest.raises(PermessoNegato):
+        richieste_ricalibrazione(conn, org["comitato"])
+
+
+def test_database_rifiuta_adozione_di_un_parametro_dell_organizzazione(conn, org):
+    parametro = proponi_parametro(conn, org["comitato"], codice="soglia_prova", valore={"valore": 0.95},
+                                  descrizione="d", motivazione="m", org_id=org["id"])
+    with pytest.raises(psycopg.errors.RaiseException, match="comune"):
+        registra(conn, autore_id=org["comitato"], tipo_oggetto="parametro", oggetto_id=parametro,
+                 atto="adozione", motivazione="m", org_id=org["id"])

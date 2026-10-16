@@ -22,16 +22,15 @@ from neartech.governance import (
     segnala,
     verifica_contenuti,
 )
+from neartech.organizzazioni import crea_organizzazione
 from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
 from neartech.registro import ancora_catena, registra, verifica_catena
 
 
 @pytest.fixture
 def org(conn):
-    org_id = str(conn.execute(
-        "INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id"
-    ).fetchone()[0])
     admin = inizializza_amministratore(conn, "sso|admin")
+    org_id = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
     comitato = crea_utente(conn, "sso|comitato")
     revisore = crea_utente(conn, "sso|revisore")
     assegna_ruolo(conn, comitato, "comitato_guida", org_id, assegnata_da=admin)
@@ -69,7 +68,7 @@ def test_registro_non_si_modifica(conn, org, comando):
 
 
 def test_motivazione_obbligatoria(conn, org):
-    with pytest.raises(psycopg.errors.CheckViolation):
+    with pytest.raises(ValueError, match="motivazione"):
         _atto(conn, org, motivazione="   ")
 
 
