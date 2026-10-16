@@ -80,7 +80,7 @@ def score_item(
         for _attempt in range(MAX_ATTEMPTS):
             resp = client.messages.create(
                 model=MODEL_ID,
-                max_tokens=400,
+                max_tokens=2000,
                 system=system,
                 messages=[{"role": "user", "content": user}],
             )

@@ -1,4 +1,4 @@
-# Stato del progetto (aggiornato al 2026-10-10)
+# Stato del progetto (aggiornato al 2026-10-12)
 
 Questo file è il punto di ripartenza per le sessioni future. La cronologia della chat
 non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel codice.
@@ -20,6 +20,26 @@ non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel
   usando il segreto GitHub `Claude`. Ultimo run riuscito: run #2.
 - **Licenze**: confermate dal responsabile del progetto il 2026-10-10. Il testo di ciascuna licenza
   va ancora allegato (vedi "Da fare").
+
+## Stima preliminare di N (2026-10-12)
+
+Tutti i 3.083 task di staff hanno una stima preliminare di k1, k2, k3 e r (modello `claude-haiku-5-5`, nessun errore).
+
+- **File finale:** `docs/ricerca/estratti/llm-prior-staff-finale.jsonl`, rigenerato da `scripts/unisci_prior_n.py`.
+- **Input versionati** (non più gitignored): `llm-prior-staff.jsonl` (v1, 1.226 task), `ricalcolo_k2_r_v2.jsonl` (k2 e r v2, 1.226 task), `nuovi_v2.jsonl` (1.857 task nuovi). Lo script li legge da lì, quindi l'unione si riproduce da clone pulito.
+- **Campioni:** 739 task con cinque campioni per k1 e k3; 2.344 task con un campione per voce.
+- **Rubrica per voce:** k1 e k3 `bozza-1` nei 1.226 task della prima fase, `bozza-2` nei nuovi; k2 e r `bozza-2` ovunque. Ogni record la riporta.
+- **Stato:** preliminare, non calibrato. Nessun peso o soglia approvato.
+
+Dettagli e limiti: `docs/ricerca/relazione-conoscenza.md`.
+
+## Confronto con WORKBank (2026-10-12)
+
+- Script: `scripts/confronta_workbank.py`. Risultato in `docs/ricerca/verifica-workbank.md`.
+- 538 task in comune. Correlazione di rango (Spearman) con la capacità AI media (Ae): k1 −0,24, k2 −0,29, k3 +0,07, r −0,05.
+- Criterio di rango approvato dal responsabile metodologico.
+- Le ancore 1–5 di Ae non sono disponibili: è stata usata un'ipotesi (`config/mappe_scala.json`, non approvata). Non cambia il ρ, ma non va usata per confronti di livello.
+- Il dataset grezzo non è nel repo: la licenza non è dichiarata sulla scheda.
 
 ## Dati caricati (nel database locale di sessione, non persistente)
 
@@ -141,8 +161,11 @@ Registrati su indicazione del responsabile del progetto. Dettagli in `docs/metod
 3. **Allegare i testi delle licenze** di O*NET, Atlante ed ESCO al progetto, e aggiornare la colonna
    `license` in `sources`.
 4. **Job di calcolo di N e D** (Monte Carlo, quadranti, baricentro e dispersione): non ancora costruito.
-   Si può scrivere con dati sintetici, senza chiavi. Modifica di policy: va approvato in modalità plan.
-5. **Primo test reale dello Scorer** sul gold standard, con `NEARTECH_ANTHROPIC_API_KEY`.
+   Si può scrivere con dati sintetici, senza chiavi. Va fatto solo dopo l'approvazione di pesi e soglie, in modalità plan.
+5. **Verifiche sulla stima N** (decisioni del responsabile metodologico): stabilità con cinque campioni per k2 e r;
+   coerenza fra task simili con gli embedding; collegamento di GDPval e METR a task O\*NET.
+6. **Ancore di Ae**: chiedere agli autori di WORKBank, oppure confermare l'ipotesi. Licenza di WORKBank da verificare.
+7. **Primo test reale dello Scorer** sul gold standard, con `NEARTECH_ANTHROPIC_API_KEY`.
 
 ## Note tecniche
 
@@ -165,6 +188,8 @@ Registrati su indicazione del responsabile del progetto. Dettagli in `docs/metod
 - ESCO: la gerarchia delle competenze (`skillsHierarchy`) e le relazioni tra occupazioni non sono ancora caricate.
 - Atlante: un'attività che compare sotto più risultati attesi ha come genitore solo il primo.
 - Scorer: il test con il modello reale è verde, ma non è ancora stato eseguito sul gold standard.
+- Stima N: preliminare e non calibrata. Verifica umana della rubrica v1 su 15 task; la verifica v2 su 20 task non è nel repo.
+- Il database e i vettori restano non persistenti: i numeri del punto "Dati caricati" vanno ricontrollati.
 
 ## Comandi utili
 

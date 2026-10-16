@@ -1,0 +1,28 @@
+{
+  "versione": "bozza-2",
+  "stato": "GDPval approvata dal responsabile il 2026-10-11, ma sospesa finché non c'è il collegamento a task. Le altre mappe restano proposte.",
+  "regole": {
+    "WB_Ae_expert": {
+      "stato": "ipotesi di lavoro, non approvata dal responsabile metodologico",
+      "motivo": "ancore di Ae non riportate nel paper né nel codebook; ipotesi analoga alla domanda di Aw (1 = per niente, 5 = completamente)",
+      "ipotesi_ancore": {
+        "1": "il sistema attuale non sa farlo",
+        "5": "il sistema attuale lo fa completamente"
+      },
+      "formula": "score_0_4 = Ae - 1",
+      "uso": "solo confronti di livello illustrativi; non entra nel calcolo di N"
+    },
+    "AEI_task_penetration": {
+      "stato": "contesto con traccia di carenza",
+      "uso": "contesto",
+      "promozione_a_N": "consentita solo se, a fine ricerca, le fonti di capacità non coprono un nodo; ogni promozione resta tracciata nel file carenza-evidenze.md",
+      "motivo": "la quota d'uso non misura la capacità; usata come riserva per evitare nodi senza evidenza"
+    },
+    "GDPVAL_win_tie": {
+      "stato": "approvata, sospesa (collegamento a task mancante)",
+      "formula": "score_0_4 = 4 * quota_win_tie",
+      "esempio": "47,6% -> 1,90",
+      "bloccata_da": "collegamento a task O*NET mancante (solo occupazione)"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "versione": "bozza-2",
+  "stato": "BOZZA v2: chiarite le ancore di k2 e r dopo la verifica umana del campione. Da validare con il responsabile metodologico.",
+  "nota": "Le ancore dell'asse N non fanno riferimento a etica o relazioni, che appartengono a D. Per r si valuta l'errore assumendo che nessun controllo successivo lo intercetti: il livello misura le conseguenze per l'organizzazione, non la probabilità di errore.",
+  "items": {
+    "k1": {
+      "nome": "Variabilità dell'input",
+      "ancore": {
+        "0": "Input strutturato e completo. Es.: registrare presenze da badge",
+        "1": "Semi-strutturato con varianti note. Es.: registrare fatture fornitori",
+        "2": "Non strutturato in un dominio delimitato. Es.: sintetizzare una relazione di servizio",
+        "3": "Incompleto o contraddittorio, va ricostruito. Es.: ricostruire il bisogno di un utente da documenti e servizi",
+        "4": "Contesto aperto che cambia durante l'esecuzione. Es.: gestire un'uscita con imprevisti"
+      }
+    },
+    "k2": {
+      "nome": "Giudizio",
+      "ancore": {
+        "0": "Regole esaustive. Es.: calcolare maggiorazioni da contratto collettivo",
+        "1": "Scelta tra opzioni documentate, con una sola regola da applicare. Es.: assegnare una sostituzione da graduatoria",
+        "2": "Confrontare e bilanciare 2-3 requisiti o vincoli tra loro, anche normativi. Es.: verificare un'istanza di licenza rispetto a più requisiti, o comporre turni con vincoli orari e di competenza",
+        "3": "Dati incompleti, senza precedenti standard. Es.: rivedere un progetto dopo un cambiamento di contesto",
+        "4": "Sintesi inedita in scenari mai visti. Es.: riorganizzare un servizio in emergenza"
+      }
+    },
+    "k3": {
+      "nome": "Componente fisico-percettiva",
+      "ancore": {
+        "0": "Nessuna. Es.: redigere un verbale",
+        "1": "Dispositivi standard. Es.: stampare e archiviare",
+        "2": "Manipolazione ordinaria in ambiente stabile. Es.: riordinare il magazzino",
+        "3": "Manipolazione o percezione in ambiente variabile. Es.: intervento fisico fuori sede",
+        "4": "Intervento fine e non pianificabile. Es.: intervento d'urgenza sul campo"
+      }
+    },
+    "r": {
+      "nome": "Criticità dell'errore (moltiplicatore)",
+      "ancore": {
+        "0": "Reversibile senza effetti",
+        "1": "Errore con effetti interni limitati e facilmente correggibile",
+        "2": "Richiede rilavorazione, o chiarimento con terzi, o un costo di correzione interno rilevante",
+        "3": "Danno economico, legale o reputazionale per l'organizzazione (es. errori su bilanci, rendicontazioni, scelte operative), anche se interno",
+        "4": "Danno irreversibile a salute, sicurezza o diritti fondamentali"
+      }
+    }
+  }
+}
