@@ -85,6 +85,7 @@ def _decidi(
     conn: psycopg.Connection, utente_id: str, tipo: str, oggetto_id: str, atto: str, motivazione: str
 ) -> int:
     tabella, chiave, permesso = _OGGETTI[tipo]
+    oggetto_id = str(uuid.UUID(str(oggetto_id)))
     with conn.transaction():
         riga = conn.execute(
             sql.SQL("SELECT org_id, codice, versione FROM {} WHERE {} = %s")
@@ -136,6 +137,7 @@ def proponi_parametro(
     motivazione: str,
     org_id: str | None,
 ) -> str:
+    org_id = str(uuid.UUID(str(org_id))) if org_id is not None else None
     with conn.transaction():
         richiedi(conn, utente_id, "proporre_parametro", org_id, risorsa=f"parametro:{codice}")
         parametro_id = str(uuid.uuid4())
@@ -165,16 +167,6 @@ def rifiuta_parametro(conn: psycopg.Connection, utente_id: str, parametro_id: st
 def ritira_parametro(conn: psycopg.Connection, utente_id: str, parametro_id: str, *, motivazione: str) -> int:
     return _decidi(conn, utente_id, "parametro", parametro_id, "ritiro", motivazione)
 
-
-def _vigente(conn: psycopg.Connection, codice: str, org_id: str | None) -> Parametro | None:
-    riga = conn.execute(
-        """SELECT parametro_id, codice, org_id, versione, valore, approvazione_id
-           FROM parametri_vigenti WHERE codice = %s AND org_id IS NOT DISTINCT FROM %s""",
-        (codice, org_id),
-    ).fetchone()
-    if riga is None:
-        return None
-    return Parametro(str(riga[0]), riga[1], str(riga[2]) if riga[2] else None, riga[3], riga[4], riga[5])
 
 
 def parametro_vigente(conn: psycopg.Connection, codice: str, org_id: str | None) -> Parametro:
@@ -224,6 +216,7 @@ def proponi_indirizzo(
     ambito: str,
     motivazione: str,
 ) -> str:
+    org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "proporre_indirizzo", org_id, risorsa=f"indirizzo:{codice}")
         indirizzo_id = str(uuid.uuid4())

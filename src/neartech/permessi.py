@@ -33,10 +33,15 @@ class UltimoAmministratore(RuntimeError):
 
 
 _ADMIN_ATTIVI = """
-    SELECT count(*) FROM assegnazioni_ruolo
+    SELECT count(DISTINCT utente_id) FROM assegnazioni_ruolo
     WHERE ruolo = 'amministratore_tecnico' AND valida_dal <= now()
       AND (valida_al IS NULL OR valida_al > now())
 """
+
+
+def _canonico(identificativo: str) -> str:
+    """Forma canonica di un uuid passato da chi chiama (minuscole, con trattini)."""
+    return str(uuid.UUID(str(identificativo)))
 
 
 def configura_log(connessione: psycopg.Connection | None) -> None:
@@ -144,6 +149,9 @@ def assegna_ruolo(
     valida_al: datetime | None = None,
     motivazione: str = "assegnazione di ruolo",
 ) -> str:
+    if ruolo == "amministratore_tecnico" and valida_al is not None:
+        raise ValueError("l'amministratore tecnico non si assegna a termine")
+    org_id = _canonico(org_id) if org_id is not None else None
     with conn.transaction():
         richiedi(conn, assegnata_da, "gestire_utenti", org_id, risorsa=f"ruolo:{ruolo}")
         assegnazione = str(conn.execute(
@@ -158,18 +166,28 @@ def assegna_ruolo(
 
 
 def chiudi_assegnazione(conn: psycopg.Connection, assegnazione_id: str, *, chiusa_da: str, motivazione: str) -> None:
+    assegnazione_id = _canonico(assegnazione_id)
     with conn.transaction():
         riga = conn.execute(
-            "SELECT org_id, ruolo FROM assegnazioni_ruolo WHERE assegnazione_id = %s", (assegnazione_id,)
+            """SELECT org_id, ruolo, utente_id,
+                      chiusa_da IS NULL AND (valida_al IS NULL OR valida_al > now()) AS valida
+               FROM assegnazioni_ruolo WHERE assegnazione_id = %s""",
+            (assegnazione_id,),
         ).fetchone()
         if riga is None:
             raise LookupError(f"assegnazione {assegnazione_id} inesistente")
         org_id = str(riga[0]) if riga[0] else None
         richiedi(conn, chiusa_da, "gestire_utenti", org_id, risorsa=f"assegnazione:{assegnazione_id}")
+        if not riga[3]:
+            raise LookupError(f"assegnazione {assegnazione_id} già chiusa o scaduta")
         if riga[1] == "amministratore_tecnico":
             # Stesso lock del bootstrap: due chiusure contemporanee non lasciano il sistema senza amministratore.
+            # Gli amministratori non hanno scadenza (migrazione 0016): conta chi resta, persona per persona.
             conn.execute("SELECT pg_advisory_xact_lock(hashtext('inizializza_amministratore'))")
-            if conn.execute(_ADMIN_ATTIVI).fetchone()[0] <= 1:
+            altri = conn.execute(
+                _ADMIN_ATTIVI + " AND utente_id <> %s", (riga[2],)
+            ).fetchone()[0]
+            if altri == 0:
                 raise UltimoAmministratore("serve almeno un altro amministratore tecnico attivo")
         chiusa = conn.execute(
             """UPDATE assegnazioni_ruolo SET valida_al = now(), chiusa_da = %s

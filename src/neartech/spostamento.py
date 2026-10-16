@@ -76,7 +76,16 @@ def _sposta(conn: psycopg.Connection, utente_id: str, org_id: str, codice: str) 
         (org_id,),
     )
     conteggi = piano_spostamento(conn, org_id)
+    copiate = {
+        tabella_breve: conn.execute(
+            sql.SQL("SELECT count(*) FROM {}.{}").format(destinazione, sql.Identifier(tabella))
+        ).fetchone()[0]
+        for tabella_breve, tabella in (("ruoli", "ruoli_organizzativi"), ("occorrenze", "occorrenze"),
+                                       ("documenti", "documenti"))
+    }
+    if any(copiate[chiave] != conteggi[chiave] for chiave in copiate):
+        raise RuntimeError(f"copia incompleta: origine {conteggi}, destinazione {copiate}")
     registra(conn, autore_id=utente_id, tipo_oggetto="spostamento_testo_cliente", oggetto_id=str(org_id),
              atto="approvazione", motivazione="copia del testo del cliente nello spazio dell'organizzazione (ADR 0001)",
-             org_id=org_id, dettagli={"codice": codice, **conteggi})
+             org_id=org_id, dettagli={"codice": codice, **conteggi, "copiate": copiate})
     return conteggi

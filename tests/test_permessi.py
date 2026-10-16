@@ -288,9 +288,9 @@ def test_amministratore_tecnico_non_si_assegna_a_termine(conn, scenario):
 
 
 def test_nuovi_permessi_solo_con_migrazione(conn):
-    with pytest.raises(psycopg.errors.RaiseException):
+    with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
         conn.execute("INSERT INTO permessi_ruolo (ruolo, azione) VALUES ('revisore', 'approvare_parametro')")
-    with pytest.raises(psycopg.errors.RaiseException):
+    with pytest.raises(psycopg.errors.RaiseException), conn.transaction():
         conn.execute("INSERT INTO ruoli (codice, ambito, descrizione) VALUES ('nuovo', 'globale', 'x')")
 
 

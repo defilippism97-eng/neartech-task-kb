@@ -9,6 +9,8 @@ task compare nello spazio della propria organizzazione. Chi valida i task comuni
 organizzazioni resta una decisione di governance aperta (docs/HANDOVER.md).
 """
 
+import uuid
+
 import psycopg
 from psycopg import sql
 
@@ -27,9 +29,11 @@ def _collegato(conn: psycopg.Connection, task_id: str, org_id: str) -> bool:
     riga = conn.execute("SELECT codice FROM organizations WHERE org_id = %s", (org_id,)).fetchone()
     if riga is None or riga[0] is None:
         return False
+    schema = schema_organizzazione(riga[0])
+    if conn.execute("SELECT to_regnamespace(%s)", (schema,)).fetchone()[0] is None:
+        return False  # spazio rimosso all'uscita del cliente
     return conn.execute(
-        sql.SQL("SELECT EXISTS (SELECT 1 FROM {}.occorrenze WHERE task_id = %s)")
-        .format(sql.Identifier(schema_organizzazione(riga[0]))),
+        sql.SQL("SELECT EXISTS (SELECT 1 FROM {}.occorrenze WHERE task_id = %s)").format(sql.Identifier(schema)),
         (task_id,),
     ).fetchone()[0]
 
@@ -39,6 +43,7 @@ def imposta_stato(
 ) -> int:
     if stato not in STATI:
         raise ValueError(f"stato sconosciuto: {stato!r}")
+    task_id = str(uuid.UUID(str(task_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "giudicare_task", org_id, risorsa=f"task:{task_id}")
         if not _collegato(conn, task_id, org_id):

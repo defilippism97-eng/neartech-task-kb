@@ -37,6 +37,10 @@ class SchemaAssente(LookupError):
     """Lo schema di destinazione non esiste: gli oggetti finirebbero in public."""
 
 
+class MigrazioneFuoriOrdine(RuntimeError):
+    """Una migrazione non registrata precede una già registrata: va verificata a mano."""
+
+
 def hash_migrazione(percorso: Path) -> str:
     contenuto = percorso.read_bytes().replace(b"\r\n", b"\n")
     return hashlib.sha256(contenuto).hexdigest()
@@ -133,7 +137,14 @@ def applica(conn: psycopg.Connection, cartella: Path, schema: str = SCHEMA_CONDI
 
 def _applica_in_ordine(conn: psycopg.Connection, cartella: Path, schema: str, eseguite: list[Path]) -> None:
     in_attesa: list[Path] = []
-    for percorso in da_applicare(conn, cartella, schema):
+    mancanti = da_applicare(conn, cartella, schema)
+    registrate = _registrate(conn, schema)
+    if registrate and mancanti and mancanti[0].name < max(registrate):
+        raise MigrazioneFuoriOrdine(
+            f"{mancanti[0].name} precede migrazioni già registrate in {schema}: "
+            "va applicata o registrata a mano, dopo verifica"
+        )
+    for percorso in mancanti:
         with conn.transaction():
             precedente = conn.execute("SELECT current_setting('search_path')").fetchone()[0]
             if schema != SCHEMA_CONDIVISO:

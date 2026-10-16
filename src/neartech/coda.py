@@ -49,6 +49,7 @@ def prendi(conn: psycopg.Connection, lavoratore: str, *, tipi: list[str]) -> Job
         """WITH scelto AS MATERIALIZED (
              SELECT job_id FROM jobs
              WHERE status = 'queued' AND run_after <= now() AND kind = ANY(%(tipi)s::text[])
+               AND attempts < tentativi_massimi
              ORDER BY run_after, created_at
              FOR UPDATE SKIP LOCKED
              LIMIT 1)
