@@ -8,6 +8,7 @@ from pathlib import Path
 import psycopg
 import pytest
 
+from neartech.migrazioni import CARTELLA_CONDIVISA, applica
 from pg_locale import cartella_binari, postgres_temporaneo
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,9 +23,8 @@ def _prepara(url: str) -> None:
     with psycopg.connect(url, autocommit=True) as conn:
         conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
         conn.execute(SCHEMA.read_text(encoding="utf-8"))
-        # Le migrazioni si applicano nell'ordine del nome, dopo lo schema (come in produzione).
-        for migration in sorted((ROOT / "db" / "migrations").glob("*.sql")):
-            conn.execute(migration.read_text(encoding="utf-8"))
+        # Le migrazioni si applicano con lo stesso registro usato in produzione.
+        applica(conn, CARTELLA_CONDIVISA)
 
 
 @pytest.fixture(scope="session")
