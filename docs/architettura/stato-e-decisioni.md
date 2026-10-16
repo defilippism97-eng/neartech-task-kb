@@ -63,3 +63,23 @@ Scelta del responsabile del progetto. D resta un valore dell'organizzazione. Il 
 **Ribassi forti.** Una variazione che porta D sotto la base di una soglia viene segnalata in revisione e riportata nel report finale. La soglia è un parametro del comitato guida, non una costante del codice.
 
 **Record per task.** Tre valori separati: pavimento legale con norma, base con fonte e versione, variazione con motivazione e approvazione.
+
+## 6. Base di conoscenza come fondamento del software (2026-10-16)
+
+Scelta del responsabile del progetto.
+
+**Il software poggia su una base di conoscenza:** un dataset NEARTECH di task già classificati. Quando un task dell'organizzazione viene abbinato correttamente a un task del dataset, il sistema restituisce analisi pronte, dopo l'integrazione delle opinioni del comitato guida e le revisioni.
+
+**Il dataset cresce con un meccanismo di data flywheel.** Ogni nuovo task classificato entra nel dataset, e aumenta la copertura per le aziende successive.
+
+**Due condizioni da rispettare:**
+- La qualità dell'abbinamento è il punto critico. Va misurata per prima, con la precisione dei collegamenti (almeno 90% sul campione rivisto, come da piano).
+- Ogni task nel dataset porta uno stato: **validato** (rivisto da persone), **stima del modello** (provvisorio), o **da integrare** (non ancora rivisto). L'output mostra lo stato. Un task non validato non può fondare un'analisi definitiva.
+
+**Rischio legale.** La classificazione legale dei task passa da un livello di uso, non di task: vedi `docs/legale/ai-act-schema.md`. Il sistema propone la classificazione sulla base del dataset NEARTECH (O*NET, ESCO, INAPP e dati dell'organizzazione), e una persona competente la conferma.
+
+**Privacy.** Nel dataset entra il task canonicalizzato, non il testo della job description. Il DPO deve verificare che il task canonicalizzato, legato al ruolo e all'organizzazione, non identifichi persone, soprattutto nei ruoli con pochi occupati.
+
+## 7. Scostamenti dalla media: registrazione, non soglia (2026-10-16)
+
+Il sistema non fissa soglie per i ribassi di D. Registra nell'audit finale lo scostamento del comitato guida dalla media. Auditor e rappresentanti dei lavoratori possono discuterne. La soglia, se mai servisse, resta una scelta del comitato, non una costante del codice.
