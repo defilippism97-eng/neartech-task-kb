@@ -3,8 +3,9 @@
 La fusione (canonicalizer.fondi) ha spostato le occorrenze del task fuso sul superstite, ha
 cancellato quelle doppie per lo stesso ruolo e i collegamenti alle tassonomie del task fuso,
 senza lasciare traccia dell'origine. Qui il task fuso torna attivo e le sue occorrenze si
-ricostruiscono dalla scomposizione approvata (ruolo, documento, titolo, testo originale),
-sia in public sia nello spazio dell'organizzazione. Il crosswalk del task riattivato va rifatto.
+ricostruiscono dalla scomposizione approvata (ruolo, documento, titolo, testo originale): il
+confronto avviene nello spazio dell'organizzazione, dove sta il testo (ADR 0005), e i legami
+in public seguono con gli stessi identificativi. Il crosswalk del task riattivato va rifatto.
 Ogni separazione è un atto 'correzione' nel registro; il Canonicalizer non rifonde più il task.
 """
 
@@ -16,9 +17,11 @@ from typing import Any
 import psycopg
 from psycopg import sql
 
-from neartech.organizzazioni import schema_organizzazione
+from neartech.occorrenze import registra_occorrenza, spazio_organizzazione
 from neartech.permessi import richiedi
 from neartech.registro import registra
+
+ORIGINE_RICOSTRUITA = ("scomposizione-2026-10-11", "ricostruita")
 
 
 def carica_scomposizione(percorso: Path) -> list[dict[str, Any]]:
@@ -51,12 +54,14 @@ def piano_scissione(
     voci = [v for v in scomposizione if v["titolo"] == titolo]
     if not voci:
         raise LookupError(f"nessuna voce della scomposizione con titolo {titolo!r}")
+    spazio = spazio_organizzazione(conn, org_id)
     da_spostare, da_ricreare = [], []
     for voce in voci:
         occorrenza = conn.execute(
-            """SELECT o.occurrence_id FROM task_occurrences o JOIN roles r ON r.role_id = o.role_id
-               WHERE o.task_id = %s AND r.org_id = %s AND r.name = %s AND o.raw_snippet = %s""",
-            (superstite, org_id, voce["ruolo"], voce["testo_originale"]),
+            sql.SQL("""SELECT o.occorrenza_id FROM {0}.occorrenze o
+                       JOIN {0}.ruoli_organizzativi r ON r.ruolo_id = o.ruolo_id
+                       WHERE o.task_id = %s AND r.nome = %s AND o.estratto = %s""").format(spazio),
+            (superstite, voce["ruolo"], voce["testo_originale"]),
         ).fetchone()
         if occorrenza is not None:
             da_spostare.append(str(occorrenza[0]))
@@ -66,40 +71,28 @@ def piano_scissione(
             "da_spostare": da_spostare, "da_ricreare": da_ricreare}
 
 
-def _ricrea(conn: psycopg.Connection, schema: sql.Identifier, task_id: str, superstite: str,
-            org_id: str, voce: dict[str, Any]) -> None:
+def _ricrea(conn: psycopg.Connection, org_id: str, task_id: str, superstite: str, voce: dict[str, Any]) -> None:
+    spazio = spazio_organizzazione(conn, org_id)
     ruolo = conn.execute(
-        "SELECT role_id FROM roles WHERE org_id = %s AND name = %s", (org_id, voce["ruolo"])
+        sql.SQL("SELECT ruolo_id FROM {}.ruoli_organizzativi WHERE nome = %s").format(spazio), (voce["ruolo"],)
     ).fetchone()
-    fonte = conn.execute(
-        "SELECT source_id FROM sources WHERE name = %s ORDER BY retrieved_at DESC LIMIT 1", (voce["documento"],)
+    documento = conn.execute(
+        sql.SQL("SELECT documento_id FROM {}.documenti WHERE nome_file = %s ORDER BY caricato_il DESC LIMIT 1")
+        .format(spazio),
+        (voce["documento"],),
     ).fetchone()
-    if ruolo is None or fonte is None:
+    if ruolo is None or documento is None:
         raise LookupError(f"ruolo o documento della scomposizione non trovati: {voce['ruolo']!r}")
     # Modello e prompt della scomposizione: quelli dell'occorrenza del superstite nello stesso ruolo.
     origine = conn.execute(
-        "SELECT model_name, prompt_hash FROM task_occurrences WHERE task_id = %s AND role_id = %s",
+        sql.SQL("SELECT model_name, prompt_hash FROM {}.occorrenze WHERE task_id = %s AND ruolo_id = %s")
+        .format(spazio),
         (superstite, ruolo[0]),
-    ).fetchone() or ("scomposizione-2026-10-11", "ricostruita")
-    occorrenza = conn.execute(
-        """INSERT INTO task_occurrences
-             (task_id, role_id, context_note, raw_snippet, source_id, model_name, prompt_hash)
-           VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING occurrence_id""",
-        (task_id, ruolo[0], voce.get("nota_contesto"), voce["testo_originale"], fonte[0], origine[0], origine[1]),
-    ).fetchone()[0]
-    conn.execute(
-        sql.SQL("""INSERT INTO {}.documenti (documento_id, nome_file, sha256, tipo)
-                   SELECT source_id, name, content_hash, kind FROM sources WHERE source_id = %s
-                   ON CONFLICT (documento_id) DO NOTHING""").format(schema),
-        (fonte[0],),
-    )
-    conn.execute(
-        sql.SQL("""INSERT INTO {}.occorrenze
-                     (occorrenza_id, task_id, ruolo_id, documento_id, estratto, nota_contesto, model_name, prompt_hash)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""").format(schema),
-        (occorrenza, task_id, ruolo[0], fonte[0], voce["testo_originale"], voce.get("nota_contesto"),
-         origine[0], origine[1]),
-    )
+    ).fetchone()
+    model_name, prompt_hash = origine if origine and origine[0] else ORIGINE_RICOSTRUITA
+    registra_occorrenza(conn, org_id, task_id=task_id, ruolo_id=str(ruolo[0]), documento_id=str(documento[0]),
+                        estratto=voce["testo_originale"], nota_contesto=voce.get("nota_contesto"),
+                        model_name=model_name, prompt_hash=prompt_hash)
 
 
 def scindi(
@@ -115,17 +108,14 @@ def scindi(
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_dataset_centrale", risorsa=f"scissione:{task_id}")
         piano = piano_scissione(conn, task_id, scomposizione, org_id)
-        codice = conn.execute("SELECT codice FROM organizations WHERE org_id = %s", (org_id,)).fetchone()
-        if codice is None or codice[0] is None:
-            raise LookupError("l'organizzazione non ha uno spazio")
-        schema = sql.Identifier(schema_organizzazione(codice[0]))
+        spazio = spazio_organizzazione(conn, org_id)
         for occorrenza in piano["da_spostare"]:
             conn.execute("UPDATE task_occurrences SET task_id = %s WHERE occurrence_id = %s",
                          (piano["task_id"], occorrenza))
-            conn.execute(sql.SQL("UPDATE {}.occorrenze SET task_id = %s WHERE occorrenza_id = %s").format(schema),
+            conn.execute(sql.SQL("UPDATE {}.occorrenze SET task_id = %s WHERE occorrenza_id = %s").format(spazio),
                          (piano["task_id"], occorrenza))
         for voce in piano["da_ricreare"]:
-            _ricrea(conn, schema, piano["task_id"], piano["superstite"], org_id, voce)
+            _ricrea(conn, org_id, piano["task_id"], piano["superstite"], voce)
         conn.execute("UPDATE canonical_tasks SET status = 'active', merged_into = NULL WHERE task_id = %s",
                      (piano["task_id"],))
         esito = {"spostate": len(piano["da_spostare"]), "ricreate": len(piano["da_ricreare"])}

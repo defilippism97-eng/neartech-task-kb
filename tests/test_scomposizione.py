@@ -5,6 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from neartech.organizzazioni import crea_organizzazione
+from neartech.permessi import inizializza_amministratore
 from neartech.scomposizione import (
     MODEL_ID,
     DocumentoJob,
@@ -71,15 +73,21 @@ def test_passo_inventato_viene_rifiutato_dopo_i_tentativi():
         proponi_attivita(FakeClient(inventato), doc, [])
 
 
-def test_salvataggio_riusa_il_titolo_canonico_tra_ruoli(conn):
+@pytest.fixture
+def org(conn):
+    admin = inizializza_amministratore(conn, "sso|admin")
+    return crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
+
+
+def test_salvataggio_riusa_il_titolo_canonico_tra_ruoli(conn, org):
     doc_a = _doc("A.docx", TESTO_A, "RESPONSABILE UFFICIO ACQUISTI")
     doc_b = _doc("B.docx", TESTO_B, "IMPIEGATO UFFICIO ACQUISTI")
     titolo = "Aggiornare la banca dati fornitori"
     att_a = proponi_attivita(FakeClient(_risposta((titolo, "Aggiorna la banca dati fornitori aziendali."))), doc_a, [])
     att_b = proponi_attivita(FakeClient(_risposta((titolo, "Aggiorna la banca dati fornitori aziendali."))), doc_b, titoli_attivi(conn))
 
-    assert salva_documento(conn, doc_a, att_a) == 1
-    assert salva_documento(conn, doc_b, att_b) == 1
+    assert salva_documento(conn, doc_a, att_a, org_id=org) == 1
+    assert salva_documento(conn, doc_b, att_b, org_id=org) == 1
     # Un solo task canonico, due occorrenze (una per ruolo).
     assert conn.execute("SELECT count(*) FROM canonical_tasks WHERE title_it = %s", (titolo,)).fetchone()[0] == 1
     assert conn.execute("SELECT count(*) FROM task_occurrences").fetchone()[0] == 2
@@ -87,14 +95,18 @@ def test_salvataggio_riusa_il_titolo_canonico_tra_ruoli(conn):
     assert modello == [(MODEL_ID,)]
 
 
-def test_rilancio_non_duplica(conn):
+def test_rilancio_non_duplica(conn, org):
     doc = _doc("A.docx", TESTO_A, "RESPONSABILE UFFICIO ACQUISTI")
     att = proponi_attivita(FakeClient(_risposta(("Aggiornare la banca dati fornitori", "Aggiorna la banca dati fornitori aziendali."))), doc, [])
-    assert salva_documento(conn, doc, att) == 1
-    assert salva_documento(conn, doc, att) == 0
+    assert salva_documento(conn, doc, att, org_id=org) == 1
+    assert salva_documento(conn, doc, att, org_id=org) == 0
     # Si contano solo le righe di questo test: altre suite possono lasciare fonti nel database di test.
-    assert conn.execute("SELECT count(*) FROM sources WHERE name = 'A.docx'").fetchone()[0] == 1
-    assert conn.execute("SELECT count(*) FROM roles WHERE name = 'RESPONSABILE UFFICIO ACQUISTI'").fetchone()[0] == 1
+    assert conn.execute("SELECT count(*) FROM org_sintetica.documenti WHERE nome_file = 'A.docx'").fetchone()[0] == 1
+    assert conn.execute(
+        "SELECT count(*) FROM org_sintetica.ruoli_organizzativi WHERE nome = 'RESPONSABILE UFFICIO ACQUISTI'"
+    ).fetchone()[0] == 1
+    # In public niente testo: legami con nomi neutri.
+    assert conn.execute("SELECT count(*) FROM task_occurrences WHERE raw_snippet IS NOT NULL").fetchone()[0] == 0
 
 
 def test_record_approvato_rispetta_la_verifica_sul_testo():

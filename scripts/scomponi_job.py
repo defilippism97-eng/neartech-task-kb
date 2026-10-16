@@ -18,11 +18,14 @@ import anthropic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from neartech.db import connect  # noqa: E402
+
+ORG_CODICE = "societa_dolce"  # organizzazione del pilota; il testo va nel suo spazio
 from neartech.scomposizione import (  # noqa: E402
     ScompostoError,
     attivita_da_record,
     carica_documenti,
     proponi_attivita,
+    organizzazione_per_codice,
     salva_documento,
     titoli_attivi,
     verifica_attivita,
@@ -38,7 +41,7 @@ def carica_da_file(cartella: Path, file_proposte: Path) -> None:
         for i, rec in enumerate(records, start=1):
             doc = per_nome[rec["documento"]]
             attivita = verifica_attivita(attivita_da_record(rec), doc.testo)
-            nuove = salva_documento(conn, doc, attivita)
+            nuove = salva_documento(conn, doc, attivita, org_id=organizzazione_per_codice(conn, ORG_CODICE))
             print(f"[{i}/{len(records)}] {doc.ruolo}: {len(attivita)} attività, occorrenze nuove: {nuove}", flush=True)
 
 
@@ -83,7 +86,7 @@ def main() -> None:
                 for a in attivita:
                     print(f"    g{a.granularita} {a.titolo}", flush=True)
                 continue
-            nuove = salva_documento(conn, doc, attivita)
+            nuove = salva_documento(conn, doc, attivita, org_id=organizzazione_per_codice(conn, ORG_CODICE))
             print(f"    occorrenze nuove: {nuove}", flush=True)
     if falliti:
         raise SystemExit(f"documenti da rielaborare: {len(falliti)}: {falliti}")

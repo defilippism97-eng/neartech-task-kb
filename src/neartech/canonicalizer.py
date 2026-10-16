@@ -22,6 +22,7 @@ import psycopg
 from pydantic import BaseModel, Field, ValidationError
 
 from neartech.crosswalk import EMBEDDING_MODEL
+from neartech.occorrenze import sposta_occorrenze
 
 MODEL_ID = "claude-haiku-5-5"
 NEIGHBOURS = 5
@@ -207,13 +208,9 @@ def fondi(conn: psycopg.Connection, task_ids: list[str]) -> str:
     for m in occ:
         if m == superstite:
             continue
-        # Occorrenze: se il ruolo ha già il superstite, si tiene quella del superstite.
-        conn.execute(
-            """DELETE FROM task_occurrences o WHERE o.task_id = %s
-               AND EXISTS (SELECT 1 FROM task_occurrences s WHERE s.task_id = %s AND s.role_id = o.role_id)""",
-            (m, superstite),
-        )
-        conn.execute("UPDATE task_occurrences SET task_id = %s WHERE task_id = %s", (superstite, m))
+        # Occorrenze, in public e negli spazi delle organizzazioni: se il ruolo ha già il superstite,
+        # si tiene quella del superstite.
+        sposta_occorrenze(conn, da_task=m, a_task=superstite)
         # Relazioni: si trasferiscono quelle che il superstite non ha già.
         conn.execute(
             """INSERT INTO task_mappings (task_id, node_id, relation, confidence, rationale, validated, model_name, prompt_hash)
