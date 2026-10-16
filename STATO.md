@@ -1,5 +1,7 @@
 # Stato del progetto (aggiornato al 2026-10-12)
 
+> **Punto di ripartenza per una nuova sessione:** leggi [docs/HANDOVER.md](docs/HANDOVER.md) prima di tutto.
+
 Questo file è il punto di ripartenza per le sessioni future. La cronologia della chat
 non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel codice.
 
