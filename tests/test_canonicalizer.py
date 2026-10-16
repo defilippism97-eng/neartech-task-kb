@@ -118,3 +118,12 @@ def test_crosswalk_accetta_il_codice_del_candidato_e_registra_nessuna_corrispond
     t = task("Predisporre il piano di tesoreria")
     registra_giudizio(conn, str(t), "ONET_TASK", 0)
     assert conn.execute("SELECT esito FROM crosswalk_giudizi WHERE task_id = %s", (t,)).fetchone()[0] == "nessuna"
+
+
+def test_prompt_distingue_esecuzione_responsabilita_e_ampiezza():
+    """Ricalibrazione dopo la revisione del 2026-10-16: 46/61 fusioni corrette, gli errori fra
+    compiti esecutivi e compiti di responsabilità, o fra un task e uno più ampio."""
+    from neartech.canonicalizer import SYSTEM_PROMPT
+
+    for criterio in ("responsabilità", "più ampio", "esecutiv", "relazion"):
+        assert criterio in SYSTEM_PROMPT
