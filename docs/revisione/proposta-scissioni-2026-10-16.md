@@ -12,7 +12,7 @@ Fonte: revisione completa delle 61 fusioni "stessa attività" (`campioni/fusioni
 | 26 | Verificare la correttezza e l'aggiornamento dei materiali informativi pubblici e interni | Controllare la qualità dei materiali stampati e digitali |
 | 39 | Informare la direzione sul programma e sui risultati degli audit | Elaborare dati e prospetti a fini decisionali, programmatici e di controllo (gruppo di 6 task: gli altri 4 parlano di report e dati per la direzione) |
 
-## Parziali: proposta, da approvare (12)
+## Parziali: proposta approvata dal responsabile il 2026-10-16 (12)
 
 | N. | Coppia | Nota del revisore | Proposta | Perché |
 |---|---|---|---|---|
@@ -35,3 +35,9 @@ Fonte: revisione completa delle 61 fusioni "stessa attività" (`campioni/fusioni
 - Il crosswalk verso le tassonomie del task riattivato era stato cancellato dalla fusione: va rifatto, con chiamate API e quindi con una stima dei costi prima.
 - Il task riattivato parte con stato di validazione `da_integrare`.
 - Ogni separazione è un atto nel registro (correzione), e il Canonicalizer non rifonde più le coppie che un revisore ha giudicato errate.
+
+## Esito (2026-10-16)
+
+Eseguite in produzione le 11 separazioni (3 errate, 8 parziali): task attivi da 295 a 306. Ogni separazione è un atto di correzione nel registro (ancore in `docs/audit/ancore-registro.md`, posizioni 14 e 22). Restano fuse le coppie 21, 28, 49, 54.
+
+**Da rivedere in seguito:** nel gruppo di "Gestire i rapporti con consulenti legali esterni" restano fusi "Collaborare alla gestione del recupero crediti con l'ufficio legale o agenzie esterne" e "Gestire la riscossione dei crediti", che non erano nel campione e sembrano più vicini al task separato sul recupero crediti che ai rapporti con i consulenti legali.
