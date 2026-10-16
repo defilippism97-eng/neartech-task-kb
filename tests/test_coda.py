@@ -82,3 +82,13 @@ def test_due_lavoratori_non_prendono_lo_stesso_job(dsn):
     finally:
         with psycopg.connect(dsn, autocommit=True) as pulizia:
             pulizia.execute("DELETE FROM jobs WHERE kind = 'prova_concorrenza'")
+
+
+
+def test_job_senza_tentativi_residui_non_blocca_la_coda(conn):
+    conn.execute(
+        """INSERT INTO jobs (kind, payload, status, attempts, tentativi_massimi, run_after)
+           VALUES ('prova', '{}', 'queued', 1, 1, now() - interval '1 hour')"""
+    )
+    buono = accoda(conn, "prova", {})
+    assert prendi(conn, "lavoratore-1", tipi=["prova"]).job_id == buono

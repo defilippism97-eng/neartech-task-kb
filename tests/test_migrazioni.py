@@ -9,6 +9,7 @@ import pytest
 
 from neartech.migrazioni import (
     CARTELLA_CONDIVISA,
+    MigrazioneFuoriOrdine,
     MigrazioneModificata,
     applica,
     da_applicare,
@@ -118,3 +119,11 @@ def test_inizializza_accetta_solo_migrazioni_precedenti_al_registro(conn):
     conn.execute("DROP TABLE public.migrazioni_applicate")
     with pytest.raises(ValueError):
         inizializza_registro(conn, ["0008_utenti_ruoli_permessi.sql"])
+
+
+
+def test_migrazione_fuori_ordine_non_si_applica(conn, tmp_path):
+    cartella = _copia_migrazioni(tmp_path)
+    (cartella / "0006_bis.sql").write_text("CREATE TABLE prova_fuori_ordine (x int);", encoding="utf-8")
+    with pytest.raises(MigrazioneFuoriOrdine):
+        applica(conn, cartella)

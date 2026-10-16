@@ -289,3 +289,11 @@ def test_contenuto_dei_parametri_verifica_l_organizzazione(conn, org):
     conn.execute("ALTER TABLE parametri_governance DISABLE TRIGGER parametri_append_only")
     conn.execute("UPDATE parametri_governance SET org_id = %s WHERE parametro_id = %s", (altra, parametro))
     assert verifica_contenuti(conn) == [("parametro", parametro)]
+
+
+# --- santa-loop, giro 2 -----------------------------------------------------------
+
+def test_identificativi_in_maiuscolo_accettati(conn, org):
+    parametro = _proponi(conn, org, {"valore": 0.9})
+    approva_parametro(conn, org["comitato"], parametro.upper(), motivazione="ok")
+    assert parametro_vigente(conn, "soglia_prova", org["id"]).parametro_id == parametro

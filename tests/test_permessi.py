@@ -235,3 +235,69 @@ def test_ultimo_amministratore_non_si_chiude(conn, scenario):
 
 def test_organizzazione_inesistente_e_negata(conn, scenario):
     assert not puo(conn, scenario["auditor"], "leggere", "00000000-0000-0000-0000-00000000dead")
+
+
+# --- santa-loop, giro 2 -----------------------------------------------------------
+
+def test_assegnazioni_contemporanee_non_si_duplicano(dsn):
+    """Due transazioni che assegnano lo stesso ruolo a termine: una sola deve riuscire."""
+    import threading
+
+    with psycopg.connect(dsn, autocommit=True) as setup:
+        utente = crea_utente(setup, "sso|concorrenza-ruoli")
+    risultati = []
+    with psycopg.connect(dsn) as prima, psycopg.connect(dsn) as seconda:
+        prima.execute(
+            "INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al) VALUES (%s, 'auditor', now() + interval '1 day')",
+            (utente,),
+        )
+
+        def seconda_insert():
+            try:
+                seconda.execute(
+                    """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al)
+                       VALUES (%s, 'auditor', now() + interval '1 day')""",
+                    (utente,),
+                )
+                seconda.commit()
+                risultati.append("riuscita")
+            except psycopg.errors.UniqueViolation:
+                seconda.rollback()
+                risultati.append("rifiutata")
+
+        filo = threading.Thread(target=seconda_insert)
+        filo.start()
+        filo.join(timeout=2)
+        prima.commit()
+        filo.join(timeout=10)
+    assert risultati == ["rifiutata"]
+
+
+def test_amministratore_tecnico_non_si_assegna_a_termine(conn, scenario):
+    nuovo = crea_utente(conn, "sso|admin-a-termine")
+    adesso = conn.execute("SELECT now()").fetchone()[0]
+    with pytest.raises(ValueError):
+        assegna_ruolo(conn, nuovo, "amministratore_tecnico", assegnata_da=scenario["admin"],
+                      valida_al=adesso + timedelta(days=1))
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al)
+               VALUES (%s, 'amministratore_tecnico', now() + interval '1 day')""",
+            (nuovo,),
+        )
+
+
+def test_nuovi_permessi_solo_con_migrazione(conn):
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("INSERT INTO permessi_ruolo (ruolo, azione) VALUES ('revisore', 'approvare_parametro')")
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("INSERT INTO ruoli (codice, ambito, descrizione) VALUES ('nuovo', 'globale', 'x')")
+
+
+def test_log_accessi_senza_chiavi_esterne(conn):
+    """Il log su connessione dedicata deve poter registrare utenti e organizzazioni non ancora confermati."""
+    vincoli = conn.execute(
+        """SELECT count(*) FROM information_schema.table_constraints
+           WHERE table_name = 'log_accessi' AND constraint_type = 'FOREIGN KEY'"""
+    ).fetchone()[0]
+    assert vincoli == 0

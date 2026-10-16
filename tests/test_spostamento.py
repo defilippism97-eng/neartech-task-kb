@@ -97,3 +97,12 @@ def test_spostamento_registrato_nel_registro(conn, dati):
         "SELECT atto, dettagli ->> 'occorrenze' FROM registro_decisioni WHERE tipo_oggetto = 'spostamento_testo_cliente'"
     ).fetchall()
     assert atto == [("approvazione", "1")]
+
+
+
+def test_atto_registra_le_righe_copiate(conn, dati):
+    sposta_testo_cliente(conn, dati["admin"], dati["org"], codice="sintetica")
+    dettagli = conn.execute(
+        "SELECT dettagli FROM registro_decisioni WHERE tipo_oggetto = 'spostamento_testo_cliente'"
+    ).fetchone()[0]
+    assert dettagli["copiate"] == {"ruoli": 1, "occorrenze": 1, "documenti": 1}

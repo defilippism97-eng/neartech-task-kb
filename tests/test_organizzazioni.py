@@ -205,3 +205,25 @@ def test_creazione_registrata_nel_registro(conn, admin):
         "SELECT atto FROM registro_decisioni WHERE tipo_oggetto = 'organizzazione' AND oggetto_id = %s",
         (org,),
     ).fetchall() == [("approvazione",)]
+
+
+# --- santa-loop, giro 2 -----------------------------------------------------------
+
+def test_stato_di_un_task_richiede_un_approvazione(conn, revisione):
+    segnalazione = conn.execute(
+        """INSERT INTO registro_decisioni (tipo_oggetto, oggetto_id, atto, autore_id, motivazione)
+           VALUES ('stato_task', %s, 'segnalazione', %s, 'x') RETURNING decisione_id""",
+        (revisione["task"], revisione["revisore"]),
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute(
+            "INSERT INTO stati_validazione_task (task_id, stato, decisione_id) VALUES (%s, 'validato', %s)",
+            (revisione["task"], segnalazione),
+        )
+
+
+def test_stato_per_organizzazione_uscita(conn, revisione):
+    conn.execute("DROP SCHEMA org_sintetica CASCADE")
+    with pytest.raises(TaskNonCollegato):
+        imposta_stato(conn, revisione["revisore"], revisione["task"], "validato",
+                      org_id=revisione["org"], motivazione="x")
