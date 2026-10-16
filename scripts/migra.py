@@ -5,6 +5,8 @@ Uso:
   DATABASE_URL=... python scripts/migra.py --inizializza 0002_... 0003_... 0004_... 0005_... 0006_...
   DATABASE_URL=... python scripts/migra.py --applica             # applica le mancanti, poi gli spazi
 
+Connessione: NEARTECH_DATABASE_URL_PROPRIETARIO (ruolo proprietario) se impostata, altrimenti DATABASE_URL.
+
 --inizializza crea il registro (0007) su un database migrato a mano prima del registro
 e vi segna, senza eseguirle, le migrazioni indicate. Va usato una volta sola, dopo aver
 verificato che i loro oggetti esistono. Su produzione, --inizializza e --applica
@@ -12,6 +14,7 @@ richiedono l'approvazione del responsabile del progetto.
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -34,7 +37,9 @@ def main() -> None:
     gruppo.add_argument("--inizializza", nargs="+", metavar="NOME")
     args = parser.parse_args()
 
-    with connect() as conn:
+    # Le migrazioni girano con il ruolo proprietario (migrazione 0022): connessione separata da quella
+    # dell'applicazione, se configurata.
+    with connect(os.environ.get("NEARTECH_DATABASE_URL_PROPRIETARIO")) as conn:
         if args.inizializza:
             inizializza_registro(conn, args.inizializza)
             conn.commit()
