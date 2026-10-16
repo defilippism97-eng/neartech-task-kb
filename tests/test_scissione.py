@@ -25,12 +25,13 @@ def fusione(conn):
     ).fetchone()[0]
     ruoli = {nome: conn.execute(
         "INSERT INTO roles (org_id, name) VALUES (%s, %s) RETURNING role_id", (org, nome)
-    ).fetchone()[0] for nome in ("RUOLO UNO", "RUOLO DUE", "RUOLO TRE")}
+    ).fetchone()[0] for nome in ("RUOLO UNO", "RUOLO DUE", "RUOLO TRE", "RUOLO QUATTRO")}
     a = conn.execute("INSERT INTO canonical_tasks (title_it, granularity) VALUES (%s, 2) RETURNING task_id",
                      (TITOLO_A,)).fetchone()[0]
     m = conn.execute("INSERT INTO canonical_tasks (title_it, granularity) VALUES (%s, 2) RETURNING task_id",
                      (TITOLO_M,)).fetchone()[0]
     occorrenze = [(a, "RUOLO UNO", "fornisce documenti"), (a, "RUOLO DUE", "fornisce documentazione"),
+                  (a, "RUOLO QUATTRO", "consegna documenti"),
                   (m, "RUOLO UNO", "scansiona i documenti"), (m, "RUOLO TRE", "trasmette i documenti")]
     for task, ruolo, testo in occorrenze:
         conn.execute(
@@ -74,7 +75,7 @@ def test_scissione_ricostruisce_il_task(conn, fusione):
     assert conn.execute("SELECT status, merged_into FROM canonical_tasks WHERE task_id = %s",
                         (fusione["m"],)).fetchone() == ("active", None)
     attese_m = ["scansiona i documenti", "trasmette i documenti"]
-    attese_a = ["fornisce documentazione", "fornisce documenti"]
+    attese_a = ["consegna documenti", "fornisce documentazione", "fornisce documenti"]
     assert _occorrenze(conn, "task_occurrences", "raw_snippet", fusione["m"]) == attese_m
     assert _occorrenze(conn, "org_sintetica.occorrenze", "estratto", fusione["m"]) == attese_m
     assert _occorrenze(conn, "task_occurrences", "raw_snippet", fusione["a"]) == attese_a

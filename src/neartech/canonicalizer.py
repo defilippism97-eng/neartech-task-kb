@@ -144,8 +144,16 @@ def registra_giudizi(conn: psycopg.Connection, task_id: str, giudizi: list[tuple
 
 def _gruppi_da_fondere(conn: psycopg.Connection) -> list[list[str]]:
     """Gruppi di task che il modello ha giudicato equivalenti in almeno una direzione (chiusura transitiva)."""
+    # Esclusi i task separati da una persona dopo una fusione sbagliata (neartech.scissione):
+    # una loro nuova fusione richiede di nuovo il giudizio di un revisore.
     coppie = conn.execute(
-        """SELECT task_id, altro_task_id FROM fusioni_proposte WHERE decisione = 'stessa_attivita'"""
+        """SELECT f.task_id, f.altro_task_id FROM fusioni_proposte f
+           WHERE f.decisione = 'stessa_attivita'
+             AND NOT EXISTS (
+               SELECT 1 FROM registro_decisioni r
+               WHERE r.tipo_oggetto = 'task_canonico' AND r.atto = 'correzione'
+                 AND r.dettagli ->> 'operazione' = 'scissione'
+                 AND r.oggetto_id IN (f.task_id::text, f.altro_task_id::text))"""
     ).fetchall()
     padre: dict[str, str] = {}
 
