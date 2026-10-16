@@ -3,6 +3,8 @@
 Questo file è il punto di ripartenza per le sessioni future. La cronologia della chat
 non viene conservata: tutto ciò che serve per riprendere il lavoro è qui o nel codice.
 
+Per i prossimi passi verso il pilota (sessioni, decisioni bloccanti, checklist) vedi [`docs/PROSSIMI-PASSI.md`](docs/PROSSIMI-PASSI.md).
+
 ## Cosa è fatto
 
 - **Metodologia**: `docs/piano-sviluppo-v2.md` (piano V2 completo). Regole di progetto in `CLAUDE.md`.
