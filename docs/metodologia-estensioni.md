@@ -68,3 +68,12 @@ Approvate dal responsabile del progetto. Dettagli negli ADR.
 
 - **Dataset condiviso:** contiene solo la rielaborazione del task (titolo canonico e dati derivati). Il testo originale del cliente resta nello spazio dell'organizzazione. Vedi `docs/adr/0001-testo-cliente-fuori-dal-dataset-condiviso.md`.
 - **Comitato guida e revisori:** il comitato guida emette indirizzi di alto livello, non giudica il singolo task. I revisori valutano la classificazione dei singoli task, verificano le ricadute degli indirizzi e segnalano le situazioni anomale. La variazione di D per task deriva quindi dagli indirizzi e dal giudizio dei revisori, non da un'approvazione del comitato task per task. Vedi `docs/adr/0002-indirizzi-del-comitato-e-revisione-per-task.md`.
+
+## 8. Ruoli nel sistema e task non attivi del dataset (2026-10-16)
+
+Approvate dal responsabile del progetto.
+
+- **Curatore:** non è un ruolo a sé. Approvare abbinamenti e fusioni è compito dei revisori, coerente con l'ADR 0002. Fonti e snapshot di capacità li approva l'amministratore tecnico.
+- **Rappresentanti dei lavoratori:** ruolo distinto per organizzazione, con il blocco dei ribassi. Il ruolo può restare vuoto se l'organizzazione non li coinvolge: in quel caso il blocco non si applica.
+- **Comitato guida e revisore:** una stessa persona può avere entrambi i ruoli nella stessa organizzazione. Il sistema non impone vincoli. Chiude il punto aperto dell'ADR 0002.
+- **Task non attivi del dataset silver:** le etichette dei 54 task fusi diventano giudizi aggiuntivi sul task in cui sono confluiti, con l'origine tracciata. I 5 task ritirati restano fuori dalla base di conoscenza.

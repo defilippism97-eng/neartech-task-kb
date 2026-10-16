@@ -170,8 +170,8 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 3. Decidere il livello di revisione iniziale del revisore (campione, completa o nulla) e registrarlo nel sistema.
 4. Costruire le fondazioni del software (sezione 4). In corso sul branch `fondazioni`.
 5. ~~Unire `protocollo-silver` e `capacita-mappa-fonti` in `main`~~: fatto (PR #4 e #5).
-6. Decidere il trattamento dei 59 task non attivi del dataset e la regola sui collegamenti "parziali".
-7. Decidere se una stessa persona può essere membro del comitato guida e revisore nella stessa organizzazione (ADR 0002).
+6. Decidere la regola sui collegamenti "parziali". I 59 task non attivi sono decisi: `docs/metodologia-estensioni.md`, sezione 8.
+7. Piano della fase 1: `docs/piani/fase-1-fondazioni.md`.
 
 **Decisioni ancora aperte nel tempo:**
 - Costituzione del comitato guida e individuazione dei rappresentanti dei lavoratori.

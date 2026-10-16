@@ -45,5 +45,5 @@ Le responsabilità si separano **per livello**, non per persona dentro lo stesso
 
 ### Rischi
 - Un indirizzo molto specifico può di fatto riguardare un solo task. Mitigazione: il revisore lo segnala.
-- La separazione funziona se le persone sono diverse. Va deciso se una stessa persona può essere insieme membro del comitato guida e revisore nella stessa organizzazione (punto aperto).
+- La separazione funziona se le persone sono diverse. Il responsabile ha deciso (2026-10-16) che una stessa persona può essere membro del comitato guida e revisore: il sistema non impone vincoli (`docs/metodologia-estensioni.md`, sezione 8).
 - Il blocco dei ribassi da parte dei rappresentanti dei lavoratori resta in vigore e si applica alle ricadute degli indirizzi.
