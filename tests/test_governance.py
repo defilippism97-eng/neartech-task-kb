@@ -298,3 +298,37 @@ def test_identificativi_in_maiuscolo_accettati(conn, org):
     parametro = _proponi(conn, org, {"valore": 0.9})
     approva_parametro(conn, org["comitato"], parametro.upper(), motivazione="ok")
     assert parametro_vigente(conn, "soglia_prova", org["id"]).parametro_id == parametro
+
+
+# --- proponente e approvatore (metodologia, sezione 10, decisione e) ---------------
+
+def _dettagli(conn, decisione_id):
+    return conn.execute("SELECT dettagli FROM registro_decisioni WHERE decisione_id = %s", (decisione_id,)).fetchone()[0]
+
+
+def test_approvazione_dello_stesso_proponente_ammessa_e_segnata(conn, org):
+    atto = approva_parametro(conn, org["comitato"], _proponi(conn, org, {"valore": 0.9}), motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is True
+
+
+def test_approvazione_di_un_altro_membro_segnata(conn, org):
+    secondo = crea_utente(conn, "sso|comitato-2")
+    assegna_ruolo(conn, secondo, "comitato_guida", org["id"], assegnata_da=org["admin"])
+    atto = approva_parametro(conn, secondo, _proponi(conn, org, {"valore": 0.9}), motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is False
+
+
+def test_rifiuto_e_ritiro_segnano_il_proponente(conn, org):
+    rifiuto = rifiuta_parametro(conn, org["comitato"], _proponi(conn, org, {"valore": 0.5}), motivazione="no")
+    assert _dettagli(conn, rifiuto)["stesso_proponente"] is True
+    parametro = _proponi(conn, org, {"valore": 0.8}, codice="altra_prova")
+    approva_parametro(conn, org["comitato"], parametro, motivazione="ok")
+    ritiro = ritira_parametro(conn, org["comitato"], parametro, motivazione="ritirata")
+    assert _dettagli(conn, ritiro)["stesso_proponente"] is True
+
+
+def test_approvazione_di_un_indirizzo_segna_il_proponente(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="prova", testo="t",
+                                  ambito="a", motivazione="m")
+    atto = approva_indirizzo(conn, org["comitato"], indirizzo, motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is True

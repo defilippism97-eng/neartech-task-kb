@@ -123,8 +123,15 @@ def _decidi(
             raise DecisioneGiaPresa(f"{tipo} {oggetto_id}: già {ultimo_atto}")
         if atto == "ritiro" and ultimo_atto != "approvazione":
             raise DecisioneGiaPresa(f"{tipo} {oggetto_id}: si ritira solo una versione approvata")
+        # Chi propone può anche decidere, ma l'atto lo dice (metodologia, sezione 10).
+        proponente = conn.execute(
+            sql.SQL("""SELECT r.autore_id FROM {} t JOIN registro_decisioni r ON r.decisione_id = t.proposta_id
+                       WHERE t.{} = %s""").format(sql.Identifier(tabella), sql.Identifier(chiave)),
+            (oggetto_id,),
+        ).fetchone()[0]
         return registra(conn, autore_id=utente_id, tipo_oggetto=tipo, oggetto_id=str(oggetto_id),
-                        atto=atto, motivazione=motivazione, org_id=org_id)
+                        atto=atto, motivazione=motivazione, org_id=org_id,
+                        dettagli={"stesso_proponente": proponente == uuid.UUID(str(utente_id))})
 
 
 # --- parametri -------------------------------------------------------------------
