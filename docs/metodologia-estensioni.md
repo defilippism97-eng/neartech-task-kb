@@ -77,3 +77,12 @@ Approvate dal responsabile del progetto.
 - **Rappresentanti dei lavoratori:** ruolo distinto per organizzazione, con il blocco dei ribassi. Il ruolo può restare vuoto se l'organizzazione non li coinvolge: in quel caso il blocco non si applica.
 - **Comitato guida e revisore:** una stessa persona può avere entrambi i ruoli nella stessa organizzazione. Il sistema non impone vincoli. Chiude il punto aperto dell'ADR 0002.
 - **Task non attivi del dataset silver:** le etichette dei 54 task fusi diventano giudizi aggiuntivi sul task in cui sono confluiti, con l'origine tracciata. I 5 task ritirati restano fuori dalla base di conoscenza.
+
+## 9. Parametri comuni, regola sui parziali, primo campione, revisione iniziale (2026-10-16)
+
+Approvate dal responsabile del progetto.
+
+- **Parametri NEARTECH comuni** (`org_id` vuoto: soglia di precisione, regola sui parziali, livello di confidenza): li propone e li approva l'**amministratore tecnico**. I parametri di un'organizzazione restano del suo comitato guida. Un parametro dell'organizzazione, se approvato, prevale su quello comune.
+- **Regola sui collegamenti parziali** nella metrica di precisione: un esito "parziale" conta come **errore**. Il valore va inserito come parametro comune approvato (`regola_parziali`), non nel codice.
+- **Primo campione per la metrica di abbinamento del pilota:** revisione completa delle **61 fusioni** giudicate "stessa attività" dal Canonicalizer, più un campione casuale delle coppie giudicate "diversa". Il campione del crosswalk (40 giudizi) si importa come misura separata del collegamento alle tassonomie, non come metrica di abbinamento.
+- **Revisione iniziale dei task nuovi:** **a campione**; la quota è un parametro approvato, non un numero nel codice. Si applica nella fase 3.
