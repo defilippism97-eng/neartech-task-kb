@@ -1,6 +1,6 @@
 # Pacchetto di conoscenza per l'etichettatura silver
 
-**Versione:** silver-v1, 2026-10-16. **Rubriche:** N bozza-3 (r rivisto), D bozza-3 (solo d1 e d2).
+**Versione:** silver-v2 (bozza-4 delle istruzioni), 2026-10-16. **Rubriche:** N bozza-3 (r rivisto), D bozza-3 (solo d1 e d2).
 **Stato:** silver. Le etichette sono proposte da verificare su campione umano. Non sono decisioni organizzative.
 
 Questo file va incollato in chat come unico messaggio di istruzioni, prima dei lotti di task.
@@ -22,7 +22,7 @@ Regole:
 4. **r misura solo l'affidabilità richiesta**: quanto è grave un errore in termini tecnici e fisici. I danni a diritti, carriere o reputazione non vanno in r: vanno in d2.
 5. **Non valutare d3 né d4.** Non sono misurabili dal testo del task: dipendono dalle persone che svolgono il lavoro e dai beneficiari.
 6. **Riserva di legge:** indica `true` solo se una norma specifica riserva il compito a una figura abilitata, e cita la norma. Se non sei sicuro, indica `false` e scrivi "fonte non verificata". Non inventare norme.
-7. Se un'informazione manca, usa il livello più basso compatibile con il testo e scrivilo nel campo `incertezza`.
+7. Se un'informazione manca, esprimi il livello più probabile secondo il testo e scrivi nel campo `incertezza` ciò che manca. Non scegliere il livello più basso per prudenza.
 8. Rispondi **solo** con righe JSONL, una per task, nel formato indicato. Nessun testo fuori dal formato.
 
 **Formato N:**
@@ -96,7 +96,7 @@ Misura quanto l'errore è grave in termini tecnici e fisici. Non valuta danni a 
 
 - **N non è ancora calibrato.** Le stime precedenti sono preliminari.
 - **Verifica preliminare su 15 task:** il modello sottostima r di circa tre quarti di punto rispetto al giudizio umano. Valuta r con attenzione e indica sempre `incertezza` quando la criticità non è chiara dal testo.
-- **k2 è la voce più difficile da stabilizzare.** Quando un task richiede di bilanciare vincoli non elencati, scegli il livello più basso compatibile e segnalalo.
+- **k2 è la voce più difficile da stabilizzare.** Quando un task richiede di bilanciare vincoli non elencati, scegli il livello più probabile dal testo e segnalalo nel campo `incertezza`.
 - **I ruoli di staff sono in prevalenza compiti amministrativi, di coordinamento e di supporto.** Molti task hanno k1 e k2 bassi ma r che dipende dalle conseguenze dell'errore: valuta la conseguenza, non la frequenza.
 
 ---
