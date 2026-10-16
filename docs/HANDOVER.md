@@ -146,13 +146,15 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Login di database: fatto il 2026-10-16.** `neartech_app_login` e `neartech_lettura_login` creati; `DATABASE_URL` usa `neartech_app_login`, `NEARTECH_DATABASE_URL_PROPRIETARIO` il proprietario (verificato). Procedura seguita: Nell'editor SQL di Neon, con il ruolo proprietario, creare i login con una password scelta da lui (mai nel repo né in chat): `CREATE ROLE neartech_app_login LOGIN PASSWORD '...' IN ROLE neartech_app;` e, per l'auditor, `CREATE ROLE neartech_lettura_login LOGIN PASSWORD '...' IN ROLE neartech_lettura;`. Crearli via SQL e non dalla console: i ruoli creati dalla console ricevono privilegi ampi che annullerebbero la separazione. Poi impostare `DATABASE_URL` con il login applicativo e `NEARTECH_DATABASE_URL_PROPRIETARIO` con l'attuale stringa del proprietario: `scripts/migra.py` e la creazione di nuove organizzazioni usano il proprietario.
 
-**Restano:** rimozione del testo di Società Dolce da `public` (migrazione nuova e aggiornamento di `scomposizione.py`); decisioni b, e, g (sezione 10 del registro di metodo); crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
+**Testo del cliente fuori da `public` (2026-10-17, ADR 0005):** migrazioni 0023, 0024 e org 0005 applicate; `togli_testo_da_public` eseguita su Società Dolce (504 occorrenze, 36 ruoli, 36 documenti); in `public` restano legami con nomi neutri, i vincoli impediscono il ritorno del testo. Ancora alla posizione 23.
+
+**Restano:** decisioni b, e, g (sezione 10 del registro di metodo); crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
 2. `scripts/migra.py --applica` (0008–0017 e gli spazi delle organizzazioni).
 3. Bootstrap dell'amministratore tecnico (`neartech.permessi.inizializza_amministratore`) con il soggetto SSO del responsabile.
-4. Copia del testo di Società Dolce nello spazio dell'organizzazione (`neartech.spostamento`, prima con `piano_spostamento` in sola lettura), poi rimozione del testo da `public` con una migrazione dedicata.
+4. Copia del testo di Società Dolce nello spazio dell'organizzazione (fatto), poi rimozione del testo da `public` (fatto il 2026-10-17, `neartech.occorrenze.togli_testo_da_public`).
 5. Ruoli di database separati: proprietario per le migrazioni, ruolo applicativo senza proprietà (le tabelle append-only restano tali solo per un ruolo non proprietario).
 
 ---
@@ -162,7 +164,7 @@ Passi originari, in ordine:
 - **Dataset silver:** `docs/silver/dataset/task-silver.jsonl`, **354 task**. Derivato dalla scomposizione approvata del 2026-10-11 (384 attività, di cui 30 solo come aree di responsabilità ritirate). Gli id originali sono conservati.
 - **Verifica sul database (2026-10-16, sola lettura):** 295 task attivi (29 di granularità 1, 266 di granularità 2), tutti presenti nel dataset con titolo identico. Il dataset ha **59 task in più**: 54 fusi dal Canonicalizer e 5 ritirati. Le etichette v2 coprono anche questi 59. Deciso: le etichette dei 54 fusi diventano giudizi sul task superstite, i 5 ritirati restano fuori (`docs/metodologia-estensioni.md`, sezione 8).
 - **Campioni rivisti da persone:** solo il crosswalk (`crosswalk-2026-10-11`, 40 collegamenti su 37 task: 36 ok, 2 parziali, 2 no; 90% se i parziali contano come errori, 95% altrimenti; la regola sui parziali è da decidere). Per l'abbinamento al database consolidato non esiste ancora un campione rivisto. Le 1.745 proposte di fusione (61 "stessa attività") sono solo giudizi del modello.
-- **Testo del cliente nel database:** `task_occurrences.raw_snippet` e `context_note` contengono testo dei documenti di Società Dolce. Con l'ADR 0001 vanno spostati nello spazio dell'organizzazione; la copia è pronta (`neartech.spostamento`), l'esecuzione in produzione è da approvare.
+- **Testo del cliente nel database:** dal 2026-10-17 solo in `org_societa_dolce`. In `public` restano i legami task–ruolo–documento senza testo, con nomi neutri (ADR 0005, migrazioni 0023–0024).
 - **Etichette v2 (Haiku 5.5):** `docs/silver/output/N-v2-final.jsonl` e `D-v2-final.jsonl`, 354 righe ciascuno, senza errori di schema.
 - **Stabilità:** 3 run su 20 task. k1 identico in 16/20, k2 in 18/20, k3 in 15/20, **r in 8/20** (voce più instabile), d1 in 13/20, d2 in 12/20. La riserva di legge non risulta mai `true`.
 - **Campione di prova:** 10 task marketing (T-0001–T-0010). T-0004 non è più nel dataset, quindi restano 9.

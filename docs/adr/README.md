@@ -10,3 +10,4 @@ Modello vuoto: `template.md`.
 | [0002](0002-indirizzi-del-comitato-e-revisione-per-task.md) | Il comitato guida dà indirizzi, i revisori giudicano i singoli task | accettato | 2026-10-16 |
 | [0003](0003-schema-per-organizzazione-e-tabelle-append-only.md) | Uno schema per organizzazione, tabelle append-only, registro delle migrazioni | accettato | 2026-10-16 |
 | [0004](0004-testi-di-governance-nello-spazio-dell-organizzazione.md) | I testi di governance dell'organizzazione stanno nel suo spazio | accettato | 2026-10-16 |
+| [0005](0005-scheletro-senza-testo-in-public.md) | In `public` resta uno scheletro senza testo del cliente | accettato | 2026-10-17 |
