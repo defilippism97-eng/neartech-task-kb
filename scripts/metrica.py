@@ -5,19 +5,24 @@ Uso (l'utente è indicato dal soggetto SSO; DATABASE_URL dall'ambiente):
   python scripts/metrica.py crea-campione --utente-sso S --org ORG --tipo fusione --filtro decisione=stessa_attivita \
       --criterio tutte --istruzioni istruzioni-fusioni-v1 --motivazione "..."
   python scripts/metrica.py crea-campione ... --criterio casuale --dimensione 60 --seme 20261016
-  python scripts/metrica.py esporta --utente-sso S --campione C --file campione.jsonl
-  python scripts/metrica.py importa-giudizi --utente-sso S --campione C --file giudizi.jsonl --istruzioni v1
-  python scripts/metrica.py importa-crosswalk --utente-sso S --org ORG --campione crosswalk-2026-10-11       --popolazione-originale 6520
+  python scripts/metrica.py esporta --utente-sso S --campione C --file campione.csv
+  python scripts/metrica.py importa-giudizi --utente-sso S --campione C --file campione.csv --istruzioni v1
+  python scripts/metrica.py importa-crosswalk --utente-sso S --org ORG --campione crosswalk-2026-10-11 \
+      --popolazione-originale 6520
   python scripts/metrica.py calcola --utente-sso S --campione C
 
 'anteprima' è in sola lettura. Gli altri comandi scrivono: su produzione richiedono
 l'approvazione del responsabile del progetto. Il file dei giudizi ha una riga JSON per
 elemento: {"posizione": 1, "esito": "corretto|parziale|errato", "nota": "..."}.
+Con estensione .csv esportazione e importazione usano un CSV separato da punto e virgola
+(si apre in Excel): si compilano le colonne "esito" e "nota" e si reimporta lo stesso file;
+le righe con "esito" vuoto si saltano.
 Serve la connessione diretta: il collegamento HTTPS (NEARTECH_DB_VIA=https) non ha transazioni.
 Il log di accesso usa una connessione dedicata, così i rifiuti restano anche se l'operazione fallisce.
 """
 
 import argparse
+import csv
 import json
 import os
 import sys
@@ -45,6 +50,27 @@ def _filtro(coppie: list[str]) -> dict[str, str]:
             raise SystemExit(f"filtro non valido: {coppia!r} (atteso chiave=valore)")
         filtro[chiave] = valore
     return filtro
+
+
+def _scrivi_esportazione(percorso: Path, righe: list[dict]) -> None:
+    if percorso.suffix.lower() == ".csv":
+        colonne = [*righe[0], "esito", "nota"] if righe else ["posizione", "esito", "nota"]
+        with percorso.open("w", encoding="utf-8-sig", newline="") as f:
+            scrittore = csv.DictWriter(f, fieldnames=colonne, delimiter=";")
+            scrittore.writeheader()
+            for riga in righe:
+                scrittore.writerow({**riga, "esito": "", "nota": ""})
+        return
+    percorso.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe), encoding="utf-8")
+
+
+def _leggi_giudizi(percorso: Path) -> list[dict]:
+    if percorso.suffix.lower() == ".csv":
+        with percorso.open(encoding="utf-8-sig", newline="") as f:
+            righe = [r for r in csv.DictReader(f, delimiter=";") if (r.get("esito") or "").strip()]
+        return [{"posizione": r["posizione"], "esito": r["esito"].strip().lower(),
+                 "nota": (r.get("nota") or "").strip() or None} for r in righe]
+    return [json.loads(r) for r in percorso.read_text(encoding="utf-8").splitlines() if r.strip()]
 
 
 def _utente(conn, soggetto_sso: str) -> str:
@@ -125,12 +151,10 @@ def _scrivi(conn, args: argparse.Namespace) -> None:
         if Path(args.file).exists():
             raise SystemExit(f"il file {args.file} esiste già: scegliere un altro nome")
         righe = esporta_campione(conn, utente, args.campione)
-        Path(args.file).write_text(
-            "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe), encoding="utf-8"
-        )
+        _scrivi_esportazione(Path(args.file), righe)
         print(f"elementi esportati: {len(righe)}")
     elif args.comando == "importa-giudizi":
-        righe = [json.loads(r) for r in Path(args.file).read_text(encoding="utf-8").splitlines() if r.strip()]
+        righe = _leggi_giudizi(Path(args.file))
         with conn.transaction():
             for riga in righe:
                 registra_giudizio(conn, utente, args.campione, int(riga["posizione"]), riga["esito"],
