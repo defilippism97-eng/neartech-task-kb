@@ -16,11 +16,10 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 
 | Branch | Stato | Contenuto |
 |---|---|---|
-| `main` | PR #1, #2, #3 unite | Fonti e tassonomie, relazione su N, guida ai prossimi passi (`docs/PROSSIMI-PASSI.md`) |
-| `protocollo-silver` | **PR #4 aperta, non unita** | Silver: dataset, pacchetto istruzioni, output, script di etichettatura, workflow rivisto, architettura, schema AI Act |
-| `capacita-mappa-fonti` | **PR #5 aperta, non unita** | Base di conoscenza sulla capacità tecnologica e sull'uso dell'AI (`docs/ricerca/capacita/`) |
+| `main` | PR #1–#5 unite | Fonti e tassonomie, relazione su N, silver (dataset, etichette, workflow rivisto, schema AI Act), base di conoscenza sulla capacità (`docs/ricerca/capacita/`) |
+| `fondazioni` | in corso, da `main` | ADR 0001 e 0002, verifica del database, piano e costruzione delle fondazioni |
 
-**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Il lavoro più recente sta in `protocollo-silver`: per riprendere il lavoro, fare `git checkout protocollo-silver`.
+**Regola:** nessuna sessione unisce in `main` senza l'approvazione esplicita del responsabile. Per riprendere il lavoro: `git checkout fondazioni`.
 
 ---
 
@@ -61,6 +60,10 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 - **Revisori:** controllano che il sistema funzioni e valutano D sul piano soggettivo. La visibilità è configurabile.
 - **Auditor:** vede tutto come il super user, solo in lettura.
 - Se una decisione del comitato cambia una regola della rubrica, il revisore analizza la classificazione aggiornata e il comitato riapprova la restituzione finale.
+- **Livelli di decisione (ADR 0002):** il comitato guida emette indirizzi di alto livello, non giudica il singolo task. I revisori valutano la classificazione dei singoli task, verificano le ricadute degli indirizzi e segnalano le situazioni anomale.
+
+### Dati del cliente (ADR 0001)
+- Nel dataset condiviso entra solo la rielaborazione del task. Il testo originale del cliente resta nello spazio dell'organizzazione.
 
 ### Regole non negoziabili (da `CLAUDE.md`)
 - Gli agenti propongono, il calcolo è deterministico, le persone decidono.
@@ -82,12 +85,12 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 
 **Stack proposto:** Python e PostgreSQL 16 con pgvector (già in uso), su Neon in UE. API con FastAPI. Coda dei job come tabella `jobs` con worker pianificato, senza piattaforma di orchestrazione. Interfaccia web con accesso via SSO aziendale.
 
-**Multi-organizzazione:** ogni cliente ha il proprio schema o database. Il dataset NEARTECH condiviso contiene solo task canonicalizzati e stati, non testi dei documenti del cliente.
+**Multi-organizzazione:** ogni cliente ha il proprio schema `org_<codice>` (ADR 0003). Il dataset NEARTECH condiviso in `public` contiene solo task canonicalizzati e stati, non testi dei documenti del cliente (ADR 0001).
 
 **Tabelle minime da creare:** organizzazioni, ruoli e permessi, registro delle decisioni, job, proposte di abbinamento, dataset dei task con stato, record dei giudizi (con versioni), parametri approvati con data e approvatore, log di accesso.
 
 **Ordine di costruzione:**
-1. Fondazioni: schema multi-organizzazione, ruoli, registro decisioni, coda job.
+1. ~~Fondazioni: schema multi-organizzazione, ruoli, registro decisioni, coda job~~: costruite sul branch `fondazioni` (sezione 4.1), in attesa di unione e di applicazione in produzione.
 2. **Metrica di abbinamento** sul campione rivisto. Prima di tutto il resto.
 3. Abbinamento al database consolidato e priorità di revisione.
 4. Calcolo deterministico di N (con capacità di test, quando calibrata) e D (con pavimento e variazioni).
@@ -96,12 +99,42 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 
 **Non costruire ora:** app mobile, integrazioni con i sistemi HR del cliente, dati individuali di alcun tipo.
 
+### 4.1 Fase 1, fondazioni (2026-10-16)
+
+Piano: `docs/piani/fase-1-fondazioni.md`. Decisioni tecniche: ADR 0003. Ambiente e test: `docs/sviluppo.md`.
+
+| Componente | Dove | Note |
+|---|---|---|
+| Registro delle migrazioni | `0007`, `neartech.migrazioni`, `scripts/migra.py` | Hash per file; `--inizializza` per la produzione |
+| Utenti, ruoli, permessi, log di accesso | `0008`, `neartech.permessi` | Utenti solo con soggetto SSO; matrice ruolo-azione in tabella; assegnazioni registrate; log dei rifiuti su connessione dedicata |
+| Registro delle decisioni | `0009`, `neartech.registro` | Append-only, catena di hash, ancora esterna per l'auditor |
+| Parametri di governance e indirizzi del comitato | `0010`, `neartech.governance` | Versionati; stato dal registro; nessun valore inserito dal codice; un ritiro lascia il parametro senza valore |
+| Stato di validazione dei task | `0011`, `neartech.stato_task` | `validato`, `stima_modello`, `da_integrare`; solo task presenti nello spazio dell'organizzazione |
+| Coda dei job e worker | `0012`, `neartech.coda`, `scripts/worker.py` | SKIP LOCKED; worker senza gestori finché le fasi successive non li aggiungono |
+| Default di policy tolti dallo schema | `0013` | `lambda_r`, `theta_n`, `theta_d` |
+| Rafforzamenti dopo le revisioni | `0014`, `migrations_org/0002` | TRUNCATE vietato, legami fra atti e oggetti, indici FK |
+| Correzioni della santa-loop | `0015`, `0016`, `0017`, `migrations_org/0003` | Revoca delle assegnazioni a termine, lock sui duplicati, amministratore senza scadenza, log senza chiavi esterne, validità dei ruoli con `statement_timestamp()` |
+| Spazio dell'organizzazione | `migrations_org/0001`, `neartech.organizzazioni`, `neartech.spostamento` | Testo del cliente in `org_<codice>`; copia dei dati esistenti pronta, non eseguita |
+
+Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave API), compresi test di concorrenza su un database isolato. Revisioni Python, database e sicurezza fatte; problemi critici e alti corretti.
+
+**Santa-loop** (due revisori Claude indipendenti; nessun modello esterno installato): 3 giri, tutti con esito negativo, ogni volta su problemi nuovi e più sottili (giro 3: validità dei ruoli valutata con l'ora di inizio della transazione). Il problema del giro 3 è corretto e coperto da test, ma non è stato rivisto da un quarto giro.
+
+**In produzione non è stato applicato nulla.** Passi da approvare, in ordine:
+1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
+2. `scripts/migra.py --applica` (0008–0017 e gli spazi delle organizzazioni).
+3. Bootstrap dell'amministratore tecnico (`neartech.permessi.inizializza_amministratore`) con il soggetto SSO del responsabile.
+4. Copia del testo di Società Dolce nello spazio dell'organizzazione (`neartech.spostamento`, prima con `piano_spostamento` in sola lettura), poi rimozione del testo da `public` con una migrazione dedicata.
+5. Ruoli di database separati: proprietario per le migrazioni, ruolo applicativo senza proprietà (le tabelle append-only restano tali solo per un ruolo non proprietario).
+
 ---
 
 ## 5. Stato dei dati
 
 - **Dataset silver:** `docs/silver/dataset/task-silver.jsonl`, **354 task**. Derivato dalla scomposizione approvata del 2026-10-11 (384 attività, di cui 30 solo come aree di responsabilità ritirate). Gli id originali sono conservati.
-- **Non verificato:** il dataset non corrisponde necessariamente ai task attivi nel database dopo le fusioni del Canonicalizer. Serve una verifica di sola lettura, che richiede la variabile `DATABASE_URL`.
+- **Verifica sul database (2026-10-16, sola lettura):** 295 task attivi (29 di granularità 1, 266 di granularità 2), tutti presenti nel dataset con titolo identico. Il dataset ha **59 task in più**: 54 fusi dal Canonicalizer e 5 ritirati. Le etichette v2 coprono anche questi 59. Deciso: le etichette dei 54 fusi diventano giudizi sul task superstite, i 5 ritirati restano fuori (`docs/metodologia-estensioni.md`, sezione 8).
+- **Campioni rivisti da persone:** solo il crosswalk (`crosswalk-2026-10-11`, 40 collegamenti su 37 task: 36 ok, 2 parziali, 2 no; 90% se i parziali contano come errori, 95% altrimenti; la regola sui parziali è da decidere). Per l'abbinamento al database consolidato non esiste ancora un campione rivisto. Le 1.745 proposte di fusione (61 "stessa attività") sono solo giudizi del modello.
+- **Testo del cliente nel database:** `task_occurrences.raw_snippet` e `context_note` contengono testo dei documenti di Società Dolce. Con l'ADR 0001 vanno spostati nello spazio dell'organizzazione; la copia è pronta (`neartech.spostamento`), l'esecuzione in produzione è da approvare.
 - **Etichette v2 (Haiku 5.5):** `docs/silver/output/N-v2-final.jsonl` e `D-v2-final.jsonl`, 354 righe ciascuno, senza errori di schema.
 - **Stabilità:** 3 run su 20 task. k1 identico in 16/20, k2 in 18/20, k3 in 15/20, **r in 8/20** (voce più instabile), d1 in 13/20, d2 in 12/20. La riserva di legge non risulta mai `true`.
 - **Campione di prova:** 10 task marketing (T-0001–T-0010). T-0004 non è più nel dataset, quindi restano 9.
@@ -123,10 +156,10 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 
 ## 7. Ambiente di lavoro
 
-- **Repo locale:** `C:\neartech`, su branch `protocollo-silver`.
+- **Repo locale:** `C:\neartech`, su branch `fondazioni`. Ambiente Python del progetto in `.venv` (escluso da git).
 - **Variabile della chiave API:** `NEARTECH_ANTHROPIC_API_KEY`, impostata come variabile utente di Windows. Il nome non è `ANTHROPIC_API_KEY` per non cambiare l'autenticazione di Claude Code. Non stamparne mai il valore.
-- **Variabile del database:** `DATABASE_URL` **non impostata**. Va impostata dal terminale del responsabile, come la chiave. Non chiedere il valore in chat.
-- **Strumenti installati:** `gh` (GitHub CLI, autenticato come `defilippism97-eng`), pacchetto `anthropic` 1.15.0, `pypdf` 6.21.0, Python 3.15.
+- **Variabile del database:** `DATABASE_URL` è impostata come variabile utente di Windows. Una sessione avviata prima dell'impostazione non la vede nel processo: va letta dalle variabili utente. Non stamparne né chiederne il valore. Le letture usano una sessione `read only`.
+- **Strumenti installati:** `gh` (GitHub CLI, autenticato come `defilippism97-eng`), pacchetto `anthropic` 1.15.0, `pypdf` 6.21.0, Python 3.15. Nel `.venv`: il progetto con `[dev]`. Postgres 16.2 con pgvector per i test in `%LOCALAPPDATA%\neartech\pgserver-0.1.4` (vedi `docs/sviluppo.md`).
 - **Non tentare** di elencare segreti o variabili su GitHub: il classificatore di sicurezza lo blocca come ricerca di credenziali.
 - **Script di etichettatura:** `scripts/etichetta_silver.py`. Opzioni: `--asse N|D`, `--run`, `--limite`, `--dry-run`. Scrive in `docs/silver/output/` con versione del prompt nel nome.
 
@@ -160,11 +193,19 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 - Verifica legale dello schema AI Act.
 
 **Da fare, in ordine:**
-1. Impostare `DATABASE_URL` sul PC e verificare, in sola lettura, l'elenco dei task attivi rispetto al dataset.
-2. Misurare la precisione dell'abbinamento sul campione rivisto (≥90%).
+1. ~~Verificare in sola lettura i task attivi rispetto al dataset~~: fatto il 2026-10-16, vedi sezione 5.
+2. Misurare la precisione dell'abbinamento sul campione rivisto (≥90%). Il campione per l'abbinamento al database consolidato va ancora creato.
 3. Decidere il livello di revisione iniziale del revisore (campione, completa o nulla) e registrarlo nel sistema.
-4. Costruire le fondazioni del software (sezione 4).
-5. Decidere se unire `protocollo-silver` e `capacita-mappa-fonti` in `main`.
+4. ~~Costruire le fondazioni del software~~: fatto sul branch `fondazioni` (sezione 4.1). Restano l'unione in `main` e i passi di produzione elencati in 4.1, tutti da approvare.
+5. ~~Unire `protocollo-silver` e `capacita-mappa-fonti` in `main`~~: fatto (PR #4 e #5).
+6. Decidere la regola sui collegamenti "parziali". I 59 task non attivi sono decisi: `docs/metodologia-estensioni.md`, sezione 8.
+7. Piano della fase 1: `docs/piani/fase-1-fondazioni.md`.
+8. Decisioni di governance emerse nella fase 1:
+   - chi propone e approva i parametri NEARTECH comuni (`org_id` vuoto): oggi nessun ruolo può farlo;
+   - chi valida i task del dataset condiviso presenti in più organizzazioni: oggi un revisore può cambiare lo stato solo dei task della propria organizzazione;
+   - se nel comitato guida chi propone un parametro o un indirizzo può anche approvarlo;
+   - se l'amministratore tecnico può assegnarsi un ruolo di organizzazione (oggi sì);
+   - il testo degli indirizzi del comitato e le descrizioni dei parametri stanno nello schema condiviso e restano dopo l'uscita del cliente: va deciso se è accettabile (ADR 0001 non li elenca fra i testi del cliente).
 
 **Decisioni ancora aperte nel tempo:**
 - Costituzione del comitato guida e individuazione dei rappresentanti dei lavoratori.
@@ -180,7 +221,7 @@ Catalogo in `docs/ricerca/capacita/fonti.csv`, sintesi in `kb-capacita.md`:
 Incolla questo testo come primo messaggio:
 
 ```
-Lavoriamo sul progetto Neartech nel repo C:\neartech, branch protocollo-silver.
+Lavoriamo sul progetto Neartech nel repo C:\neartech, branch fondazioni.
 
 Leggi in quest'ordine: docs/HANDOVER.md, CLAUDE.md, docs/architettura/stato-e-decisioni.md.
 

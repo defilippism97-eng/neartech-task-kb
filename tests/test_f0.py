@@ -18,13 +18,14 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def _weights(profile_id: str, *, org_id=None, active=True) -> tuple:
-    return (profile_id, org_id, 0.4, 0.4, 0.2, 0.25, 0.25, 0.25, 0.25, active)
+    # Valori sintetici: lambda_r e le soglie non hanno default nello schema (migrazione 0013).
+    return (profile_id, org_id, 0.4, 0.4, 0.2, 0.25, 0.25, 0.25, 0.25, 0.5, 0.5, 0.5, active)
 
 
 WEIGHT_SQL = """
 INSERT INTO weight_profiles
-  (profile_id, org_id, w_k1, w_k2, w_k3, w_d1, w_d2, w_d3, w_d4, is_active)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (profile_id, org_id, w_k1, w_k2, w_k3, w_d1, w_d2, w_d3, w_d4, lambda_r, theta_n, theta_d, is_active)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 """
 
 
