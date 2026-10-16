@@ -30,11 +30,19 @@ MAX_TOKENS = 4000
 
 Decisione = Literal["stessa_attivita", "diversa"]
 
+# Versione 2 (2026-10-16), dopo la revisione umana delle 61 fusioni (46 corrette): gli errori univano
+# compiti esecutivi e compiti di responsabilità, o un task con uno più ampio. Un cambio di prompt cambia
+# prompt_hash e richiede il set di controllo prima di nuove esecuzioni (CLAUDE.md).
 SYSTEM_PROMPT = (
     "Sei un revisore di task di lavoro. Ricevi un task di riferimento e un elenco numerato di task simili, "
     "provenienti da job description diverse. Per ciascun candidato decidi: \"stessa_attivita\" se descrive "
     "lo stesso compito di lavoro (stesso risultato e stesso oggetto, formulazioni diverse ammesse), "
-    "\"diversa\" altrimenti (anche se sono affini o uno è più ampio dell'altro). "
+    "\"diversa\" altrimenti. Sono attività diverse anche quando sono affini ma: uno è più ampio e comprende "
+    "l'altro; uno è un compito esecutivo o tecnico (per esempio scansionare, trasmettere, compilare) e l'altro "
+    "un compito di responsabilità (garantire, rappresentare l'ente, decidere, elaborare per la direzione); "
+    "cambia il livello di esposizione o la componente relazionale (per esempio rappresentare l'ente o "
+    "consultare il rappresentante dei lavoratori rispetto a gestire una pratica); cambia la fase del processo "
+    "(produrre il dato rispetto a riportarlo). Nel dubbio rispondi \"diversa\". "
     "Rispondi solo con un oggetto JSON: "
     "{\"giudizi\": [{\"n\": <numero del candidato>, \"decisione\": \"stessa_attivita|diversa\", "
     "\"motivazione\": \"<una frase in italiano>\"}]}."
