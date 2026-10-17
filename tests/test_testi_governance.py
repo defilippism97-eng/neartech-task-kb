@@ -342,3 +342,28 @@ def test_verifica_dei_contenuti_per_una_sola_organizzazione(conn, org):
     conn.execute("DROP SCHEMA org_altra CASCADE")  # spazio mancante: non blocca le altre organizzazioni
     assert verifica_contenuti(conn, org["id"]) == []
     assert verifica_contenuti(conn) == []
+
+
+# --- lettura delle richieste di ricalibrazione (revisione del 2026-10-17) -----------------------
+
+def test_lettura_delle_richieste_lascia_una_voce_per_organizzazione(conn, org):
+    altra = crea_organizzazione(conn, org["admin"], nome="Altra org sintetica", codice="sintetica_altra")
+    richieste_ricalibrazione(conn, org["admin"])
+    lette = {r[0] for r in conn.execute(
+        """SELECT org_id::text FROM log_accessi
+           WHERE utente_id = %s AND azione = 'approvare_parametro_comune'
+             AND risorsa = 'richieste_ricalibrazione' AND esito = 'consentito' AND org_id IS NOT NULL""",
+        (org["admin"],)).fetchall()}
+    assert {org["id"], altra} <= lette
+
+
+def test_richiesta_superata_quando_il_parametro_non_e_piu_vigente(conn, org):
+    prima = _comune(conn, org, valore=0.9)
+    chiedi_ricalibrazione(conn, org["comitato"], org_id=org["id"], parametro_id=prima,
+                          motivazione="soglia troppo alta")
+    assert [r["superata"] for r in richieste_ricalibrazione(conn, org["admin"])] == [False]
+    seconda = _comune(conn, org, valore=0.85)  # nuova versione comune: la richiesta ha avuto risposta
+    chiedi_ricalibrazione(conn, org["comitato"], org_id=org["id"], parametro_id=seconda,
+                          motivazione="ancora troppo alta")
+    assert [(r["parametro_id"], r["superata"]) for r in richieste_ricalibrazione(conn, org["admin"])] == [
+        (prima, True), (seconda, False)]

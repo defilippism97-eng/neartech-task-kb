@@ -221,7 +221,8 @@ def fondi(conn: psycopg.Connection, task_ids: list[str]) -> str:
             (superstite, m),
         )
         conn.execute("DELETE FROM task_mappings WHERE task_id = %s", (m,))
-        conn.execute("DELETE FROM crosswalk_giudizi WHERE task_id = %s", (m,))
+        # I giudizi del crosswalk del task fuso restano (un record per ogni giudizio): la vista
+        # v_crosswalk_giudizi li marca come relativi a un task fuso (migrazione 0027).
         conn.execute(
             "UPDATE canonical_tasks SET status = 'merged', merged_into = %s WHERE task_id = %s", (superstite, m)
         )

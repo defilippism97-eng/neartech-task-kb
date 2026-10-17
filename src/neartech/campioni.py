@@ -7,6 +7,8 @@ del modello (revisione cieca). Ogni giudizio è un record; un ripensamento è un
 Gli elementi contengono solo identificativi del dataset condiviso, mai testo del cliente,
 più la fotografia del modello e del prompt che hanno prodotto la proposta.
 Non va confuso con crosswalk.registra_giudizio, che registra i giudizi del modello.
+La nota del revisore è testo libero: sta nello spazio dell'organizzazione (note_giudizi), e nel giudizio
+in public resta la sua impronta con la chiave dello spazio (ADR 0004, migrazione 0028).
 """
 
 import random
@@ -14,10 +16,11 @@ import uuid
 from typing import Any
 
 import psycopg
+from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from neartech.permessi import richiedi
-from neartech.registro import registra
+from neartech.registro import chiave_spazio, impronta, registra, spazio
 
 ESITI = ("corretto", "parziale", "errato")
 CRITERI = ("tutte", "casuale")
@@ -218,11 +221,24 @@ def registra_giudizio(
         richiedi(conn, revisore_id, "giudicare_task", org_id, risorsa=f"campione:{campione_id}:{posizione}")
         if versione_istruzioni != versione_campione:
             raise ValueError(f"il campione usa le istruzioni {versione_campione!r}, non {versione_istruzioni!r}")
-        return conn.execute(
-            """INSERT INTO giudizi_revisione (campione_id, posizione, esito, nota, revisore_id, versione_istruzioni)
+        schema, hash_nota = None, None
+        if nota is not None and nota.strip():
+            schema = spazio(conn, org_id)
+            if schema is None:
+                raise LookupError(f"l'organizzazione {org_id} non ha uno spazio: la nota non ha dove stare")
+            hash_nota = impronta(chiave_spazio(conn, schema), nota)
+        giudizio_id = conn.execute(
+            """INSERT INTO giudizi_revisione
+                 (campione_id, posizione, esito, hash_nota, revisore_id, versione_istruzioni)
                VALUES (%s, %s, %s, %s, %s, %s) RETURNING giudizio_id""",
-            (campione_id, posizione, esito, nota, revisore_id, versione_istruzioni),
+            (campione_id, posizione, esito, hash_nota, revisore_id, versione_istruzioni),
         ).fetchone()[0]
+        if schema is not None:
+            conn.execute(
+                sql.SQL("INSERT INTO {}.note_giudizi (giudizio_id, nota) VALUES (%s, %s)").format(schema),
+                (giudizio_id, nota),
+            )
+        return giudizio_id
 
 
 def importa_revisioni_crosswalk(
