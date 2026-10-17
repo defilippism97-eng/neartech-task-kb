@@ -87,8 +87,9 @@ def test_manomissione_rilevata_dalla_verifica(conn, org):
 def test_correzione_e_una_riga_nuova(conn, org):
     originale = _atto(conn, org)
     correzione = _atto(conn, org, atto="correzione", corregge_id=originale, motivazione="corregge un errore")
+    # Le motivazioni di un'organizzazione stanno nel suo spazio (ADR 0004).
     righe = dict(conn.execute(
-        "SELECT decisione_id, motivazione FROM registro_decisioni WHERE decisione_id IN (%s, %s)",
+        "SELECT decisione_id, motivazione FROM org_sintetica.testi_atti WHERE decisione_id IN (%s, %s)",
         (originale, correzione),
     ).fetchall())
     assert righe == {originale: "motivazione sintetica", correzione: "corregge un errore"}
@@ -207,9 +208,9 @@ def test_comitato_non_segnala(conn, org):
 # --- rafforzamenti dopo la revisione ---------------------------------------------
 
 def test_coda_cancellata_rilevata_con_l_ancora(conn, org):
-    _atto(conn, org)
+    _atto(conn, org, org_id=None)
     ancora = ancora_catena(conn)
-    _atto(conn, org, oggetto_id="y")
+    _atto(conn, org, oggetto_id="y", org_id=None)
     conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
     conn.execute("DELETE FROM registro_decisioni WHERE posizione >= %s", (ancora[0],))
     assert verifica_catena(conn, ancora=ancora) == ancora[0]
@@ -250,8 +251,9 @@ def test_contenuto_degli_indirizzi_verificato(conn, org):
     indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="x", testo="testo originale",
                                   ambito="ambito", motivazione="x")
     assert verifica_contenuti(conn) == []
-    conn.execute("ALTER TABLE indirizzi_comitato DISABLE TRIGGER indirizzi_append_only")
-    conn.execute("UPDATE indirizzi_comitato SET testo = 'testo cambiato' WHERE indirizzo_id = %s", (indirizzo,))
+    conn.execute("ALTER TABLE org_sintetica.testi_indirizzi DISABLE TRIGGER testi_indirizzi_append_only")
+    conn.execute("UPDATE org_sintetica.testi_indirizzi SET testo = 'testo cambiato' WHERE indirizzo_id = %s",
+                 (indirizzo,))
     assert verifica_contenuti(conn) == [("indirizzo", indirizzo)]
 
 
@@ -273,7 +275,7 @@ def test_versione_superata_non_si_approva(conn, org):
 
 
 def test_segnalazione_solo_su_oggetti_della_propria_organizzazione(conn, org):
-    altra = str(conn.execute("INSERT INTO organizations (name) VALUES ('Altra') RETURNING org_id").fetchone()[0])
+    altra = crea_organizzazione(conn, org["admin"], nome="Altra", codice="altra")
     comitato_altra = crea_utente(conn, "sso|comitato-altra")
     assegna_ruolo(conn, comitato_altra, "comitato_guida", altra, assegnata_da=org["admin"])
     indirizzo = proponi_indirizzo(conn, comitato_altra, org_id=altra, codice="x", testo="x",
