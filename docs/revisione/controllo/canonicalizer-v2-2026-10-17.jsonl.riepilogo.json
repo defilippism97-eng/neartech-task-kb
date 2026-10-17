@@ -1,0 +1,25 @@
+{
+  "campione": "86199f1e-ca89-42d3-af9e-b5837b3675c1",
+  "model_name": "claude-haiku-5-5",
+  "prompt_hash": "f72fc194015ea806e1a8b29d614e220dfcc084b04fe262b0e167ba85c7fbcd7d",
+  "regola_parziali": "errore",
+  "chiamate": 59,
+  "token_ingresso": 39099,
+  "token_uscita": 57692,
+  "task_falliti": [],
+  "coppie_giudicate": 61,
+  "esiti_umani": {
+    "corretto": 46,
+    "parziale": 12,
+    "errato": 3
+  },
+  "v2_stessa_attivita": 17,
+  "v2_precisione": 0.8235,
+  "corrette_mantenute": 14,
+  "non_corrette_respinte": {
+    "parziale": 10,
+    "errato": 2
+  },
+  "altre_coppie": 234,
+  "altre_da_diversa_a_stessa": 1
+}

@@ -154,7 +154,9 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Seguiti aperti dalle revisioni:** il ruolo `neartech_app` può scrivere assegnazioni di ruolo e atti direttamente (la credenziale è il confine di fiducia); `scripts/scomponi_job.py` senza controllo dei permessi né atto nel registro; la fusione del Canonicalizer cancella i giudizi del crosswalk del task fuso; le note dei revisori (`giudizi_revisione.nota`) stanno in `public`; elementi aggiungibili a un campione prima del primo giudizio; i valori delle misure non sono confrontati nel database con quelli dei parametri citati.
 
-**Restano:** crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
+**Set di controllo del prompt v2 (2026-10-17, approvato):** 59 chiamate, 39.099 token in ingresso e 57.692 in uscita (stima superata in uscita). Precisione 82,4% su 17 proposte, sotto soglia; solo 14 delle 46 fusioni corrette mantenute. **v2 non supera il controllo** (`docs/revisione/controllo/esito-canonicalizer-v2-2026-10-17.md`). Serve una versione 3 e un nuovo controllo.
+
+**Restano:** crosswalk delle 11 task separate (`scripts/esegui_crosswalk.py --solo-separati`; fermato prima dell'esecuzione perché la stima in uscita va rivista); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).

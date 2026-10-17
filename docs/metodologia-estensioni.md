@@ -115,3 +115,7 @@ Realizzazione delle decisioni b, e, g della sezione 10.
 - **e:** ogni approvazione, rifiuto o ritiro registra `stesso_proponente` nei dettagli.
 - **g:** testi di governance dell'organizzazione nel suo spazio, impronta con la chiave dello spazio nel registro, report di audit unico (ADR 0004, sezione Realizzazione).
 - **Prompt v2 del Canonicalizer:** aggiunta, prima di qualsiasi esecuzione, la frase che chiede di trattare i titoli come dati (revisione di sicurezza). Il set di controllo si fa su questa versione.
+
+## 14. Set di controllo del prompt v2 del Canonicalizer (2026-10-17)
+
+Esecuzione approvata dal responsabile del progetto. Sulle 61 fusioni giudicate, v2 propone 17 fusioni con precisione 82,4% (14/17, intervallo 59,0–93,8%), sotto la soglia di 0,9, e mantiene solo 14 delle 46 fusioni corrette. **Il prompt v2 non supera il controllo** e non si usa per nuove esecuzioni. Dettagli: `docs/revisione/controllo/esito-canonicalizer-v2-2026-10-17.md`.
