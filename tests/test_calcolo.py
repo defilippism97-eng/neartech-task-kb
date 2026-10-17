@@ -225,7 +225,6 @@ def test_giudizi_di_un_task_fuso_valgono_per_il_superstite(conn, mondo):
 
 def test_una_persona_che_corregge_sostituisce_il_suo_giudizio(conn, mondo):
     _giudizio(conn, mondo["task"], "d1", 0, valutatore="expert", rif="esperto-1")
-    conn.execute("SELECT pg_sleep(0.01)")
     _giudizio(conn, mondo["task"], "d1", 2, valutatore="expert", rif="esperto-1")
     calcola_organizzazione(conn, mondo["admin"], mondo["org"], seme=7, estrazioni=100)
     d = _stime(conn, mondo["occorrenza"])[0][1]
