@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from carica_tassonomie import atlante_rows, esco_rows, onet_rows  # noqa: E402
 
 MODEL_NAME = "BAAI/bge-m3"
+MODEL_REVISION = "5617a9f61b028005a4858fdac845db406aefb181"  # stessa di neartech.crosswalk.EMBEDDING_REVISION
 BATCH = 64
 
 
@@ -47,7 +48,7 @@ def main() -> None:
     esco = esco_rows(args.esco_csv_zip)
 
     print(f"carico il modello {MODEL_NAME}", flush=True)
-    model = SentenceTransformer(MODEL_NAME, device="cpu")
+    model = SentenceTransformer(MODEL_NAME, revision=MODEL_REVISION, device="cpu")
 
     for rows, stem in [(onet_atl, "embeddings"), (esco, "embeddings_esco")]:
         index = [{"scheme": r["scheme"], "code": r["code"], "lang": r["lang"]} for r in rows]
