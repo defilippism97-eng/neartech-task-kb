@@ -156,7 +156,9 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Set di controllo del prompt v2 (2026-10-17, approvato):** 59 chiamate, 39.099 token in ingresso e 57.692 in uscita (stima superata in uscita). Precisione 82,4% su 17 proposte, sotto soglia; solo 14 delle 46 fusioni corrette mantenute. **v2 non supera il controllo** (`docs/revisione/controllo/esito-canonicalizer-v2-2026-10-17.md`). Serve una versione 3 e un nuovo controllo.
 
-**Restano:** crosswalk delle 11 task separate (`scripts/esegui_crosswalk.py --solo-separati`; fermato prima dell'esecuzione perché la stima in uscita va rivista); revisione del campione casuale delle "diversa".
+**Crosswalk delle 11 task separate (2026-10-17, approvato con la stima rivista):** `scripts/esegui_crosswalk.py --solo-separati --limite-uscita 65000`; 32 chiamate, 24.270 token in ingresso e 31.343 in uscita. 33 giudizi per task e schema (31 con relazioni, 2 senza corrispondenza), 151 relazioni (7 exact, 26 broad, 35 narrow, 83 related), tutte da validare (`validated = false`), `claude-haiku-5-5`.
+
+**Restano:** versione 3 del prompt del Canonicalizer e nuovo set di controllo (chiamate API, con stima); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).

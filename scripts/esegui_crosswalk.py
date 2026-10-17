@@ -6,6 +6,8 @@ Uso (la chiave del modello è letta da NEARTECH_ANTHROPIC_API_KEY):
 
 --solo-separati: solo i task separati da una fusione sbagliata (atti 'correzione' con operazione
 'scissione', crosswalk da rifare) e, per ciascuno, solo gli schemi senza giudizio registrato.
+--limite-uscita N: si ferma prima della chiamata successiva quando i token in uscita superano N
+(il limite approvato dal responsabile); stampa sempre il consumo.
 
 Passi:
 1. calcola l'embedding bge-m3 dei task canonici che non ce l'hanno;
@@ -59,7 +61,23 @@ def _embed_missing_tasks(conn) -> int:
     return len(missing)
 
 
-def _separati(conn, client) -> None:
+class _ClienteConConsumo:
+    """Conta i token di ogni chiamata, tentativi ripetuti compresi."""
+
+    def __init__(self, client):
+        self._client = client
+        self.chiamate = self.ingresso = self.uscita = 0
+        self.messages = self
+
+    def create(self, **kwargs):
+        risposta = self._client.messages.create(**kwargs)
+        self.chiamate += 1
+        self.ingresso += risposta.usage.input_tokens
+        self.uscita += risposta.usage.output_tokens
+        return risposta
+
+
+def _separati(conn, client: _ClienteConConsumo, limite_uscita: int | None) -> None:
     """Crosswalk dei task separati, schema per schema, saltando quelli già giudicati."""
     todo = conn.execute(
         """SELECT DISTINCT t.task_id, t.title_it FROM canonical_tasks t
@@ -74,6 +92,10 @@ def _separati(conn, client) -> None:
             if conn.execute("SELECT EXISTS (SELECT 1 FROM crosswalk_giudizi WHERE task_id = %s AND scheme = %s)",
                             (task_id, scheme)).fetchone()[0]:
                 continue
+            if limite_uscita is not None and client.uscita >= limite_uscita:
+                print(f"limite di {limite_uscita} token in uscita raggiunto: mi fermo", flush=True)
+                falliti += 1
+                break
             try:
                 judgements = judge(client, title, find_candidates(conn, str(task_id), scheme))
             except CrosswalkError as err:
@@ -84,6 +106,8 @@ def _separati(conn, client) -> None:
                 salvate = save_judgements(conn, str(task_id), judgements)
                 registra_giudizio(conn, str(task_id), scheme, len(judgements))
             print(f"[{i}/{len(todo)}] {scheme}: {salvate} relazioni", flush=True)
+    print(f"consumo: {client.chiamate} chiamate, {client.ingresso} token in ingresso, {client.uscita} in uscita",
+          flush=True)
     if falliti:
         raise SystemExit(f"schemi da rielaborare: {falliti}")
 
@@ -91,6 +115,7 @@ def _separati(conn, client) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--solo-separati", action="store_true")
+    parser.add_argument("--limite-uscita", type=int)
     args = parser.parse_args()
     api_key = os.environ.get("NEARTECH_ANTHROPIC_API_KEY")
     if not api_key:
@@ -100,7 +125,7 @@ def main() -> None:
     if args.solo_separati:
         with connect() as conn:
             conn.autocommit = True  # ogni schema giudicato si conferma da sé: un errore dopo non lo annulla
-            _separati(conn, client)
+            _separati(conn, _ClienteConConsumo(client), args.limite_uscita)
         return
 
     with connect() as conn:
