@@ -39,6 +39,9 @@ export function BarraPercorso({ percorso, ruolo, codice }: { percorso: Percorso;
         {tocca.rotta === 'indirizzi' && !tocca.attesa && (
           <Link to="/org/$codice/indirizzi" params={{ codice }} className="btn btn-pill">Apri gli indirizzi</Link>
         )}
+        {tocca.rotta === 'revisione' && !tocca.attesa && (
+          <Link to="/org/$codice/revisione" params={{ codice }} className="btn btn-pill">Apri la coda</Link>
+        )}
         {tocca.comando === 'ricalcolo' && (
           <button type="button" className="btn btn-pill" disabled={ricalcolo.isPending} onClick={() => ricalcolo.mutate()}>
             {ricalcolo.isPending ? 'Ricalcolo la mappa…' : 'Ricalcola la mappa'}

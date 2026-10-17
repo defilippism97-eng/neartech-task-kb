@@ -10,7 +10,7 @@ export interface Azione {
   testo: string
   pronta: boolean
   attesa?: boolean  // nessuna azione richiesta ora
-  rotta?: 'indirizzi'
+  rotta?: 'indirizzi' | 'revisione'
   comando?: 'ricalcolo'
 }
 
@@ -66,7 +66,7 @@ export function azione(ruolo: string, p: Percorso): Azione {
       if (fase === 'avvio' && avvio.fatti.in_attesa_di_abbinamento > 0) return { titolo: 'Decidi i lotti di abbinamento', pronta: false,
         testo: `${avvio.fatti.in_attesa_di_abbinamento} attività aspettano la tua decisione, dalla più ambigua.` }
       if (senzaRisultati) return ATTESA_RICALCOLO
-      if (fase === 'verifica') return { titolo: 'Controlla le classificazioni a campione', pronta: false,
+      if (fase === 'verifica') return { titolo: 'Controlla le classificazioni a campione', pronta: true, rotta: 'revisione',
         testo: `${daConfermare} risultati da confermare, dal più incerto. Ogni tuo giudizio sostituisce una stima del modello.` }
       return { titolo: 'Nessuna azione per te ora', pronta: true, attesa: true,
         testo: fase === 'indirizzi'

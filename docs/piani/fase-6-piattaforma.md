@@ -98,7 +98,9 @@ Ogni fetta: API con test, schermate con test, revisione (Python, database, sicur
 
 - **Fetta 3, indirizzi del comitato (2026-10-17):** questionario degli indirizzi come parametro di governance (`questionario_indirizzi`, versione `bozza-1` in `docs/governance/questionario-indirizzi-bozza-1.json`, approvata il 2026-10-17); `neartech.indirizzi_pesi` trasforma le risposte in un profilo di pesi di D con la regola del parametro, simula l'effetto sui task, registra proposta, approvazione del comitato e verifica dell'auditor (atto nuovo `verifica`) e attiva il profilo solo con entrambi gli atti (migrazione 0037, imposto anche dal database); ricalcolo dall'API per l'amministratore. Schermata "Indirizzi" e azioni nel percorso per comitato, auditor e amministratore.
 
-Ordine delle fette successive: 4 revisore (lotti di abbinamento, controllo a campione, valutazione sulla rubrica); 5 amministratore (pipeline dei documenti con il worker); 6 questionari d3/d4; 7 vista bonus del rappresentante e report dell'auditor.
+- **Fetta 4, revisore (2026-10-17):** coda dei task dell'organizzazione dal risultato meno certo (`neartech.valutazione_rubrica`, permesso `giudicare_task`) con le sei voci della rubrica corrente e i testi dei livelli (`src/neartech/dati/rubrica-<versione>.json`). Ogni livello scelto è un giudizio di persona: una riga in `assessment_runs` (`rater_kind` 'expert', `rater_ref` l'utente, versione della rubrica) e un atto `giudizio_rubrica` nel registro; nessuna sovrascrittura, il cambio d'idea aggiunge un giudizio. La stima del modello resta visibile accanto. Schermata "Revisione" e azione del revisore nella fase di verifica. I lotti di abbinamento passano alla fetta 5, insieme alla pipeline dei documenti che li produce.
+
+Ordine delle fette successive: 5 amministratore (pipeline dei documenti con il worker, lotti di abbinamento per il revisore) (pipeline dei documenti con il worker); 6 questionari d3/d4; 7 vista bonus del rappresentante e report dell'auditor.
 
 ## Prima della messa in esercizio
 

@@ -14,6 +14,7 @@ from neartech.percorso import stato_percorso
 from neartech.permessi import PermessoNegato, puo, ruoli_utente
 from neartech.restituzione import RestituzioneSuperata, approva_restituzione, restituzione_organizzazione
 from neartech.sperimentazione import avanzamento_sperimentazione
+from neartech.valutazione_rubrica import coda_valutazione, registra_giudizio_rubrica, rubrica_corrente
 
 router = APIRouter(prefix="/api")
 
@@ -118,6 +119,30 @@ def ricalcola(codice: str, request: Request, utente: str = Depends(utente_corren
                                    seme=int(date.today().strftime("%Y%m%d")))
     request.app.state.conferma(conn)
     return esito
+
+
+class Giudizio(BaseModel):
+    task_id: str
+    voce: str
+    valore: int
+    nota: str = Field(default="", max_length=4000)
+
+
+@router.get("/organizzazioni/{codice}/revisione")
+def revisione(codice: str, utente: str = Depends(utente_corrente),
+              conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    """Coda del revisore (dal task meno certo) con i testi della rubrica corrente."""
+    org = _organizzazione(conn, utente, codice)
+    return {"rubrica": rubrica_corrente(conn), "coda": coda_valutazione(conn, utente, org)}
+
+
+@router.post("/organizzazioni/{codice}/revisione/giudizi")
+def giudica(codice: str, corpo: Giudizio, request: Request, utente: str = Depends(utente_corrente),
+            conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    atto = registra_giudizio_rubrica(conn, utente, _organizzazione(conn, utente, codice), corpo.task_id, corpo.voce,
+                                     corpo.valore, nota=corpo.nota)
+    request.app.state.conferma(conn)
+    return {"atto": atto}
 
 
 class Approvazione(BaseModel):

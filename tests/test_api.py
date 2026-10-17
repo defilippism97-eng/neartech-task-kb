@@ -155,6 +155,11 @@ def test_solo_l_amministratore_ricalcola(client):
     assert client.post("/api/organizzazioni/sintetica/calcolo", headers=SCRIVE).status_code == 403
 
 
+def test_la_coda_del_revisore_e_solo_per_chi_giudica(client):
+    _entra(client)
+    assert client.get("/api/organizzazioni/sintetica/revisione").status_code == 403
+
+
 def test_organizzazioni_visibili(client):
     _entra(client)
     assert client.get("/api/organizzazioni").json() == [{"codice": "sintetica", "nome": "Org sintetica"}]

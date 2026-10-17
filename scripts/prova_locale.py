@@ -90,7 +90,7 @@ def popola(conn: psycopg.Connection) -> None:
         assegna_ruolo(conn, crea_utente(conn, soggetto), nome_ruolo, org, assegnata_da=admin)
 
     conn.execute("INSERT INTO rubric_versions (version, is_current, approved_by, approved_at) "
-                 "VALUES ('rubrica-prova', true, 'comitato di prova', now())")
+                 "VALUES ('bozza-3', true, 'comitato di prova', now())")
     conn.execute("""INSERT INTO weight_profiles (profile_id, org_id, w_k1, w_k2, w_k3, lambda_r, w_d1, w_d2, w_d3, w_d4,
                                                  theta_n, theta_d, is_active, approved_by, approved_at)
                     VALUES ('neartech-comune-prova', NULL, 0.4, 0.4, 0.2, 0.5, 0.25, 0.25, 0.25, 0.25, 0.5, 0.5, true,
@@ -120,13 +120,13 @@ def popola(conn: psycopg.Connection) -> None:
                     for scarto in (0, caso.choice((-1, 0, 0, 0, 1))):
                         conn.execute("""INSERT INTO assessment_runs (target_kind, target_id, item, value, rater_kind,
                                                                      rater_ref, rubric_version)
-                                        VALUES ('task', %s, %s, %s, 'llm', 'modello-prova', 'rubrica-prova')""",
+                                        VALUES ('task', %s, %s, %s, 'llm', 'modello-prova', 'bozza-3')""",
                                      (task_id[titolo], voce, _limita(valore + scarto)))
                 if caso.random() < 0.3:  # alcuni task già giudicati dai revisori
                     for voce in ("k2", "d1"):
                         conn.execute("""INSERT INTO assessment_runs (target_kind, target_id, item, value, rater_kind,
                                                                      rater_ref, rubric_version)
-                                        VALUES ('task', %s, %s, %s, 'expert', 'revisore-prova', 'rubrica-prova')""",
+                                        VALUES ('task', %s, %s, %s, 'expert', 'revisore-prova', 'bozza-3')""",
                                      (task_id[titolo], voce, valori[voce]))
             registra_occorrenza(conn, org, task_id=task_id[titolo], ruolo_id=r, documento_id=doc,
                                 estratto=titolo, nota_contesto=None, model_name="modello-prova", prompt_hash="prova")

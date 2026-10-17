@@ -33,6 +33,9 @@ export function Guscio({ codice, nomeOrganizzazione, ruolo, soggetto, children }
           <ul className="nav">
             <li><Link to="/org/$codice/panoramica" params={{ codice }} activeProps={{ 'aria-current': 'page' }}>Panoramica</Link></li>
             <li><Link to="/org/$codice/indirizzi" params={{ codice }} activeProps={{ 'aria-current': 'page' }}>Indirizzi</Link></li>
+            {ruolo === 'revisore' && (
+              <li><Link to="/org/$codice/revisione" params={{ codice }} activeProps={{ 'aria-current': 'page' }}>Revisione</Link></li>
+            )}
             {['Ruoli e task', 'Questionari', 'Parametri e soglie', 'Registro'].map((voce) => (
               <li key={voce}><span aria-disabled="true">{voce} <small>in arrivo</small></span></li>
             ))}
