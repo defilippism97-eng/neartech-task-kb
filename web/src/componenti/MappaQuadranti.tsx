@@ -95,7 +95,7 @@ export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate, larghezz
         <summary>Vedi i task in tabella</summary>
         <div className="ruoli-tabella">
           <table>
-            <thead><tr><th>Task</th><th>Ruolo</th><th>Quadrante</th><th>Probabilità</th><th>N</th><th>D</th><th>Voci giudicate da persone</th></tr></thead>
+            <thead><tr><th>Task</th><th>Ruolo</th><th>Quadrante</th><th>Probabilità</th><th>N</th><th>D</th><th>Giudizi di persona</th></tr></thead>
             <tbody>
               {occorrenze.map((o) => (
                 <tr key={o.occorrenza_id}>

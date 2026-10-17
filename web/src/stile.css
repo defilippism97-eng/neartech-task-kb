@@ -81,6 +81,9 @@ p { color: var(--slate); }
 .head h1 { font-size: 34px; margin-top: 8px; }
 .grid { display: grid; gap: 18px; }
 .g-12 { grid-template-columns: repeat(12, 1fr); }
+/* Gli elementi della griglia non si allargano oltre la colonna per il loro contenuto: le tabelle scorrono dentro. */
+.g-12 > * { min-width: 0; }
+.ruoli-tabella { overflow-x: auto; }
 .s5 { grid-column: span 5; } .s7 { grid-column: span 7; } .s12 { grid-column: span 12; }
 
 /* Avanzamento della sperimentazione */
