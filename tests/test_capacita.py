@@ -162,3 +162,21 @@ def test_senza_atto_lo_snapshot_non_si_pubblica_e_la_copertura_pubblicata_non_ca
     with pytest.raises(psycopg.errors.RaiseException, match="proposto"):
         conn.execute("""INSERT INTO task_capability (snapshot_id, task_id, dimension, c_mean, c_low, c_high, n_evidence)
                         SELECT %s, task_id, 'k1', 4, 4, 4, 1 FROM canonical_tasks LIMIT 1""", (snapshot,))
+
+
+def test_banda_di_mezzo_livello_attorno_a_una_sola_evidenza(conn, mondo):
+    _evidenza(conn, mondo, "k1", 3, "2026-10-17")
+    _evidenza(conn, mondo, "k2", 4, "2026-10-17")
+    _evidenza(conn, mondo, "k3", 0, "2026-10-17")
+    snapshot = proponi_snapshot_riserva(conn, mondo["admin"], as_of="2026-10-17", emivita_giorni=180,
+                                        motivazione="x", banda=0.5)
+    copertura = _copertura(conn, snapshot)
+    assert (copertura["k1"][1:3], copertura["k2"][1:3], copertura["k3"][1:3]) == ((2.5, 3.5), (3.5, 4), (0, 0.5))
+    assert conn.execute("SELECT method_version FROM capability_snapshots WHERE snapshot_id = %s",
+                        (snapshot,)).fetchone()[0] == "riserva-v2-banda-0.5"
+
+
+def test_banda_fuori_misura_rifiutata(conn, mondo):
+    with pytest.raises(ValueError, match="banda"):
+        proponi_snapshot_riserva(conn, mondo["admin"], as_of="2026-10-17", emivita_giorni=180, motivazione="x",
+                                 banda=3)

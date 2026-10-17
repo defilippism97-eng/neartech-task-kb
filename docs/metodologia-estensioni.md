@@ -179,3 +179,7 @@ Realizzazione delle decisioni della sezione 17 (piano `docs/piani/fase-4-calcolo
 Approvate dal responsabile del progetto, provvisorie fino alla revisione del comitato guida; atti nel registro (ancora alla posizione 39).
 - **Rubrica corrente:** `bozza-3`, quella con cui sono state prodotte le etichette silver v2 dei 306 task.
 - **Profilo di pesi comune** `neartech-comune-v1`, con i valori dell'esempio del piano: k1 0,4, k2 0,4, k3 0,2; λ 0,5; d1–d4 0,25 ciascuno; soglie 0,50 per N e per D. Un'organizzazione che approva un profilo proprio lo sostituisce.
+
+## 20. Incertezza della copertura di riserva (2026-10-17)
+
+Approvata dal responsabile del progetto. Con una sola evidenza di riserva per dimensione la copertura apparirebbe certa. Lo snapshot di riserva allarga l'intervallo di ±0,5 livelli attorno alle evidenze (metà della distanza fra due livelli della scala), limitato a 0–4: metodo `riserva-v2-banda-0.5`, dichiarato nello snapshot e nell'atto. Così il risultato dice quanto è sicuro (probabilità dei quadranti) e i casi incerti vanno in revisione. Quando arriveranno evidenze reali, il disaccordo fra le fonti sostituirà la banda.
