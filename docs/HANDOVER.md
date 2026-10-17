@@ -148,9 +148,13 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Testo del cliente fuori da `public` (2026-10-17, ADR 0005):** migrazioni 0023, 0024 e org 0005 applicate; `togli_testo_da_public` eseguita su Società Dolce (504 occorrenze, 36 ruoli, 36 documenti); in `public` restano legami con nomi neutri, i vincoli impediscono il ritorno del testo. Ancora alla posizione 23.
 
-**Decisioni b, e, g (2026-10-17, sezione 13 del registro di metodo):** in codice sul branch `governance-e-pulizia`; migrazioni 0025 e org 0006 **da applicare in produzione** (serve l'approvazione). Linee guida per il comitato: `docs/governance/linee-guida-parametri-comuni.md`.
+**Decisioni b, e, g (2026-10-17, sezione 13 del registro di metodo):** in codice sul branch `governance-e-pulizia`, con report di audit unico per organizzazione (`neartech.audit`, `scripts/report_audit.py`). Revisioni Python, database e sicurezza fatte e corrette (nessun problema critico). Migrazioni 0025 e org 0006 **da applicare in produzione** (serve l'approvazione), nello stesso giro di `scripts/migra.py --applica` con il proprietario e l'applicazione ferma. Linee guida per il comitato: `docs/governance/linee-guida-parametri-comuni.md`. Per il report di audit serve un utente con il ruolo `auditor` (oggi nessuno in produzione).
 
-**Restano:** applicazione di 0025 e org 0006; report di audit per organizzazione (ADR 0004); crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
+**Stima delle chiamate API in attesa di approvazione (2026-10-17, solo lettura):** set di controllo del prompt v2 del Canonicalizer sulle 61 fusioni giudicate (59 chiamate, ~30.000 token in ingresso, ~18.000 in uscita) e crosswalk delle 11 task separate (32 chiamate, ~19.000 in ingresso, ~14.000 in uscita); totale ~49.000 + ~32.000 token con `claude-haiku-5-5`, il doppio nel caso peggiore con i tentativi ripetuti.
+
+**Seguiti aperti dalle revisioni:** il ruolo `neartech_app` può scrivere assegnazioni di ruolo e atti direttamente (la credenziale è il confine di fiducia); `scripts/scomponi_job.py` senza controllo dei permessi né atto nel registro; la fusione del Canonicalizer cancella i giudizi del crosswalk del task fuso; le note dei revisori (`giudizi_revisione.nota`) stanno in `public`; elementi aggiungibili a un campione prima del primo giudizio; i valori delle misure non sono confrontati nel database con quelli dei parametri citati.
+
+**Restano:** applicazione di 0025 e org 0006; crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).

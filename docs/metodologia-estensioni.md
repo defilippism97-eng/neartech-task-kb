@@ -113,4 +113,5 @@ Realizzazione dell'ADR 0001, approvata nella sezione 10 (passi di produzione). I
 Realizzazione delle decisioni b, e, g della sezione 10.
 - **b:** il comitato guida vede i parametri comuni vigenti e per ciascuno li adotta o chiede una ricalibrazione motivata (atti `adozione` e `richiesta_ricalibrazione`, permessi `adottare_parametro_comune` e `chiedere_ricalibrazione`, migrazione 0025). L'adozione vale per una versione. Il valore comune si applica anche senza adozione; `parametro_vigente` riporta `adozione_id`. Se l'adozione debba diventare obbligatoria prima dei calcoli è una decisione di governance aperta. Linee guida: `docs/governance/linee-guida-parametri-comuni.md`.
 - **e:** ogni approvazione, rifiuto o ritiro registra `stesso_proponente` nei dettagli.
-- **g:** testi di governance dell'organizzazione nel suo spazio, hash nel registro (ADR 0004, sezione Realizzazione).
+- **g:** testi di governance dell'organizzazione nel suo spazio, impronta con la chiave dello spazio nel registro, report di audit unico (ADR 0004, sezione Realizzazione).
+- **Prompt v2 del Canonicalizer:** aggiunta, prima di qualsiasi esecuzione, la frase che chiede di trattare i titoli come dati (revisione di sicurezza). Il set di controllo si fa su questa versione.
