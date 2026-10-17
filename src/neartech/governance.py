@@ -470,20 +470,28 @@ def parametri_comuni(conn: psycopg.Connection, utente_id: str, org_id: str) -> l
 
 
 def richieste_ricalibrazione(conn: psycopg.Connection, utente_id: str) -> list[dict[str, Any]]:
-    """Richieste dei comitati, con la motivazione letta dallo spazio di ciascuna organizzazione."""
+    """Richieste dei comitati, con la motivazione letta dallo spazio di ciascuna organizzazione.
+
+    Ogni spazio letto lascia la sua voce nel log di accesso, con l'organizzazione. Una richiesta è
+    superata quando la versione comune a cui si riferisce non è più vigente (nuova versione o ritiro).
+    """
     richiedi(conn, utente_id, "approvare_parametro_comune", risorsa="richieste_ricalibrazione")
     richieste = []
     for org_id, schema in _spazi(conn):
+        richiedi(conn, utente_id, "approvare_parametro_comune", org_id, risorsa="richieste_ricalibrazione")
         for r in conn.execute(
             sql.SQL("""SELECT r.decisione_id, r.oggetto_id, r.dettagli ->> 'codice', r.autore_id, r.registrata_il,
-                              t.motivazione
+                              t.motivazione,
+                              NOT EXISTS (SELECT 1 FROM parametri_vigenti v
+                                          WHERE v.org_id IS NULL AND v.parametro_id::text = r.oggetto_id)
                        FROM registro_decisioni r LEFT JOIN {}.testi_atti t USING (decisione_id)
                        WHERE r.org_id = %s AND r.atto = 'richiesta_ricalibrazione'
                        ORDER BY r.posizione""").format(schema),
             (org_id,),
         ):
             richieste.append({"decisione_id": r[0], "org_id": org_id, "parametro_id": r[1], "codice": r[2],
-                              "autore_id": str(r[3]), "registrata_il": r[4], "motivazione": r[5]})
+                              "autore_id": str(r[3]), "registrata_il": r[4], "motivazione": r[5],
+                              "superata": r[6]})
     return sorted(richieste, key=lambda r: r["decisione_id"])
 
 

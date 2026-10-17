@@ -55,6 +55,8 @@ Livello dell'intervallo di Wilson attorno alla precisione misurata.
 
 Una buona motivazione dice che cosa nella situazione dell'organizzazione rende il valore comune inadatto: per esempio, un'organizzazione piccola con campioni ridotti, o un settore in cui un errore di classificazione pesa di più. L'amministratore risponde con una nuova versione del parametro comune oppure lasciando il valore com'è. In entrambi i casi la sua decisione è un atto registrato con la motivazione.
 
+Nell'elenco delle richieste, una richiesta **superata** riguarda una versione comune che non è più vigente: l'amministratore ha già approvato una versione nuova o ritirato quella. Il comitato vede la versione vigente e può adottarla o chiedere di nuovo una ricalibrazione.
+
 ## Contrappesi
 
 Chi propone un parametro dell'organizzazione può anche approvarlo; l'atto lo segna (`stesso_proponente`). I revisori, che giudicano le classificazioni risultanti, possono segnalare al comitato i bias che derivano dalle sue decisioni; nel comitato può sedere il rappresentante dei lavoratori.

@@ -383,3 +383,155 @@ def test_importazione_del_crosswalk_non_si_ripete(conn, base):
     importa_revisioni_crosswalk(conn, base["revisore"], org_id=base["org"], campione="crosswalk-unico")
     with pytest.raises(GiaImportato):
         importa_revisioni_crosswalk(conn, base["revisore"], org_id=base["org"], campione="crosswalk-unico")
+
+
+# --- note dei revisori nello spazio dell'organizzazione (ADR 0004; revisione del 2026-10-17) ------
+
+def _chiave(conn, schema="org_sintetica"):
+    return bytes(conn.execute(f"SELECT chiave FROM {schema}.chiave_impronte").fetchone()[0])
+
+
+def test_la_nota_del_revisore_sta_nello_spazio_con_l_impronta_in_public(conn, base):
+    from neartech.registro import impronta
+
+    campione = _campione_fusioni(conn, base)
+    nota = "ci ho ripensato dopo il confronto con l'ufficio"
+    giudizio = registra_giudizio(conn, base["revisore"], campione, 1, "parziale", nota=nota,
+                                 versione_istruzioni="istruzioni-v1")
+    in_public = conn.execute("SELECT nota, hash_nota FROM giudizi_revisione WHERE giudizio_id = %s",
+                             (giudizio,)).fetchone()
+    assert in_public == (None, impronta(_chiave(conn), nota))
+    assert conn.execute("SELECT nota FROM org_sintetica.note_giudizi WHERE giudizio_id = %s",
+                        (giudizio,)).fetchone()[0] == nota
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_nota_vuota_non_lascia_impronta(conn, base):
+    campione = _campione_fusioni(conn, base)
+    giudizio = registra_giudizio(conn, base["revisore"], campione, 1, "corretto", nota="   ",
+                                 versione_istruzioni="istruzioni-v1")
+    assert conn.execute("SELECT nota, hash_nota FROM giudizi_revisione WHERE giudizio_id = %s",
+                        (giudizio,)).fetchone() == (None, None)
+
+
+def test_nota_scritta_in_public_rifiutata(conn, base):
+    campione = _campione_fusioni(conn, base)
+    with pytest.raises(psycopg.errors.CheckViolation):
+        conn.execute(
+            """INSERT INTO giudizi_revisione (campione_id, posizione, esito, nota, revisore_id, versione_istruzioni)
+               VALUES (%s, 1, 'corretto', 'testo libero', %s, 'istruzioni-v1')""",
+            (campione, base["revisore"]),
+        )
+
+
+def test_impronta_senza_nota_nello_spazio_rifiutata_al_commit(conn, base):
+    campione = _campione_fusioni(conn, base)
+    conn.execute(
+        """INSERT INTO giudizi_revisione (campione_id, posizione, esito, hash_nota, revisore_id, versione_istruzioni)
+           VALUES (%s, 1, 'corretto', %s, %s, 'istruzioni-v1')""",
+        (campione, "a" * 64, base["revisore"]),
+    )
+    with pytest.raises(psycopg.errors.RaiseException, match="nota"):
+        conn.execute("SET CONSTRAINTS giudizi_nota_presente IMMEDIATE")
+
+
+def test_nota_diversa_dalla_sua_impronta_rifiutata(conn, base):
+    campione = _campione_fusioni(conn, base)
+    giudizio = conn.execute(
+        """INSERT INTO giudizi_revisione (campione_id, posizione, esito, hash_nota, revisore_id, versione_istruzioni)
+           VALUES (%s, 1, 'corretto', %s, %s, 'istruzioni-v1') RETURNING giudizio_id""",
+        (campione, "a" * 64, base["revisore"]),
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException, match="impronta"):
+        conn.execute("INSERT INTO org_sintetica.note_giudizi (giudizio_id, nota) VALUES (%s, 'altro testo')",
+                     (giudizio,))
+
+
+def test_nota_nello_spazio_di_un_altra_organizzazione_rifiutata(conn, base):
+    from neartech.registro import impronta
+
+    crea_organizzazione(conn, base["admin"], nome="Altra org sintetica", codice="sintetica_altra")
+    campione = _campione_fusioni(conn, base)
+    nota = "nota fuori posto"
+    giudizio = conn.execute(
+        """INSERT INTO giudizi_revisione (campione_id, posizione, esito, hash_nota, revisore_id, versione_istruzioni)
+           VALUES (%s, 1, 'corretto', %s, %s, 'istruzioni-v1') RETURNING giudizio_id""",
+        (campione, impronta(_chiave(conn, "org_sintetica_altra"), nota), base["revisore"]),
+    ).fetchone()[0]
+    with pytest.raises(psycopg.errors.RaiseException, match="organizzazione"):
+        conn.execute("INSERT INTO org_sintetica_altra.note_giudizi (giudizio_id, nota) VALUES (%s, %s)",
+                     (giudizio, nota))
+
+
+def test_le_note_gia_in_public_si_spostano_nello_spazio(conn, base):
+    """Le note scritte prima della migrazione 0028 (righe esistenti in produzione) vanno nello spazio."""
+    from neartech.registro import impronta
+
+    campione = _campione_fusioni(conn, base)
+    # Righe scritte con lo schema precedente: si toglie il vincolo solo dentro questa transazione di prova.
+    conn.execute("ALTER TABLE giudizi_revisione DROP CONSTRAINT giudizi_nota_nello_spazio")
+    vecchie = [conn.execute(
+        """INSERT INTO giudizi_revisione (campione_id, posizione, esito, nota, revisore_id, versione_istruzioni)
+           VALUES (%s, %s, 'corretto', %s, %s, 'istruzioni-v1') RETURNING giudizio_id""",
+        (campione, posizione, nota, base["revisore"]),
+    ).fetchone()[0] for posizione, nota in ((1, "nota storica"), (2, "  "))]
+    assert conn.execute("SELECT sposta_note_giudizi('org_sintetica')").fetchone()[0] == 1
+    righe = conn.execute("SELECT giudizio_id, nota, hash_nota FROM giudizi_revisione WHERE giudizio_id = ANY(%s) "
+                         "ORDER BY posizione", (vecchie,)).fetchall()
+    assert righe == [(vecchie[0], None, impronta(_chiave(conn), "nota storica")), (vecchie[1], None, None)]
+    assert conn.execute("SELECT giudizio_id, nota FROM org_sintetica.note_giudizi").fetchall() == [
+        (vecchie[0], "nota storica")]
+    # Il trigger append-only torna attivo.
+    with pytest.raises(psycopg.errors.RaiseException):
+        conn.execute("UPDATE giudizi_revisione SET esito = 'errato' WHERE giudizio_id = %s", (vecchie[0],))
+
+
+def test_l_applicazione_non_sposta_le_note(conn, base):
+    conn.execute("SET LOCAL ROLE neartech_app")
+    with pytest.raises(psycopg.errors.InsufficientPrivilege):
+        conn.execute("SELECT sposta_note_giudizi('org_sintetica')")
+
+
+# --- elementi aggiunti a un campione già creato (revisione del 2026-10-17) -----------------------
+
+def test_elemento_aggiunto_a_un_campione_gia_creato_rifiutato_al_commit(conn, base):
+    campione = _campione_fusioni(conn, base)
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # il campione è completo: come dopo il suo commit
+    conn.execute("SET CONSTRAINTS ALL DEFERRED")
+    proposta = conn.execute(
+        "SELECT proposal_id FROM fusioni_proposte WHERE decisione = 'diversa' LIMIT 1"
+    ).fetchone()[0]
+    # Nessun giudizio ancora: il trigger immediato degli elementi lo lascia passare.
+    conn.execute(
+        "INSERT INTO elementi_campione (campione_id, posizione, riferimento) VALUES (%s, 4, %s)",
+        (campione, psycopg.types.json.Jsonb({"proposal_id": str(proposta)})),
+    )
+    with pytest.raises(psycopg.errors.RaiseException, match="elementi"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+# --- valori della misura uguali a quelli dei parametri citati (revisione del 2026-10-17) ----------
+
+@pytest.mark.parametrize("colonna, valore", [
+    ("soglia", 0.8),
+    ("livello_confidenza", 0.9),
+    ("regola_parziali", "corretto"),
+])
+def test_misura_con_valore_diverso_dal_parametro_citato_rifiutata(conn, base, colonna, valore):
+    _parametri_comuni(conn, base["admin"])  # soglia 0.9, regola 'errore', livello 0.95
+    campione = _campione_fusioni(conn, base)
+    _giudica(conn, base["revisore"], campione, ["corretto", "corretto", "corretto"])
+    misura = calcola_precisione(conn, base["revisore"], campione)
+    colonne = [r[0] for r in conn.execute(
+        """SELECT column_name FROM information_schema.columns
+           WHERE table_schema = 'public' AND table_name = 'misure_precisione' AND column_name <> 'misura_id'
+           ORDER BY ordinal_position""").fetchall()]
+    elenco = ", ".join(colonne)
+    sostituite = ", ".join("%(valore)s" if c == colonna else c for c in colonne)
+    # Copia della misura valida con un solo valore cambiato: esito e posizione della soglia restano coerenti.
+    with pytest.raises(psycopg.errors.RaiseException, match="parametr"):
+        conn.execute(
+            f"""INSERT INTO misure_precisione (misura_id, {elenco})
+                SELECT gen_random_uuid(), {sostituite} FROM misure_precisione WHERE misura_id = %(misura)s""",
+            {"valore": valore, "misura": misura.misura_id},
+        )

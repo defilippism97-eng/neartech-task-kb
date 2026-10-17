@@ -19,6 +19,7 @@ from neartech.permessi import (
     puo,
     richiedi,
 )
+from neartech.registro import registra
 
 
 @pytest.fixture
@@ -32,11 +33,14 @@ def scenario(conn):
     assegna_ruolo(conn, utenti["comitato"], "comitato_guida", a, assegnata_da=admin)
     assegna_ruolo(conn, utenti["revisore"], "revisore", a, assegnata_da=admin)
     assegna_ruolo(conn, utenti["rappresentante"], "rappresentante_lavoratori", a, assegnata_da=admin)
-    conn.execute(
+    scaduta = conn.execute(
         """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, org_id, valida_dal, valida_al, assegnata_da)
-           VALUES (%s, 'revisore', %s, now() - interval '1 day', now() - interval '1 second', %s)""",
+           VALUES (%s, 'revisore', %s, now() - interval '1 day', now() - interval '1 second', %s)
+           RETURNING assegnazione_id""",
         (utenti["scaduto"], a, admin),
-    )
+    ).fetchone()[0]
+    registra(conn, autore_id=admin, tipo_oggetto="assegnazione_ruolo", oggetto_id=str(scaduta),
+             atto="approvazione", motivazione="assegnazione scaduta di prova", org_id=a)
     return {"a": a, "b": b, "admin": admin, **utenti}
 
 
@@ -132,6 +136,8 @@ def test_il_rifiuto_resta_nel_log_anche_se_la_transazione_viene_annullata(dsn):
 ])
 def test_tabelle_protette_non_si_modificano(conn, scenario, comando):
     puo(conn, scenario["revisore"], "gestire_utenti")
+    # I controlli differiti delle assegnazioni dello scenario, prima: TRUNCATE non ammette eventi in sospeso.
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute(comando)
 
@@ -234,26 +240,30 @@ def test_organizzazione_inesistente_e_negata(conn, scenario):
 
 # --- santa-loop, giro 2 -----------------------------------------------------------
 
-def test_assegnazioni_contemporanee_non_si_duplicano(dsn):
+def test_assegnazioni_contemporanee_non_si_duplicano(dsn_isolato):
     """Due transazioni che assegnano lo stesso ruolo a termine: una sola deve riuscire."""
     import threading
 
-    with psycopg.connect(dsn, autocommit=True) as setup:
+    with psycopg.connect(dsn_isolato, autocommit=True) as setup:
+        admin = inizializza_amministratore(setup, "sso|admin-concorrenza")
         utente = crea_utente(setup, "sso|concorrenza-ruoli")
+
+    def assegna(c):
+        assegnazione = c.execute(
+            """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al, assegnata_da)
+               VALUES (%s, 'auditor', now() + interval '1 day', %s) RETURNING assegnazione_id""",
+            (utente, admin),
+        ).fetchone()[0]
+        registra(c, autore_id=admin, tipo_oggetto="assegnazione_ruolo", oggetto_id=str(assegnazione),
+                 atto="approvazione", motivazione="assegnazione concorrente")
+
     risultati = []
-    with psycopg.connect(dsn) as prima, psycopg.connect(dsn) as seconda:
-        prima.execute(
-            "INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al) VALUES (%s, 'auditor', now() + interval '1 day')",
-            (utente,),
-        )
+    with psycopg.connect(dsn_isolato) as prima, psycopg.connect(dsn_isolato) as seconda:
+        assegna(prima)
 
         def seconda_insert():
             try:
-                seconda.execute(
-                    """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, valida_al)
-                       VALUES (%s, 'auditor', now() + interval '1 day')""",
-                    (utente,),
-                )
+                assegna(seconda)
                 seconda.commit()
                 risultati.append("riuscita")
             except psycopg.errors.UniqueViolation:
@@ -340,3 +350,65 @@ def test_il_database_rifiuta_un_secondo_bootstrap(conn, scenario):
         conn.execute(
             "INSERT INTO assegnazioni_ruolo (utente_id, ruolo) VALUES (%s, 'amministratore_tecnico')", (altro,)
         )
+
+
+# --- assegnazioni scritte direttamente nel database (seguito della revisione di sicurezza) ---------
+
+def _assegnazione_diretta(conn, utente, ruolo, org=None, assegnata_da=None):
+    return str(conn.execute(
+        """INSERT INTO assegnazioni_ruolo (utente_id, ruolo, org_id, assegnata_da)
+           VALUES (%s, %s, %s, %s) RETURNING assegnazione_id""",
+        (utente, ruolo, org, assegnata_da),
+    ).fetchone()[0])
+
+
+def _atto_assegnazione(conn, assegnazione, autore, org=None):
+    registra(conn, autore_id=autore, tipo_oggetto="assegnazione_ruolo", oggetto_id=assegnazione,
+             atto="approvazione", motivazione="assegnazione diretta", org_id=org)
+
+
+def test_assegnazioni_regolari_superano_il_controllo_differito(conn, scenario):
+    nuovo = crea_utente(conn, "sso|regolare")
+    assegna_ruolo(conn, nuovo, "revisore", scenario["b"], assegnata_da=scenario["admin"])
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_assegnazione_senza_atto_rifiutata(conn, scenario):
+    conn.execute("SET LOCAL ROLE neartech_app")
+    nuovo = crea_utente(conn, "sso|senza-atto")
+    _assegnazione_diretta(conn, nuovo, "revisore", scenario["a"], scenario["admin"])
+    with pytest.raises(psycopg.errors.RaiseException, match="atto"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_assegnazione_con_atto_di_chi_non_gestisce_utenti_rifiutata(conn, scenario):
+    conn.execute("SET LOCAL ROLE neartech_app")
+    nuovo = crea_utente(conn, "sso|atto-del-comitato")
+    assegnazione = _assegnazione_diretta(conn, nuovo, "revisore", scenario["a"], scenario["comitato"])
+    _atto_assegnazione(conn, assegnazione, scenario["comitato"], scenario["a"])
+    with pytest.raises(psycopg.errors.RaiseException, match="gestire_utenti"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_atto_firmato_da_altri_che_chi_assegna_rifiutato(conn, scenario):
+    conn.execute("SET LOCAL ROLE neartech_app")
+    nuovo = crea_utente(conn, "sso|atto-di-altri")
+    assegnazione = _assegnazione_diretta(conn, nuovo, "revisore", scenario["a"], scenario["comitato"])
+    _atto_assegnazione(conn, assegnazione, scenario["admin"], scenario["a"])
+    with pytest.raises(psycopg.errors.RaiseException, match="atto"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_chi_si_assegna_l_amministrazione_non_si_autorizza_da_solo(conn, scenario):
+    conn.execute("SET LOCAL ROLE neartech_app")
+    abusivo = scenario["revisore"]
+    assegnazione = _assegnazione_diretta(conn, abusivo, "amministratore_tecnico", None, abusivo)
+    _atto_assegnazione(conn, assegnazione, abusivo)
+    with pytest.raises(psycopg.errors.RaiseException, match="gestire_utenti"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_bootstrap_supera_il_controllo_differito(dsn_isolato):
+    with psycopg.connect(dsn_isolato) as c:
+        inizializza_amministratore(c, "sso|primo-admin")
+        c.commit()

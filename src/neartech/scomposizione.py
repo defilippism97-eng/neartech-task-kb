@@ -7,7 +7,9 @@ Per ogni documento di lavoro:
   e il passo letterale del documento da cui deriva;
 - ogni attività è accettata solo se il passo compare davvero nel documento: niente attività inventate;
 - il titolo canonico è riusato se esiste già (stesso testo), altrimenti viene creato;
-- l'occorrenza lega il task al ruolo e porta modello, impronta del prompt e fonte.
+- l'occorrenza lega il task al ruolo e porta modello, impronta del prompt e fonte;
+- il caricamento lo fa una persona con gestire_dataset_centrale, e ogni documento caricato lascia un atto
+  nel registro (carica_documento).
 
 Il dedup semantico tra formulazioni diverse (Canonicalizer) non è qui: si basa sui titoli già presenti.
 """
@@ -26,6 +28,8 @@ from pydantic import BaseModel, Field, ValidationError
 
 from neartech.crosswalk import una_riga
 from neartech.occorrenze import documento, registra_occorrenza, ruolo
+from neartech.permessi import richiedi
+from neartech.registro import registra
 
 MODEL_ID = "claude-sonnet-5-5"  # estrazione da documenti: Sonnet, come da CLAUDE.md
 MAX_ATTEMPTS = 2
@@ -206,3 +210,27 @@ def salva_documento(
                                model_name=MODEL_ID, prompt_hash=phash):
             nuove += 1
     return nuove
+
+
+def carica_documento(
+    conn: psycopg.Connection, utente_id: str, doc: DocumentoJob, attivita: list[_Attivita], *,
+    org_id: str, modalita: Literal["modello", "da_file"],
+    motivazione: str = "caricamento di un documento dell'organizzazione",
+) -> int:
+    """Caricamento di un documento da parte di una persona: permesso, salvataggio e atto, in una transazione.
+
+    I task nuovi entrano nel dataset centrale, quindi serve gestire_dataset_centrale. L'atto ('approvazione'
+    di un 'caricamento_documento') ha per oggetto il documento; nome del file e ruolo, testo del cliente,
+    stanno nello spazio con la motivazione. Un rilancio lascia un altro atto, con le occorrenze nuove a zero.
+    """
+    with conn.transaction():
+        richiedi(conn, utente_id, "gestire_dataset_centrale", org_id, risorsa=f"caricamento:{doc.sha256[:16]}")
+        nuove = salva_documento(conn, doc, attivita, org_id=org_id)
+        documento_id = documento(conn, org_id, nome_file=doc.nome_file, sha256=doc.sha256,
+                                 licenza=SOURCE_LICENSE, tipo=SOURCE_KIND)
+        registra(conn, autore_id=utente_id, tipo_oggetto="caricamento_documento", oggetto_id=documento_id,
+                 atto="approvazione", motivazione=motivazione, org_id=org_id,
+                 dettagli={"attivita": len(attivita), "occorrenze_nuove": nuove, "modalita": modalita,
+                           "modello": MODEL_ID, "prompt_hash": prompt_hash()},
+                 dettagli_riservati={"nome_file": doc.nome_file, "ruolo": doc.ruolo})
+        return nuove
