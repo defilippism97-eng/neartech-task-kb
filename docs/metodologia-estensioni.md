@@ -183,3 +183,11 @@ Approvate dal responsabile del progetto, provvisorie fino alla revisione del com
 ## 20. Incertezza della copertura di riserva (2026-10-17)
 
 Approvata dal responsabile del progetto. Con una sola evidenza di riserva per dimensione la copertura apparirebbe certa. Lo snapshot di riserva allarga l'intervallo di ±0,5 livelli attorno alle evidenze (metà della distanza fra due livelli della scala), limitato a 0–4: metodo `riserva-v2-banda-0.5`, dichiarato nello snapshot e nell'atto. Così il risultato dice quanto è sicuro (probabilità dei quadranti) e i casi incerti vanno in revisione. Quando arriveranno evidenze reali, il disaccordo fra le fonti sostituirà la banda.
+
+## 21. Primo calcolo di N e D per Società Dolce (2026-10-17)
+
+Esecuzione approvata dal responsabile del progetto. Copertura di riserva proposta da Haiku 5.5 per i 306 task attivi (306 chiamate, 150.689 token in ingresso e 248.140 in uscita, circa 0,14 dollari); snapshot di riserva `fe46a606-…` (metodo `riserva-v2-banda-0.5`, emivita 180 giorni) pubblicato; calcolo con rubrica `bozza-3`, profilo `neartech-comune-v1`, seme 20261017, 2.000 estrazioni.
+
+Esito: 504 occorrenze; 454 con N e D (le 50 restanti stanno su aree di responsabilità ritirate). Quadrante più probabile: Q4 370, Q3 84, nessun Q1 o Q2; 418 stabili, 36 sotto l'80% (da rivedere). N medio 0,03, D medio 0,30 (provvisorio: solo d1 e d2).
+
+**Punto metodologico aperto, da portare al comitato guida.** Per il giudizio (k2) il modello ha proposto il livello di riserva 2 per 280 task su 306. Sulla scala di riserva il livello 2 significa "strumenti commerciali con supervisione costante", cioè con una persona nel processo; la formula del piano però tratta una copertura pari alla domanda come divario nullo. Così un task che richiede giudizio 2 risulta coperto per intero anche se la scala dice che serve supervisione, e N viene quasi nullo ovunque. Va deciso se e come i livelli di riserva che presuppongono supervisione umana (1 e 2) debbano compensare la domanda. Fino ad allora i risultati sono provvisori e non motivano scelte organizzative.
