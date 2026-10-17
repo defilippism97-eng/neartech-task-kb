@@ -117,7 +117,7 @@ export function Panoramica() {
         <Approvazione codice={codice} dati={dati.data}
           puoApprovare={ruolo === 'comitato_guida' && percorso.fase_corrente === 'esito'} />
       </div>
-      <BarraPercorso percorso={percorso} ruolo={ruolo} />
+      <BarraPercorso percorso={percorso} ruolo={ruolo} codice={codice} />
       <Avanzamento dati={dati.data.avanzamento} />
       {r.riepilogo.con_risultato === 0 ? (
         <div className="card vuoto">

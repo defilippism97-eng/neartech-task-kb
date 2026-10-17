@@ -1,0 +1,25 @@
+{
+  "versione": "bozza-1",
+  "stato": "bozza da approvare dal responsabile del progetto (registro di metodo, sezione 27)",
+  "intensita": 0.5,
+  "limiti": {"min": 0.1, "max": 0.45},
+  "risposte": ["Per niente", "Poco", "In parte", "Molto", "Del tutto"],
+  "domande": [
+    {"codice": "d1a", "voce": "d1", "verso": 1,
+     "testo": "Quanto conta per voi che la relazione con clienti e colleghi resti affidata a persone?"},
+    {"codice": "d1b", "voce": "d1", "verso": -1,
+     "testo": "Quanto siete disposti ad affidare a sistemi automatici le comunicazioni di routine con clienti e fornitori?"},
+    {"codice": "d2a", "voce": "d2", "verso": 1,
+     "testo": "Quanto deve restare a una persona responsabile ogni decisione che incide su diritti, carriere o risorse?"},
+    {"codice": "d2b", "voce": "d2", "verso": -1,
+     "testo": "Quanto siete disposti ad automatizzare controlli e verifiche di conformità interni?"},
+    {"codice": "d3a", "voce": "d3", "verso": 1,
+     "testo": "Quanto pesa, nelle vostre scelte, il senso che il lavoro ha per chi lo svolge?"},
+    {"codice": "d3b", "voce": "d3", "verso": -1,
+     "testo": "Per i compiti ripetitivi, quanto volete spingere l'automazione per liberare tempo?"},
+    {"codice": "d4a", "voce": "d4", "verso": 1,
+     "testo": "Quanto conta per i vostri clienti sapere che dietro il servizio c'è una persona?"},
+    {"codice": "d4b", "voce": "d4", "verso": -1,
+     "testo": "Quanto i vostri clienti accetterebbero un servizio automatico, a parità di qualità?"}
+  ]
+}

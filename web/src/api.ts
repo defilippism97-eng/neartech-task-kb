@@ -98,7 +98,8 @@ export interface Percorso {
   fase_corrente: Fase
   fasi: [
     { codice: 'avvio'; stato: StatoFase; fatti: { documenti: number; attivita: number; in_attesa_di_abbinamento: number; occorrenze: number } },
-    { codice: 'indirizzi'; stato: StatoFase; fatti: { profilo_proprio: string | null; profilo_in_uso: string | null } },
+    { codice: 'indirizzi'; stato: StatoFase; fatti: { profilo_proprio: string | null; profilo_in_uso: string | null;
+      proposta: { profile_id: string; approvata: boolean; verificata: boolean } | null } },
     { codice: 'verifica'; stato: StatoFase; fatti: { risultati: number; da_confermare: number | null; quota_giudizi_di_persona: number } },
     { codice: 'esito'; stato: StatoFase; fatti: { approvazione: number | null; impronta: string } },
   ]
@@ -108,6 +109,27 @@ export interface Panoramica {
   restituzione: Restituzione
   avanzamento: Avanzamento
   percorso: Percorso
+}
+
+export interface Domanda {
+  codice: string
+  voce: 'd1' | 'd2' | 'd3' | 'd4'
+  verso: 1 | -1
+  testo: string
+}
+
+export interface StatoIndirizzi {
+  questionario: { versione: string; risposte: string[]; domande: Domanda[]; limiti: { min: number; max: number } } | null
+  pesi_in_uso: { profilo: string; pesi: Record<string, number> }
+  profilo: {
+    profile_id: string
+    attivo: boolean
+    pesi: Record<string, number>
+    approvato: number | null
+    verificato: number | null
+    controlli: { codice: string; esito: boolean; descrizione: string }[]
+    effetto: { quadranti: Record<Quadrante, number>; cambiano_quadrante: number; occorrenze: number } | null
+  } | null
 }
 
 export interface Organizzazione {
@@ -158,6 +180,16 @@ export const api = {
       `/api/organizzazioni/${encodeURIComponent(codice)}/restituzione/approvazione`,
       { method: 'POST', body: JSON.stringify({ impronta, motivazione }) },
     ),
+  indirizzi: (codice: string) => richiesta<StatoIndirizzi>(`/api/organizzazioni/${encodeURIComponent(codice)}/indirizzi`),
+  rispondi: (codice: string, risposte: Record<string, number>, nota: string) =>
+    richiesta<{ profile_id: string }>(`/api/organizzazioni/${encodeURIComponent(codice)}/indirizzi/risposte`,
+      { method: 'POST', body: JSON.stringify({ risposte, nota }) }),
+  decidiProfilo: (codice: string, profilo: string, atto: 'approvazione' | 'verifica', motivazione: string) =>
+    richiesta<{ atto: number }>(
+      `/api/organizzazioni/${encodeURIComponent(codice)}/indirizzi/${encodeURIComponent(profilo)}/${atto}`,
+      { method: 'POST', body: JSON.stringify({ motivazione }) }),
+  ricalcola: (codice: string) =>
+    richiesta<{ nuove: number }>(`/api/organizzazioni/${encodeURIComponent(codice)}/calcolo`, { method: 'POST' }),
   esci: () => richiesta<{ uscito: boolean }>('/accesso/esci', { method: 'POST' }),
   entraSviluppo: (soggetto: string) =>
     richiesta<{ entrato: boolean }>('/accesso/sviluppo', { method: 'POST', body: JSON.stringify({ soggetto }) }),

@@ -21,7 +21,7 @@ const percorso = (fase: Fase, approvazione: number | null = null): Percorso => {
     fase_corrente: fase,
     fasi: [
       { codice: 'avvio', stato: stato('avvio'), fatti: { documenti: 6, attivita: 30, in_attesa_di_abbinamento: 0, occorrenze: 3 } },
-      { codice: 'indirizzi', stato: stato('indirizzi'), fatti: { profilo_proprio: null, profilo_in_uso: 'p' } },
+      { codice: 'indirizzi', stato: stato('indirizzi'), fatti: { profilo_proprio: null, profilo_in_uso: 'p', proposta: null } },
       { codice: 'verifica', stato: stato('verifica'), fatti: { risultati: 2, da_confermare: 1, quota_giudizi_di_persona: 0.125 } },
       { codice: 'esito', stato: stato('esito'), fatti: { approvazione, impronta: 'f'.repeat(64) } },
     ],

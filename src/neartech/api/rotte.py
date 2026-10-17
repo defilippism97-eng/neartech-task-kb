@@ -1,5 +1,6 @@
 """Rotte dell'API (fase 6). Ogni rotta chiama il motore, che controlla i permessi e scrive gli atti."""
 
+from datetime import date
 from typing import Any
 
 import psycopg
@@ -7,6 +8,8 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from neartech.api.app import connessione, utente_corrente
+from neartech.calcolo import calcola_organizzazione
+from neartech.indirizzi_pesi import approva_profilo, proponi_profilo, stato_indirizzi, verifica_profilo
 from neartech.percorso import stato_percorso
 from neartech.permessi import PermessoNegato, puo, ruoli_utente
 from neartech.restituzione import RestituzioneSuperata, approva_restituzione, restituzione_organizzazione
@@ -63,6 +66,58 @@ def organizzazioni(utente: str = Depends(utente_corrente),
     righe = conn.execute("SELECT org_id, codice, name FROM organizations WHERE codice IS NOT NULL ORDER BY name").fetchall()
     return [{"codice": codice, "nome": nome} for org, codice, nome in righe
             if puo(conn, utente, "leggere", str(org), risorsa=f"organizzazione:{codice}")]
+
+
+class Motivazione(BaseModel):
+    motivazione: str = Field(min_length=3, max_length=4000)
+
+
+class Risposte(BaseModel):
+    risposte: dict[str, int]
+    nota: str = Field(default="", max_length=4000)
+
+
+@router.get("/organizzazioni/{codice}/indirizzi")
+def indirizzi(codice: str, utente: str = Depends(utente_corrente),
+              conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    """Questionario degli indirizzi, ultimo profilo proposto, controlli ed effetto sui task."""
+    return stato_indirizzi(conn, utente, _organizzazione(conn, utente, codice))
+
+
+@router.post("/organizzazioni/{codice}/indirizzi/risposte")
+def rispondi(codice: str, corpo: Risposte, request: Request, utente: str = Depends(utente_corrente),
+             conn: psycopg.Connection = Depends(connessione)) -> dict[str, str]:
+    profilo = proponi_profilo(conn, utente, _organizzazione(conn, utente, codice), corpo.risposte, nota=corpo.nota)
+    request.app.state.conferma(conn)
+    return {"profile_id": profilo}
+
+
+@router.post("/organizzazioni/{codice}/indirizzi/{profile_id}/approvazione")
+def approva_indirizzi(codice: str, profile_id: str, corpo: Motivazione, request: Request,
+                      utente: str = Depends(utente_corrente),
+                      conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    atto = approva_profilo(conn, utente, _organizzazione(conn, utente, codice), profile_id, motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return {"atto": atto}
+
+
+@router.post("/organizzazioni/{codice}/indirizzi/{profile_id}/verifica")
+def verifica_indirizzi(codice: str, profile_id: str, corpo: Motivazione, request: Request,
+                       utente: str = Depends(utente_corrente),
+                       conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    atto = verifica_profilo(conn, utente, _organizzazione(conn, utente, codice), profile_id, motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return {"atto": atto}
+
+
+@router.post("/organizzazioni/{codice}/calcolo")
+def ricalcola(codice: str, request: Request, utente: str = Depends(utente_corrente),
+              conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    """Ricalcolo con la configurazione vigente (amministratore tecnico). Seme dalla data: ripetibile nel giorno."""
+    esito = calcola_organizzazione(conn, utente, _organizzazione(conn, utente, codice),
+                                   seme=int(date.today().strftime("%Y%m%d")))
+    request.app.state.conferma(conn)
+    return esito
 
 
 class Approvazione(BaseModel):

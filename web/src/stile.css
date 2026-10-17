@@ -127,6 +127,24 @@ p { color: var(--slate); }
 .suggerimento b { display: block; font-size: 13px; }
 .suggerimento span { font-family: var(--f-mono); color: #CBD5E1; }
 .nota-mappa { font-size: 13px; margin: 6px 0 4px; }
+
+/* Indirizzi del comitato */
+.questionario textarea, .decisione textarea { width: 100%; min-height: 80px; margin: 8px 0; padding: 12px;
+  border: 1.5px solid var(--border); border-radius: 12px; font: inherit; resize: vertical; }
+.domanda { border: 0; border-top: 1px solid var(--border); padding: 14px 0; }
+.domanda legend { font-weight: 600; color: var(--navy); font-size: 15px; display: flex; flex-direction: column; gap: 2px; }
+.domanda legend .mono { font-size: 11px; font-weight: 500; color: var(--stone-ink); }
+.scala { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.scala label { border: 1.5px solid var(--border); border-radius: 99px; padding: 8px 14px; font-size: 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
+.scala label:hover { border-color: var(--cobalt); }
+.scala input { accent-color: var(--teal-ink); }
+.scala .scelta-attiva { border-color: var(--teal); background: #E6FAFA; color: var(--navy); font-weight: 600; }
+.passi-atto { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--stone-ink); }
+.passi-atto .fatto { color: var(--emerald-ink); font-weight: 600; }
+.pesi td, .pesi th { padding: 8px 10px; }
+.controlli { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-top: 14px; font-size: 13px; color: var(--slate); }
+.decisione { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 16px; max-width: 560px; }
 .tabella-mappa { margin-top: 12px; }
 .tabella-mappa summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--cobalt); padding: 8px 0; min-height: 32px; }
 .tabella-mappa table { margin-top: 8px; font-size: 13px; }

@@ -9,10 +9,11 @@ Non usa mai DATABASE_URL: nessun contatto con il database di produzione.
 Uso:
   (cd web && npm run build)
   python scripts/prova_locale.py [--porta 8000]
-Soggetti di prova: prova|comitato (comitato guida), prova|revisore, prova|admin.
+Soggetti di prova: prova|comitato (comitato guida), prova|auditor, prova|revisore, prova|admin.
 """
 
 import argparse
+import json
 import random
 import sys
 from pathlib import Path
@@ -133,6 +134,13 @@ def popola(conn: psycopg.Connection) -> None:
     soglia = proponi_parametro(conn, admin, codice="soglia_stabilita_quadrante", valore={"valore": 0.8},
                                descrizione="soglia di stabilità del quadrante", motivazione="dati di prova", org_id=None)
     approva_parametro(conn, admin, soglia, motivazione="dati di prova")
+    # Questionario degli indirizzi in bozza (docs/governance): approvato solo nei dati di prova.
+    bozza = json.loads((RADICE / "docs" / "governance" / "questionario-indirizzi-bozza-1.json").read_text(encoding="utf-8"))
+    questionario = proponi_parametro(conn, admin, codice="questionario_indirizzi", valore=bozza,
+                                     descrizione="questionario degli indirizzi (bozza)", motivazione="dati di prova",
+                                     org_id=None)
+    approva_parametro(conn, admin, questionario, motivazione="dati di prova")
+    assegna_ruolo(conn, crea_utente(conn, "prova|auditor"), "auditor", assegnata_da=admin)
     esito = calcola_organizzazione(conn, admin, org, seme=20261017, estrazioni=500)
     print(f"ACME S.p.A.: {len(task_id)} task, {esito['occorrenze']} occorrenze, {esito['nuove']} risultati")
 

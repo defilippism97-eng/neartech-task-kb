@@ -24,7 +24,7 @@ def test_risultati_con_il_profilo_comune_restano_provvisori(conn, mondo):  # noq
     calcola_organizzazione(conn, mondo["admin"], mondo["org"], seme=7, estrazioni=100)
     p = stato_percorso(conn, mondo["admin"], mondo["org"])
     assert _fasi(p)["verifica"] == "in_corso" and p["fase_corrente"] == "indirizzi"
-    assert p["fasi"][1]["fatti"] == {"profilo_proprio": None, "profilo_in_uso": "profilo-prova"}
+    assert p["fasi"][1]["fatti"] == {"profilo_proprio": None, "profilo_in_uso": "profilo-prova", "proposta": None}
 
 
 def test_con_profilo_proprio_e_restituzione_approvata_il_percorso_e_concluso(conn, mondo):  # noqa: F811

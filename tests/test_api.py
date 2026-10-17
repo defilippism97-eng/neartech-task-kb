@@ -143,6 +143,18 @@ def test_panoramica_del_comitato(client):
     assert corpo["percorso"]["fase_corrente"] == "indirizzi"
 
 
+def test_indirizzi_senza_questionario_approvato(client):
+    _entra(client)
+    corpo = client.get("/api/organizzazioni/sintetica/indirizzi").json()
+    assert corpo["questionario"] is None and corpo["profilo"] is None
+    assert corpo["pesi_in_uso"]["profilo"] == "profilo-prova"
+
+
+def test_solo_l_amministratore_ricalcola(client):
+    _entra(client)
+    assert client.post("/api/organizzazioni/sintetica/calcolo", headers=SCRIVE).status_code == 403
+
+
 def test_organizzazioni_visibili(client):
     _entra(client)
     assert client.get("/api/organizzazioni").json() == [{"codice": "sintetica", "nome": "Org sintetica"}]
