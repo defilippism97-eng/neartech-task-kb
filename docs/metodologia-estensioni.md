@@ -218,3 +218,9 @@ Scelte tecniche della fase 5 (`neartech.restituzione`, `scripts/restituzione.py`
 - la coda elenca occorrenze; un task presente in più ruoli compare una volta per ruolo;
 - la probabilità del quadrante si confronta con la soglia sul valore registrato, arrotondato a tre decimali;
 - i ruoli senza alcun risultato vigente non compaiono fra i ruoli (le loro occorrenze contano fra quelle senza risultato).
+
+## 25. Soglia di stabilità del quadrante (2026-10-17)
+
+Approvata dal responsabile del progetto, provvisoria fino alla revisione del comitato guida; atto nel registro alla posizione 44. Parametro comune `soglia_stabilita_quadrante` = 0,8, il valore indicato dal piano: il risultato di un'occorrenza è stabile se il suo quadrante più probabile esce in almeno l'80% delle estrazioni; sotto, l'occorrenza va nella coda da rivedere della restituzione.
+
+Con i risultati della versione 2 (sezione 23) la coda di Società Dolce ha 41 occorrenze su 454. Il comitato guida di Società Dolce deve ancora adottare il valore comune: fino ad allora la restituzione lo segnala.
