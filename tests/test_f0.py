@@ -208,3 +208,14 @@ def test_evidenza_con_punteggio_fuori_scala_e_rifiutata_dal_modello():
             source_name="x", source_version="1", evidence_type="benchmark", dimension="k1",
             raw_value=1, score_0_4=4.5, quality=0.5, observed_at="2026-01-01",
         )
+
+
+def test_ruolo_senza_quote_di_tempo_usa_pesi_uguali_e_lo_dichiara(conn):
+    """Registro di metodo, sezione 22: senza quote di tempo ogni task del ruolo pesa uguale, e il ruolo è provvisorio."""
+    base = _setup_base(conn)
+    conn.execute("UPDATE task_occurrences SET time_share = NULL WHERE occurrence_id = %s", (base["occurrence"],))
+    snap = _snapshot(conn, "published", "2026-10-01")
+    _estimate(conn, base["occurrence"], snap, 0.3, 0.6)
+    riga = conn.execute("SELECT barycenter_n, pesi_tempo, provvisorio FROM v_role_metrics WHERE role_id = %s",
+                        (base["role"],)).fetchone()
+    assert (float(riga[0]), riga[1], riga[2]) == (pytest.approx(0.3), "uguali", True)

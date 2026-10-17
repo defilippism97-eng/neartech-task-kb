@@ -139,7 +139,8 @@ def test_calcolo_scrive_i_risultati_con_le_loro_chiavi(conn, mondo):
     assert esito == {"occorrenze": 2, "nuove": 2, "senza_n": 1, "senza_d": 1}  # il task scoperto non ha giudizi
     (n, d, q1, capacita, componenti, provvisorio, versione, seme, estrazioni, profilo, rubrica, snapshot,
      fonti) = _stime(conn, mondo["occorrenza"])[0]
-    assert float(n) == pytest.approx(0.55) and float(d) == pytest.approx(0.875) and float(q1) == 1
+    # Copertura di riserva 1, 1, 2 vale 0, 0, 1 (sezione 22): divari 3, 3, 0 su 4, N = 0,6 × 1,375 = 0,825.
+    assert float(n) == pytest.approx(0.825) and float(d) == pytest.approx(0.875) and float(q1) == 1
     assert (capacita, componenti, provvisorio, versione, seme, estrazioni, profilo, rubrica) == (
         "riserva", ["d1", "d2"], True, VERSIONE_CALCOLO, 7, 200, "profilo-prova", "rubrica-prova")
     assert str(snapshot) == mondo["snapshot"]
@@ -263,3 +264,20 @@ def test_l_applicazione_non_registra_profili_approvati(conn, mondo):
                                                      w_d4, theta_n, theta_d, is_active, approved_by)
                         VALUES ('abusivo', %s, 0.4, 0.4, 0.2, 0.5, 0.25, 0.25, 0.25, 0.25, 0.5, 0.5, true, 'io')""",
                      (mondo["org"],))
+
+
+# --- copertura di riserva con supervisione (registro di metodo, sezione 22) --------------
+
+@pytest.mark.parametrize("livello, effettiva", [(0, 0), (1, 0), (1.5, 0.5), (2, 1), (2.5, 2), (3, 3), (3.5, 3.5),
+                                                (4, 4)])
+def test_copertura_effettiva_della_scala_di_riserva(livello, effettiva):
+    from neartech.calcolo import copertura_effettiva_riserva
+    assert copertura_effettiva_riserva(livello) == pytest.approx(effettiva)
+
+
+def test_la_supervisione_riduce_la_copertura_solo_con_la_riserva():
+    giudizi = {"k1": [2], "k2": [2], "k3": [0], "r": [2], "d1": [1], "d2": [1]}
+    copertura = {"k1": (2, 2), "k2": (2, 2), "k3": (2, 2)}
+    assert simula(giudizi, copertura, PROFILO, estrazioni=10, seme=1).n_media == 0
+    riserva = simula(giudizi, copertura, PROFILO, estrazioni=10, seme=1, riserva=True)
+    assert riserva.n_media == pytest.approx((0.4 * 1 / 4 + 0.4 * 1 / 4) * (1 + 0.5 * 2 / 4))
