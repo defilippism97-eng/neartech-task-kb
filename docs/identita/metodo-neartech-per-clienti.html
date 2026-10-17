@@ -174,7 +174,7 @@
     .phase.is-rule { border-left: 4px solid var(--violet); }
 
     /* ---------- Persone ---------- */
-    .who-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    .who-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
     .who-card { background: var(--cloud); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
     .who-card .dot { width: 14px; height: 14px; border-radius: 50%; margin-bottom: 12px; }
     .who-card h4 { font-size: 15px; }
@@ -472,98 +472,103 @@
           <div class="quad-item"><span class="sw" style="background:#521983"></span><div><strong>Supporto tecnologico</strong><span>Il compito è gestibile con strumenti digitali, mentre la persona resta responsabile del risultato e della qualità.</span></div></div>
         </div>
       </div>
-      <p class="mono" style="margin-top:20px;">Ogni posizione è accompagnata da una probabilità, non da un'etichetta secca: un task vicino al confine è segnalato come incerto e riportato alla revisione umana.</p>
+      <p class="mono" style="margin-top:20px;">Ogni posizione è accompagnata da una probabilità, non da un'etichetta secca: un task vicino al confine è segnalato come incerto, e i revisori lo controllano per primi.</p>
     </section>
 
     <!-- 03 IL PERCORSO -->
     <section id="percorso">
       <div class="head">
-        <div class="eyebrow">03 — Il percorso, fase per fase</div>
-        <h2>Dall'onboarding alla decisione.</h2>
-        <p class="lead">Nove passaggi. Ciascuno dice che cosa succede, chi decide e che cosa resta registrato. Le etichette indicano il tipo di passaggio: <span class="tag amber">decisione umana</span> <span class="tag teal">lavoro dell'AI, verificato</span> <span class="tag navy">regola di calcolo</span>.</p>
+        <div class="eyebrow">03 — Il percorso, passo per passo</div>
+        <h2>Dalla mansione alla restituzione.</h2>
+        <p class="lead">Nove passi per ogni organizzazione. Ciascuno dice che cosa succede, chi lavora o chi decide, e che cosa resta registrato. Le etichette indicano il tipo di passo: <span class="tag amber">decisione umana</span> <span class="tag teal">lavoro dell'AI, verificato</span> <span class="tag navy">regola di calcolo</span>.</p>
+      </div>
+
+      <div class="card" style="padding:20px 24px; margin-bottom:18px;">
+        <h4>Prima di iniziare</h4>
+        <p style="margin:0;">Si apre lo spazio riservato della vostra organizzazione, con i suoi ruoli. I documenti di lavoro (job description, mansionari) entrano solo con un caricamento autorizzato, e lì restano.</p>
       </div>
 
       <div class="phases">
-        <article class="phase is-human">
-          <div class="phase-num">01<small>Onboarding</small></div>
-          <div class="phase-body">
-            <h3>Si parte insieme</h3>
-            <div class="who">Chi decide: il comitato guida dell'organizzazione</div>
-            <ul>
-              <li>Si definisce lo spazio dell'organizzazione, con i suoi ruoli e i suoi responsabili.</li>
-              <li>Il comitato guida fissa i propri valori e le proprie priorità, e vede i parametri comuni con cui il metodo lavora.</li>
-              <li>I documenti di lavoro (job description, mansionari) entrano solo con un caricamento autorizzato.</li>
-            </ul>
-            <div class="phase-trace"><strong>Traccia</strong>Chi ha caricato che cosa, quando e con quale autorizzazione.</div>
-          </div>
-        </article>
-
         <article class="phase is-ai">
-          <div class="phase-num">02<small>Lettura</small></div>
+          <div class="phase-num">01<small>Scomposizione</small></div>
           <div class="phase-body">
-            <h3>Dal documento alle attività</h3>
+            <h3>Dal documento ai task</h3>
             <div class="who">Chi lavora: un modello AI, con verifica sul testo originale</div>
             <ul>
-              <li>Ogni documento viene scomposto in attività singole, con il passo del testo da cui deriva.</li>
-              <li>Un'attività è accettata solo se il suo passo compare davvero nel documento: niente attività inventate.</li>
+              <li>Ogni job description viene scomposta in task singoli, ciascuno con il passo del testo da cui nasce.</li>
+              <li>Un task è accettato solo se il suo passo compare davvero nel documento: niente task inventati.</li>
               <li>Il testo dei documenti è trattato come contenuto da analizzare, mai come istruzione.</li>
             </ul>
-            <div class="phase-trace"><strong>Traccia</strong>Ogni attività porta il riferimento al testo e alla versione del modello.</div>
+            <div class="phase-trace"><strong>Traccia</strong>Ogni task porta il riferimento al testo e alla versione del modello.</div>
           </div>
         </article>
 
         <article class="phase is-ai">
-          <div class="phase-num">03<small>Abbinamento</small></div>
+          <div class="phase-num">02<small>Abbinamento</small></div>
           <div class="phase-body">
-            <h3>Un riferimento riconosciuto</h3>
-            <div class="who">Chi lavora: un confronto automatico, poi la decisione di un revisore</div>
+            <h3>Un riferimento nella base NEARTECH</h3>
+            <div class="who">Chi lavora: un confronto automatico; il revisore decide i lotti</div>
             <ul>
-              <li>Ogni attività viene mappata sulle librerie di compiti basate su standard globali, europei e italiani, che orientano la mappatura.</li>
+              <li>Ogni task viene cercato, dove possibile, nella base dati NEARTECH, mappata sulle librerie di compiti basate su standard globali, europei e italiani.</li>
               <li>Le proposte formano un lotto che il revisore approva in blocco, rifiutando solo le eccezioni.</li>
-              <li>Un compito già noto arriva con una classificazione già rivista. Il sapere operativo dell'impresa resta suo: i documenti originali non lasciano il suo spazio riservato.</li>
+              <li>Nella base NEARTECH entrano solo dati anonimizzati. I documenti originali, i log e le azioni restano nella sezione della vostra organizzazione, consultabili per l'audit.</li>
             </ul>
             <div class="phase-trace"><strong>Trasparenza</strong>Ogni proposta approvata o rifiutata si può rileggere, con la sua motivazione.</div>
           </div>
         </article>
 
-        <article class="phase is-ai">
-          <div class="phase-num">04<small>Nuovi task</small></div>
+        <article class="phase is-rule">
+          <div class="phase-num">03<small>Punteggio</small></div>
           <div class="phase-body">
-            <h3>Quando il lavoro è nuovo</h3>
-            <div class="who">Chi lavora: un modello, con revisione prioritaria; dove serve, i consulenti Neartech</div>
+            <h3>Ereditato o derivato per somiglianza</h3>
+            <div class="who">Chi lavora: una regola di calcolo, sempre la stessa</div>
             <ul>
-              <li>Un'attività senza corrispondenza è un compito che nessun altro possiede: lo stimiamo a partire dai compiti più simili e da evidenze accademiche e di settore, che teniamo monitorate.</li>
-              <li>Se la stima non raggiunge un livello di certezza sufficiente, coinvolgiamo voi nella revisione, con tecniche in cui la persona guida e il sistema propone. Interveniamo noi direttamente, come consulenti, a supporto.</li>
-              <li>Le classificazioni nuove vengono riviste per prime, perché sono quelle con meno storia alle spalle.</li>
-              <li>Del compito si conserva solo la forma standard, mai il testo dei vostri documenti.</li>
+              <li><strong>Task abbinato:</strong> eredita il punteggio del task della base, già classificato.</li>
+              <li><strong>Task nuovo:</strong> riceve la media dei task più simili della base, pesata per somiglianza, ed è mostrato come «derivato per somiglianza». Poi entra nella base come task nuovo, in forma standard e senza il testo dei vostri documenti.</li>
+              <li>La base segue lo stato dell'arte della tecnologia, sempre monitorato e mappato sulle librerie di compiti standard: per questo è predittiva, e indica cosa verrà automatizzato, non solo cosa lo è già.</li>
             </ul>
-            <div class="phase-trace"><strong>Trasparenza</strong>Ogni classificazione dichiara che è una stima, finché una persona non la conferma.</div>
+            <div class="phase-trace"><strong>Trasparenza</strong>Ogni punteggio dichiara se è ereditato o derivato per somiglianza.</div>
           </div>
         </article>
 
         <article class="phase is-human">
-          <div class="phase-num">05<small>Valutazione</small></div>
+          <div class="phase-num">04<small>Comitato</small></div>
           <div class="phase-body">
-            <h3>I due assi</h3>
-            <div class="who">Chi decide: revisori e panel di esperti</div>
+            <h3>La visione dell'impresa</h3>
+            <div class="who">Chi decide: il comitato guida</div>
             <ul>
-              <li><strong>Necessità della presenza umana, vincoli tecnici</strong> (N): quanto serve ancora una persona perché la tecnologia ha dei limiti. È misurato con la capacità delle tecnologie, dichiarata e versionata per modello. La nostra base di conoscenza segue lo stato dell'arte della tecnologia, sempre monitorato e mappato sulle librerie di compiti standard: per questo è predittiva, e indica cosa verrà automatizzato, non solo cosa lo è già.</li>
-              <li><strong>Desiderabilità della presenza umana, scelte di valore</strong> (D): quanto vale che sia una persona a farlo, per relazione, responsabilità e valori dell'organizzazione. È raccolto dal panel e dalle persone coinvolte: non è deciso da un modello.</li>
-              <li>Le valutazioni dei modelli restano visibili accanto a quelle delle persone, mai sovrascritte.</li>
+              <li>Il comitato vede tutti i task, per funzione e per ruolo, e può scendere fino al singolo task.</li>
+              <li>La sua leva principale sono gli indirizzi: quanto conta, per la vostra impresa, la presenza umana nel lavoro.</li>
+              <li>Regola anche i parametri di livello superiore, come le soglie che separano i quadranti, partendo dai valori predefiniti.</li>
             </ul>
-            <div class="phase-trace"><strong>Traccia</strong>Ogni valutazione porta chi l'ha fatta, quando e con quale versione della rubrica.</div>
+            <div class="phase-trace"><strong>Traccia</strong>Ogni parametro adottato o ricalibrato è un atto con la sua motivazione.</div>
+          </div>
+        </article>
+
+        <article class="phase is-human">
+          <div class="phase-num">05<small>Indirizzi</small></div>
+          <div class="phase-body">
+            <h3>Dagli indirizzi al profilo dei pesi</h3>
+            <div class="who">Chi decide: il comitato guida, con il via libera dell'auditor</div>
+            <ul>
+              <li>Gli indirizzi si danno con interviste strutturate e questionari sulla visione dell'innovazione tecnologica.</li>
+              <li>Ne nasce il profilo dei pesi della desiderabilità: quanto contano relazione e fiducia, responsabilità, senso del lavoro per chi lo svolge, valore per chi lo riceve. Dove serve, con un'enfasi per classi di task.</li>
+              <li>Gli indirizzi aggiungono enfasi sopra il pavimento di legge, mai lo toccano.</li>
+              <li>Il profilo vale dopo l'approvazione del comitato e il via libera dell'auditor.</li>
+            </ul>
+            <div class="phase-trace"><strong>Traccia</strong>Il profilo dei pesi è versionato, con chi l'ha approvato e chi ha dato il via libera.</div>
           </div>
         </article>
 
         <article class="phase is-rule">
-          <div class="phase-num">06<small>Calcolo</small></div>
+          <div class="phase-num">06<small>Classificazione</small></div>
           <div class="phase-body">
             <h3>Il calcolo che si può rifare</h3>
             <div class="who">Chi lavora: un programma deterministico, senza AI nel calcolo</div>
             <ul>
-              <li>Le formule e i pesi sono quelli approvati dal comitato, non scelte dal software.</li>
-              <li>Il risultato è una distribuzione: si simulano migliaia di casi plausibili, da cui si ricava la probabilità di ciascuna posizione.</li>
-              <li>Stessi dati e stessi parametri danno sempre lo stesso risultato.</li>
+              <li>Con la desiderabilità calibrata, il sistema aggiorna la classificazione di tutti i task.</li>
+              <li>Le voci sul senso del lavoro e sul valore per chi lo riceve si aggiornano con i questionari a lavoratori e beneficiari.</li>
+              <li>Il risultato è una distribuzione: si simulano migliaia di casi plausibili, da cui si ricava la probabilità di ciascuna posizione. Stessi dati e stessi parametri danno sempre lo stesso risultato.</li>
             </ul>
             <div class="phase-trace"><strong>Traccia</strong>Ogni risultato riporta il profilo di pesi, lo snapshot di copertura e la versione della rubrica usati.</div>
           </div>
@@ -572,44 +577,54 @@
         <article class="phase is-human">
           <div class="phase-num">07<small>Revisione</small></div>
           <div class="phase-body">
-            <h3>Il perché di ogni posizione</h3>
-            <div class="who">Chi decide: il revisore, con la motivazione del comitato</div>
+            <h3>Il controllo a campione</h3>
+            <div class="who">Chi decide: i revisori</div>
             <ul>
-              <li>Un task instabile, incerto o che cambia molto tra una valutazione e l'altra torna a un revisore.</li>
-              <li>Il revisore vede il perché del punteggio e può confermarlo, correggerlo o motivare un'eccezione.</li>
-              <li>Ogni decisione è un atto separato: la valutazione del modello non viene mai cancellata.</li>
+              <li>I revisori controllano le classificazioni su un campione, a partire dai task incerti e da quelli derivati per somiglianza.</li>
+              <li>Danno anche i giudizi sulla rubrica, voce per voce: il giudizio di una persona prevale sulla stima del modello.</li>
+              <li>La valutazione del modello resta visibile accanto a quella delle persone, mai sovrascritta.</li>
             </ul>
-            <div class="phase-trace"><strong>Traccia</strong>Chi ha deciso, quando, perché, e quale valore c'era prima.</div>
+            <div class="phase-trace"><strong>Traccia</strong>Ogni giudizio porta chi l'ha dato, quando e con quale versione della rubrica.</div>
           </div>
         </article>
 
         <article class="phase is-human">
-          <div class="phase-num">08<small>Restituzione</small></div>
+          <div class="phase-num">08<small>Correzioni</small></div>
+          <div class="phase-body">
+            <h3>Una correzione vale ovunque</h3>
+            <div class="who">Chi decide: il revisore sul task, il comitato sui pesi</div>
+            <ul>
+              <li>La correzione di un revisore vale per quel task in tutte le sue occorrenze.</li>
+              <li>Se il campione mostra una deviazione sistematica, il sistema la segnala al comitato come proposta di ricalibrare i pesi.</li>
+              <li>Il sistema non corregge da sé gli altri task: gli agenti propongono, le persone decidono.</li>
+            </ul>
+            <div class="phase-trace"><strong>Traccia</strong>Chi ha corretto, quando, perché, e quale valore c'era prima.</div>
+          </div>
+        </article>
+
+        <article class="phase is-human">
+          <div class="phase-num">09<small>Restituzione</small></div>
           <div class="phase-body">
             <h3>Il risultato al comitato</h3>
-            <div class="who">Chi decide: il comitato guida, che approva la restituzione finale</div>
+            <div class="who">Chi decide: il comitato guida, che approva la restituzione</div>
             <ul>
-              <li>Il comitato vede i risultati in forma aggregata, per funzione o ruolo. Nessun output riguarda una singola persona.</li>
-              <li>Ogni variazione di valore richiede una motivazione. I rappresentanti dei lavoratori possono bloccare un ribasso.</li>
-              <li>Se una regola cambia, il risultato torna al comitato per una nuova approvazione.</li>
+              <li>Il comitato vede il risultato finale in forma aggregata, per funzione o ruolo. Nessun output riguarda una singola persona.</li>
+              <li>Approva la restituzione. Se una regola o un peso cambia, il risultato torna al comitato per una nuova approvazione.</li>
             </ul>
             <div class="phase-trace"><strong>Traccia</strong>Ogni versione di restituzione resta legata alla versione con cui è stata approvata.</div>
           </div>
         </article>
+      </div>
 
-        <article class="phase is-ai">
-          <div class="phase-num">09<small>Manutenzione</small></div>
-          <div class="phase-body">
-            <h3>Il lavoro cambia, il metodo si aggiorna</h3>
-            <div class="who">Chi lavora: sorveglianza automatica, con approvazioni umane</div>
-            <ul>
-              <li>L'avanzamento della tecnologia è monitorato di continuo: nuove fonti, nuovi strumenti e nuove evidenze vengono mappati sulle librerie di compiti e confrontati con le analisi esistenti.</li>
-              <li>Quando un cambiamento modifica un risultato, il sistema segnala che cosa è cambiato e perché.</li>
-              <li>Periodicamente si verifica che il metodo resti affidabile, anche quando cambia il modello di AI sottostante.</li>
-            </ul>
-            <div class="phase-trace"><strong>Traccia</strong>Ogni aggiornamento è un atto approvato, con la sua nota su cosa è cambiato.</div>
-          </div>
-        </article>
+      <div class="grid-2" style="margin-top:18px; align-items:start;">
+        <div class="card">
+          <h4>Chi accompagna ogni passo</h4>
+          <p style="margin:0;">L'auditor segue ogni fase e legge tutto, dal registro ai parametri. L'amministratore tecnico avvia scomposizione, abbinamento e calcolo, segue il lavoro e può intervenire quando serve.</p>
+        </div>
+        <div class="card">
+          <h4>Dopo la restituzione: il metodo si aggiorna</h4>
+          <p style="margin:0;">L'avanzamento della tecnologia è monitorato di continuo e mappato sulle librerie di compiti. Quando un cambiamento modifica un risultato, il sistema segnala che cosa è cambiato e perché, e il risultato torna al comitato. Periodicamente si verifica che il metodo resti affidabile, anche quando cambia il modello di AI sottostante.</p>
+        </div>
       </div>
     </section>
 
@@ -622,21 +637,24 @@
       </div>
 
       <div class="who-grid">
-        <div class="who-card"><div class="dot" style="background:#0B2559"></div><h4>Comitato guida</h4><p>Dà valori e priorità, approva parametri e restituzioni. Non giudica il singolo task.</p></div>
-        <div class="who-card"><div class="dot" style="background:#00B4B4"></div><h4>Revisori</h4><p>Controllano che il sistema lavori bene e valutano la dimensione umana del lavoro.</p></div>
-        <div class="who-card"><div class="dot" style="background:#F59E0B"></div><h4>Rappresentanti dei lavoratori</h4><p>Possono bloccare un ribasso del valore del lavoro umano. Presenza facoltativa.</p></div>
-        <div class="who-card"><div class="dot" style="background:#521983"></div><h4>Auditor</h4><p>Vede tutto in sola lettura: registro, parametri, motivazioni. Non approva nulla.</p></div>
-        <div class="who-card"><div class="dot" style="background:#64748B"></div><h4>Amministratore tecnico</h4><p>Gestisce la piattaforma, le fonti e i parametri comuni. Non interviene sui parametri di un'organizzazione.</p></div>
+        <div class="who-card"><div class="dot" style="background:#0B2559"></div><h4>Comitato guida</h4><p>Dà gli indirizzi da cui nasce il profilo dei pesi, regola i parametri di livello superiore e approva la restituzione. Vede ogni task, fino al singolo.</p></div>
+        <div class="who-card"><div class="dot" style="background:#00B4B4"></div><h4>Revisori</h4><p>Controllano le classificazioni a campione, le correggono e danno i giudizi sulla rubrica. Segnalano al comitato le deviazioni sistematiche.</p></div>
+        <div class="who-card"><div class="dot" style="background:#10B981"></div><h4>Chi risponde ai questionari</h4><p>Lavoratori e beneficiari ricevono un'email con un link monouso. Le risposte sono anonime e si leggono solo per gruppi di almeno 5 persone.</p></div>
+        <div class="who-card"><div class="dot" style="background:#F59E0B"></div><h4>Rappresentante dei lavoratori</h4><p>Vista facoltativa, attivata dall'amministratore tecnico. Verifica i cali di desiderabilità causati dagli indirizzi e può rinviarli al comitato.</p></div>
+        <div class="who-card"><div class="dot" style="background:#521983"></div><h4>Auditor</h4><p>Segue ogni fase in lettura: registro, parametri, motivazioni. Dà il via libera al profilo dei pesi approvato dal comitato.</p></div>
+        <div class="who-card"><div class="dot" style="background:#64748B"></div><h4>Amministratore tecnico</h4><p>Gestisce la piattaforma, le fonti e i parametri comuni. Segue il lavoro e può intervenire quando serve.</p></div>
       </div>
 
       <div style="margin-top:36px;">
         <table class="split-table">
           <thead><tr><th>Passaggio</th><th>Che cosa fa l'AI</th><th>Che cosa decide una persona</th></tr></thead>
           <tbody>
-            <tr><td>Lettura dei documenti</td><td>Propone le attività, citando il passo del testo</td><td>Il revisore vede e approva il lotto</td></tr>
-            <tr><td>Abbinamento</td><td>Propone il riferimento più vicino nelle tassonomie del lavoro</td><td>Approva in blocco, rifiuta le eccezioni</td></tr>
-            <tr><td>Valutazione</td><td>Stima la capacità tecnologica e le prime valutazioni</td><td>Il panel e le persone coinvolte danno il valore umano</td></tr>
+            <tr><td>Scomposizione dei documenti</td><td>Propone i task, citando il passo del testo</td><td>Il revisore vede e approva il lotto</td></tr>
+            <tr><td>Abbinamento</td><td>Propone il task più vicino nella base NEARTECH</td><td>Il revisore approva in blocco, rifiuta le eccezioni</td></tr>
+            <tr><td>Task nuovi</td><td>Nessuna: una regola deriva il punteggio dai task più simili</td><td>Il revisore li controlla per primi nel campione</td></tr>
+            <tr><td>Indirizzi</td><td>Organizza interviste e questionari</td><td>Il comitato approva il profilo dei pesi, l'auditor dà il via libera</td></tr>
             <tr><td>Calcolo</td><td>Nessuna: il calcolo è fatto da regole approvate</td><td>Il comitato approva pesi e soglie</td></tr>
+            <tr><td>Revisione a campione</td><td>Segnala le deviazioni sistematiche</td><td>Il revisore corregge, il comitato decide se ricalibrare i pesi</td></tr>
             <tr><td>Restituzione</td><td>Prepara sintesi e grafici</td><td>Il comitato approva ciò che viene restituito</td></tr>
           </tbody>
         </table>
@@ -671,9 +689,9 @@
           <h4>Esempio di traccia di un task</h4>
           <div class="trail" style="margin-top:14px;">
             <div class="trail-item"><h4>Attività estratta dal documento</h4><p>Passo 4 del mansionario, versione 2 del modello. Revisione: non richiesta.</p></div>
-            <div class="trail-item"><h4>Abbinata al task condiviso</h4><p>Proposta approvata in blocco da un revisore, con motivazione: «stesso compito, stesso risultato».</p></div>
-            <div class="trail-item"><h4>Posizione calcolata</h4><p>Profilo di pesi approvato dal comitato, rubrica versione 3. Probabilità della posizione: 78%.</p></div>
-            <div class="trail-item"><h4>Confermata dal revisore</h4><p>Una persona ha confermato la posizione. La stima del modello resta visibile nella storia.</p></div>
+            <div class="trail-item"><h4>Abbinata a un task della base</h4><p>Proposta approvata in blocco da un revisore, con motivazione: «stesso compito, stesso risultato». Il task eredita il punteggio della base.</p></div>
+            <div class="trail-item"><h4>Posizione calcolata</h4><p>Profilo dei pesi approvato dal comitato, con il via libera dell'auditor; rubrica versione 3. Probabilità della posizione: 78%.</p></div>
+            <div class="trail-item"><h4>Confermata nel campione</h4><p>Un revisore ha confermato la posizione. La stima del modello resta visibile nella storia.</p></div>
           </div>
         </div>
         <div class="card">
@@ -858,7 +876,7 @@
         <div class="step-time"><div class="w">LETTURA</div><h4>Attività estratte</h4><p>Un documento di decine di pagine diventa un elenco di attività, ognuna con il suo passo di riferimento.</p></div>
         <div class="step-time"><div class="w">ABBINAMENTO</div><h4>Riferimenti riconosciuti</h4><p>Le attività già note arrivano con una classificazione rivista; l'attenzione va a ciò che è nuovo.</p></div>
         <div class="step-time"><div class="w">CALCOLO</div><h4>Regole fisse</h4><p>Il calcolo è deterministico e si può ripetere in qualunque momento con gli stessi risultati.</p></div>
-        <div class="step-time"><div class="w">REVISIONE</div><h4>Attenzione dove serve</h4><p>Le persone guardano prima ciò che è incerto o nuovo, non tutto allo stesso modo.</p></div>
+        <div class="step-time"><div class="w">REVISIONE</div><h4>Attenzione dove serve</h4><p>Le persone controllano un campione, partendo da ciò che è incerto o derivato per somiglianza.</p></div>
       </div>
     </section>
 
@@ -874,7 +892,7 @@
         <div class="card">
           <span class="tag emerald">Fabbisogni formativi</span>
           <h3 style="margin-top:14px;">Dalla mappa al percorso</h3>
-          <p>Le competenze emerse dai task che cambiano diventano fabbisogni formativi per funzione. Le risposte delle persone coinvolte sono raccolte con un questionario breve, pseudonimizzato e riservato.</p>
+          <p>Le competenze emerse dai task che cambiano diventano fabbisogni formativi per funzione. Le risposte delle persone coinvolte arrivano da un questionario breve, inviato per email con un link monouso: anonimo, letto solo per gruppi di almeno 5 persone.</p>
           <p class="mono">Restituzione sempre aggregata: nessun dato individuale.</p>
         </div>
         <div class="card">
