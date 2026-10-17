@@ -94,6 +94,10 @@ Ogni fetta: API con test, schermate con test, revisione (Python, database, sicur
 - **Fetta 0, fondamenta (2026-10-17):** API FastAPI (`neartech.api`) con accesso SSO (OpenID Connect con PKCE) e accesso di sviluppo solo locale; sessione con durata massima; protezione con intestazione propria, host ammessi, CSP; frontend React in `web/` con il sistema di design dell'identità v3.1 e i caratteri ospitati dalla piattaforma; CI su GitHub; ambiente di prova locale con dati sintetici (`scripts/prova_locale.py`). Voce e testi: `docs/piattaforma/voce-e-testi.md`.
 - **Fetta 1, panoramica del comitato (2026-10-17):** mappa dei task con incertezza e voci giudicate da persone, avanzamento della sperimentazione, inviti all'azione, ruoli, approvazione della restituzione con impronta. Motore: restituzione v2 (elenco delle occorrenze), `sperimentazione.avanzamento_sperimentazione`, `permessi.ruoli_utente`, lettura con lock condiviso.
 
+- **Fetta 2, percorso del pilota (2026-10-17):** il responsabile ha approvato il percorso multifase per tutti i ruoli. `neartech.percorso.stato_percorso` calcola dai dati le quattro fasi (avvio, indirizzi, verifica, esito); la barra del percorso è in cima a ogni home, con "Tocca a te" diverso per ruolo e fase; la mappa resta "provvisoria" fino all'esito; l'approvazione compare solo al comitato nella fase di esito; chi vede più organizzazioni sceglie dalla home. Dati di prova: ACME S.p.A., ruoli di staff. Design verificato con la skill ECC `frontend-design-direction` (stati del contenuto, 1440×900 e 390×844).
+
+Ordine delle fette successive: 3 indirizzi del comitato fino all'ok dell'auditor; 4 revisore (lotti di abbinamento, controllo a campione, valutazione sulla rubrica); 5 amministratore (pipeline dei documenti con il worker); 6 questionari d3/d4; 7 vista bonus del rappresentante e report dell'auditor.
+
 ## Prima della messa in esercizio
 
 Emersi dalle revisioni di sicurezza e di codice della fetta 0, da fare prima dell'ambiente di prova in cloud:

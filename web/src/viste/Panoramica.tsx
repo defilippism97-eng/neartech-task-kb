@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { useRef, useState } from 'react'
 import { api, ErroreApi, GIA_DECISA, SUPERATA, type Io, type Panoramica as DatiPanoramica, type Quadrante } from '../api'
 import { Avanzamento } from '../componenti/Avanzamento'
+import { BarraPercorso } from '../componenti/BarraPercorso'
 import { Guscio } from '../componenti/Guscio'
+import { ETICHETTE_RUOLO } from '../azioni'
 import { MappaQuadranti, VOCI_TOTALI } from '../componenti/MappaQuadranti'
 import { inviti } from '../inviti'
 
@@ -89,7 +91,12 @@ export function Panoramica() {
 
   if (dati.isPending || io.isPending) return <p className="vuoto" aria-busy="true">Carico la mappa…</p>
   if (dati.error || io.error) {
-    return <p className="vuoto errore" role="alert">{messaggioErrore((dati.error ?? io.error) as ErroreApi)}</p>
+    return (
+      <div className="vuoto">
+        <p className="errore" role="alert">{messaggioErrore((dati.error ?? io.error) as ErroreApi)}</p>
+        <Link to="/" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
+      </div>
+    )
   }
   const r = dati.data.restituzione
   const soglie = r.chiavi.soglie_quadranti[0]
@@ -97,16 +104,20 @@ export function Panoramica() {
   const stabili = r.riepilogo.instabili === null ? null : r.riepilogo.con_risultato - r.riepilogo.instabili
   const ruolo = ruoloInOrganizzazione(io.data, codice)
 
+  const percorso = dati.data.percorso
+  const provvisoria = percorso.fase_corrente !== 'esito'
+
   return (
     <Guscio codice={codice} nomeOrganizzazione={r.organizzazione.nome} ruolo={ruolo} soggetto={io.data.soggetto}>
-      <div className="blob" aria-hidden="true" />
       <div className="head">
         <div>
-          <span className="eyebrow">{r.organizzazione.nome} · comitato guida</span>
+          <span className="eyebrow">{r.organizzazione.nome} · {ETICHETTE_RUOLO[ruolo] ?? 'percorso del pilota'}</span>
           <h1>{r.riepilogo.con_risultato} task in {ruoli(r.ruoli.length)}: dove sta ciascuno</h1>
         </div>
-        <Approvazione codice={codice} dati={dati.data} puoApprovare={ruolo === 'comitato_guida'} />
+        <Approvazione codice={codice} dati={dati.data}
+          puoApprovare={ruolo === 'comitato_guida' && percorso.fase_corrente === 'esito'} />
       </div>
+      <BarraPercorso percorso={percorso} ruolo={ruolo} />
       <Avanzamento dati={dati.data.avanzamento} />
       {r.riepilogo.con_risultato === 0 ? (
         <div className="card vuoto">
@@ -118,6 +129,14 @@ export function Panoramica() {
         <div className="grid g-12">
           <section className="card s7" aria-labelledby="titolo-mappa">
             <h2 id="titolo-mappa">Ogni task, tra necessità e desiderabilità della persona</h2>
+            {provvisoria && (
+              <p className="nota-mappa">
+                <span className="state stima">mappa provvisoria</span>{' '}
+                {percorso.fasi[1].stato === 'fatta'
+                  ? 'Calcolata con il vostro profilo di pesi; diventa definitiva con l\'approvazione della restituzione.'
+                  : 'Calcolata con i pesi di default NEARTECH: cambierà con gli indirizzi del comitato.'}
+              </p>
+            )}
             {soglie && <MappaQuadranti occorrenze={r.occorrenze} thetaN={soglie.theta_n} thetaD={soglie.theta_d} giudicate={giudicate} />}
             <div className="legend">
               <span><i style={{ background: 'var(--emerald)' }} />verde più pieno: più voci giudicate da persone (su {VOCI_TOTALI})</span>

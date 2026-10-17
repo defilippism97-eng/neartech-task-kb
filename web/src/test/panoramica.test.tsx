@@ -2,28 +2,44 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Occorrenza, Panoramica } from '../api'
+import type { Fase, Occorrenza, Panoramica, Percorso } from '../api'
 import { Avanzamento } from '../componenti/Avanzamento'
 import { MappaQuadranti } from '../componenti/MappaQuadranti'
 import { creaRouter } from '../rotte'
 import { inviti } from '../inviti'
 
 const occorrenza = (id: string, n: number, d: number, quadrante: Occorrenza['quadrante']): Occorrenza => ({
-  occorrenza_id: id, task_id: `t-${id}`, task: `Task ${id}`, ruolo_id: 'r1', ruolo: 'Educatore', quadrante,
+  occorrenza_id: id, task_id: `t-${id}`, task: `Task ${id}`, ruolo_id: 'r1', ruolo: 'Controller', quadrante,
   probabilita: 0.9, pari: false, n, n_dev: 0.05, d, d_dev: 0.05, instabile: false,
 })
 
-const panoramica = (sovrascrivi: Partial<Panoramica['restituzione']> = {}): Panoramica => ({
+const percorso = (fase: Fase, approvazione: number | null = null): Percorso => {
+  const ordine: Fase[] = ['avvio', 'indirizzi', 'verifica', 'esito']
+  const stato = (f: Fase) => (ordine.indexOf(f) < ordine.indexOf(fase) || approvazione !== null ? 'fatta'
+    : f === fase ? 'in_corso' : 'da_fare')
+  return {
+    fase_corrente: fase,
+    fasi: [
+      { codice: 'avvio', stato: stato('avvio'), fatti: { documenti: 6, attivita: 30, in_attesa_di_abbinamento: 0, occorrenze: 3 } },
+      { codice: 'indirizzi', stato: stato('indirizzi'), fatti: { profilo_proprio: null, profilo_in_uso: 'p' } },
+      { codice: 'verifica', stato: stato('verifica'), fatti: { risultati: 2, da_confermare: 1, quota_giudizi_di_persona: 0.125 } },
+      { codice: 'esito', stato: stato('esito'), fatti: { approvazione, impronta: 'f'.repeat(64) } },
+    ],
+  }
+}
+
+const panoramica = (sovrascrivi: Partial<Panoramica['restituzione']> = {}, fase: Fase = 'esito'): Panoramica => ({
+  percorso: percorso(fase, sovrascrivi.approvazione ?? null),
   restituzione: {
     versione: 'restituzione-v2',
-    organizzazione: { org_id: 'o1', nome: 'Cooperativa Aurora', codice: 'aurora' },
+    organizzazione: { org_id: 'o1', nome: 'ACME S.p.A.', codice: 'acme' },
     nota: 'Nessun output riguarda una persona.',
     chiavi: { rubriche: ['r'], profili: ['p'], soglie_quadranti: [{ profilo: 'p', theta_n: 0.5, theta_d: 0.5 }], snapshot: ['s'],
       metodi_capacita: ['m'], versioni_calcolo: ['v'], capacita: ['riserva'], componenti_d: ['d1', 'd2'], modelli_giudizi: ['x'] },
     soglia_stabilita: { valore: 0.8, parametro_id: 'p1', versione: 1, comune: true },
     avvertenze: ['capacita_di_riserva', 'd_provvisorio', 'pesi_uguali', 'soglia_comune_non_adottata'],
     riepilogo: { occorrenze: 3, con_risultato: 2, senza_risultato: 1, quadranti: { q1: 1, q2: 0, q3: 0, q4: 1 }, instabili: 1, pari: 0 },
-    ruoli: [{ ruolo_id: 'r1', ruolo: 'Educatore', occorrenze: 2, baricentro_n: 0.4, baricentro_d: 0.5, dispersione: 0.1,
+    ruoli: [{ ruolo_id: 'r1', ruolo: 'Controller', occorrenze: 2, baricentro_n: 0.4, baricentro_d: 0.5, dispersione: 0.1,
       stabilita: 0.85, pesi_tempo: 'uguali', provvisorio: true, quadranti: { q1: 1, q2: 0, q3: 0, q4: 1 }, instabili: 1 }],
     da_rivedere: [occorrenza('b', 0.2, 0.3, 'q4')],
     occorrenze: [occorrenza('a', 0.7, 0.8, 'q1'), occorrenza('b', 0.2, 0.3, 'q4')],
@@ -82,7 +98,7 @@ describe('panoramica del comitato', () => {
         return new Response(JSON.stringify({ detail: conflitto }), { status: 409, headers: { 'Content-Type': 'application/json' } })
       }
       const corpo = url === '/api/io'
-        ? { utente_id: 'u', soggetto: 'prova|comitato', ruoli: [{ ruolo, org_id: 'o1', codice: 'aurora', nome: 'Aurora' }] }
+        ? { utente_id: 'u', soggetto: 'prova|comitato', ruoli: [{ ruolo, org_id: 'o1', codice: 'acme', nome: 'ACME S.p.A.' }] }
         : url.endsWith('/approvazione') ? { atto: 91, impronta: dati.restituzione.impronta } : dati
       return new Response(JSON.stringify(corpo), { status: 200, headers: { 'Content-Type': 'application/json' } })
     }))
@@ -93,7 +109,7 @@ describe('panoramica del comitato', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const monta = () => {
-    const router = creaRouter(createMemoryHistory({ initialEntries: ['/org/aurora/panoramica'] }))
+    const router = creaRouter(createMemoryHistory({ initialEntries: ['/org/acme/panoramica'] }))
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <RouterProvider router={router} />
@@ -106,8 +122,37 @@ describe('panoramica del comitato', () => {
     expect(await screen.findByRole('heading', { name: '2 task in 1 ruolo: dove sta ciascuno' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '1 risultato da confermare' })).toBeInTheDocument()
     const tabellaRuoli = screen.getByRole('region', { name: 'Ruoli' })
-    expect(within(tabellaRuoli).getByRole('cell', { name: 'Educatore' })).toBeInTheDocument()
+    expect(within(tabellaRuoli).getByRole('cell', { name: 'Controller' })).toBeInTheDocument()
     expect(screen.getByText('Comitato guida')).toBeInTheDocument()
+  })
+
+  it('nella fase degli indirizzi il comitato vede che cosa gli tocca e una mappa provvisoria', async () => {
+    dati = panoramica({}, 'indirizzi')
+    monta()
+    expect(await screen.findByRole('heading', { name: 'Date gli indirizzi' })).toBeInTheDocument()
+    expect(screen.getByText('mappa provvisoria')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Approva la restituzione' })).not.toBeInTheDocument()
+    expect(screen.getByRole('listitem', { current: 'step' })).toHaveTextContent('Indirizzi')
+  })
+
+  it('il revisore vede la propria azione nella stessa fase', async () => {
+    ruolo = 'revisore'
+    dati = panoramica({}, 'verifica')
+    monta()
+    expect(await screen.findByRole('heading', { name: 'Controlla le classificazioni a campione' })).toBeInTheDocument()
+  })
+
+  it('senza risultati spiega come si riempie la mappa', async () => {
+    dati = panoramica({ occorrenze: [], riepilogo: { occorrenze: 3, con_risultato: 0, senza_risultato: 3,
+      quadranti: { q1: 0, q2: 0, q3: 0, q4: 0 }, instabili: null, pari: 0 }, ruoli: [] }, 'avvio')
+    monta()
+    expect(await screen.findByRole('heading', { name: 'La mappa si riempie dopo il primo calcolo' })).toBeInTheDocument()
+  })
+
+  it('mostra che cosa sta caricando', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})))
+    monta()
+    return waitFor(() => expect(screen.getByText(/Verifico l'accesso|Carico la mappa/)).toBeInTheDocument())
   })
 
   it('non mostra l\'approvazione a chi non è del comitato', async () => {

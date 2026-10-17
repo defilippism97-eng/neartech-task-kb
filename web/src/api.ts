@@ -91,9 +91,28 @@ export interface Avanzamento {
   occorrenze: Record<string, string[]>
 }
 
+export type Fase = 'avvio' | 'indirizzi' | 'verifica' | 'esito'
+export type StatoFase = 'fatta' | 'in_corso' | 'da_fare'
+
+export interface Percorso {
+  fase_corrente: Fase
+  fasi: [
+    { codice: 'avvio'; stato: StatoFase; fatti: { documenti: number; attivita: number; in_attesa_di_abbinamento: number; occorrenze: number } },
+    { codice: 'indirizzi'; stato: StatoFase; fatti: { profilo_proprio: string | null; profilo_in_uso: string | null } },
+    { codice: 'verifica'; stato: StatoFase; fatti: { risultati: number; da_confermare: number | null; quota_giudizi_di_persona: number } },
+    { codice: 'esito'; stato: StatoFase; fatti: { approvazione: number | null; impronta: string } },
+  ]
+}
+
 export interface Panoramica {
   restituzione: Restituzione
   avanzamento: Avanzamento
+  percorso: Percorso
+}
+
+export interface Organizzazione {
+  codice: string
+  nome: string
 }
 
 export class ErroreApi extends Error {
@@ -132,6 +151,7 @@ async function richiesta<T>(percorso: string, opzioni: RequestInit = {}): Promis
 export const api = {
   ambiente: () => richiesta<Ambiente>('/api/ambiente'),
   io: () => richiesta<Io>('/api/io'),
+  organizzazioni: () => richiesta<Organizzazione[]>('/api/organizzazioni'),
   panoramica: (codice: string) => richiesta<Panoramica>(`/api/organizzazioni/${encodeURIComponent(codice)}/panoramica`),
   approva: (codice: string, impronta: string, motivazione: string) =>
     richiesta<{ atto: number; impronta: string }>(

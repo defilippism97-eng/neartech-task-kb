@@ -140,6 +140,14 @@ def test_panoramica_del_comitato(client):
     corpo = r.json()
     assert corpo["restituzione"]["versione"] == "restituzione-v2"
     assert len(corpo["restituzione"]["occorrenze"]) == 1 and corpo["avanzamento"]["totale"] == 1
+    assert corpo["percorso"]["fase_corrente"] == "indirizzi"
+
+
+def test_organizzazioni_visibili(client):
+    _entra(client)
+    assert client.get("/api/organizzazioni").json() == [{"codice": "sintetica", "nome": "Org sintetica"}]
+    _entra(client, "sso|estraneo")
+    assert client.get("/api/organizzazioni").json() == []
 
 
 def test_panoramica_negata_a_chi_non_legge(client):

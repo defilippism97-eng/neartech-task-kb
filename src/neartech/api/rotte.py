@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
 from neartech.api.app import connessione, utente_corrente
+from neartech.percorso import stato_percorso
 from neartech.permessi import PermessoNegato, puo, ruoli_utente
 from neartech.restituzione import RestituzioneSuperata, approva_restituzione, restituzione_organizzazione
 from neartech.sperimentazione import avanzamento_sperimentazione
@@ -49,8 +50,19 @@ def panoramica(codice: str, utente: str = Depends(utente_corrente),
                conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
     """Restituzione vigente e avanzamento della sperimentazione: la home del comitato guida."""
     org = _organizzazione(conn, utente, codice)
-    return {"restituzione": restituzione_organizzazione(conn, utente, org),
-            "avanzamento": avanzamento_sperimentazione(conn, utente, org)}
+    restituzione = restituzione_organizzazione(conn, utente, org)
+    avanzamento = avanzamento_sperimentazione(conn, utente, org)
+    return {"restituzione": restituzione, "avanzamento": avanzamento,
+            "percorso": stato_percorso(conn, utente, org, restituzione=restituzione, avanzamento=avanzamento)}
+
+
+@router.get("/organizzazioni")
+def organizzazioni(utente: str = Depends(utente_corrente),
+                   conn: psycopg.Connection = Depends(connessione)) -> list[dict[str, str]]:
+    """Organizzazioni che l'utente può leggere: per la home e per chi ha un ruolo globale."""
+    righe = conn.execute("SELECT org_id, codice, name FROM organizations WHERE codice IS NOT NULL ORDER BY name").fetchall()
+    return [{"codice": codice, "nome": nome} for org, codice, nome in righe
+            if puo(conn, utente, "leggere", str(org), risorsa=f"organizzazione:{codice}")]
 
 
 class Approvazione(BaseModel):

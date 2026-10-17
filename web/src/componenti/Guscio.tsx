@@ -1,18 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { api } from '../api'
+import { ETICHETTE_RUOLO } from '../azioni'
 import { Logo } from './Logo'
 
 // Guscio dell'applicazione per i ruoli di un'organizzazione. Le voci non ancora costruite si vedono come
 // "in arrivo": la piattaforma cresce a fette (docs/piani/fase-6-piattaforma.md).
 
-const ETICHETTE_RUOLO: Record<string, string> = {
-  comitato_guida: 'Comitato guida',
-  revisore: 'Revisore',
-  auditor: 'Auditor',
-  amministratore_tecnico: 'Amministratore tecnico',
-  rappresentante_lavoratori: 'Rappresentante dei lavoratori',
-}
 
 interface Props {
   codice: string

@@ -1,7 +1,7 @@
 """Ambiente di prova locale della piattaforma (fase 6), con dati sintetici.
 
 Avvia un PostgreSQL temporaneo (tests/pg_locale.py), applica schema e migrazioni, crea un'organizzazione
-immaginaria ("Cooperativa Aurora") con ruoli, task, giudizi, snapshot di riserva e calcolo, poi avvia la
+immaginaria ("ACME S.p.A.", ruoli di staff) con ruoli, task, giudizi, snapshot di riserva e calcolo, poi avvia la
 piattaforma su http://127.0.0.1:8000 con l'accesso di sviluppo. Alla chiusura il database viene distrutto.
 
 Non usa mai DATABASE_URL: nessun contatto con il database di produzione.
@@ -38,37 +38,35 @@ from neartech.permessi import assegna_ruolo, crea_utente, inizializza_amministra
 # Archetipi di task: domanda (k1, k2, k3), copertura di riserva (k1, k2, k3), affidabilità r, d1, d2.
 ARCHETIPI = {
     "relazione": ((3, 3, 2), (2, 2, 2), 2, (4, 3)),
-    "cura": ((3, 3, 4), (1, 1, 1), 3, (3, 3)),
-    "amministrativo": ((1, 1, 0), (3, 3, 3), 1, (1, 1)),
+    "presenza": ((3, 3, 4), (1, 1, 1), 3, (3, 3)),
+    "operativo": ((1, 1, 0), (3, 3, 3), 1, (1, 1)),
     "pianificazione": ((2, 3, 1), (3, 2, 3), 2, (2, 1)),
     "responsabilita": ((2, 2, 1), (3, 3, 3), 2, (1, 4)),
-    "tecnico": ((3, 3, 1), (1, 1, 2), 3, (1, 1)),
+    "analisi": ((3, 3, 1), (1, 1, 2), 3, (1, 1)),
 }
 
+# Ruoli di staff di un'impresa immaginaria.
 RUOLI = {
-    "Educatore professionale": [
-        ("Colloquio con la famiglia di un utente", "relazione"), ("Stesura del progetto educativo individualizzato", "responsabilita"),
-        ("Conduzione di attività di gruppo", "relazione"), ("Compilazione del diario di bordo del turno", "amministrativo"),
-        ("Gestione di una crisi comportamentale", "cura"), ("Accompagnamento sul territorio", "cura")],
-    "Operatore socio-sanitario": [
-        ("Igiene e cura della persona", "cura"), ("Somministrazione della terapia", "responsabilita"),
-        ("Mobilizzazione dell'utente allettato", "cura"), ("Rilevazione dei parametri vitali", "tecnico"),
-        ("Compilazione del diario di bordo del turno", "amministrativo"), ("Accompagnamento sul territorio", "cura")],
-    "Coordinatore di servizio": [
-        ("Turnistica del personale", "pianificazione"), ("Colloquio con la famiglia di un utente", "relazione"),
-        ("Riunione d'équipe", "relazione"), ("Controllo di gestione del servizio", "tecnico"),
-        ("Valutazione dell'inserimento di un nuovo utente", "responsabilita"), ("Ordini di materiali e forniture", "amministrativo")],
-    "Assistente sociale": [
-        ("Presa in carico di un nuovo caso", "responsabilita"), ("Relazione per il tribunale", "responsabilita"),
-        ("Visita domiciliare", "relazione"), ("Attivazione della rete dei servizi", "pianificazione"),
-        ("Aggiornamento della cartella sociale", "amministrativo")],
-    "Addetto amministrativo": [
-        ("Fatturazione delle rette", "amministrativo"), ("Registrazione delle presenze", "amministrativo"),
-        ("Comunicazione degli orari alle famiglie", "amministrativo"), ("Gestione del protocollo", "amministrativo"),
-        ("Risposta alle richieste di informazioni", "relazione")],
-    "Responsabile qualità": [
-        ("Audit interno delle procedure", "tecnico"), ("Analisi dei reclami", "relazione"),
-        ("Aggiornamento della carta dei servizi", "pianificazione"), ("Indicatori di qualità del servizio", "tecnico")],
+    "Specialista risorse umane": [
+        ("Colloquio di selezione", "relazione"), ("Gestione di un conflitto tra colleghi", "presenza"),
+        ("Inserimento dei nuovi assunti", "relazione"), ("Elaborazione delle presenze", "operativo"),
+        ("Redazione degli annunci di lavoro", "operativo"), ("Comunicazione di un provvedimento disciplinare", "responsabilita")],
+    "Addetto contabilità": [
+        ("Registrazione delle fatture passive", "operativo"), ("Riconciliazioni bancarie", "operativo"),
+        ("Gestione dei solleciti ai clienti", "pianificazione"), ("Chiusura contabile mensile", "analisi"),
+        ("Risposta alle richieste dei fornitori", "operativo")],
+    "Controller": [
+        ("Analisi degli scostamenti di budget", "analisi"), ("Preparazione del budget annuale", "pianificazione"),
+        ("Presentazione dei risultati alla direzione", "relazione"), ("Chiusura contabile mensile", "analisi")],
+    "Responsabile acquisti": [
+        ("Negoziazione con i fornitori", "relazione"), ("Qualifica dei nuovi fornitori", "responsabilita"),
+        ("Emissione degli ordini di acquisto", "operativo"), ("Pianificazione dei fabbisogni", "pianificazione")],
+    "Tecnico IT": [
+        ("Gestione dei ticket di primo livello", "operativo"), ("Installazione e cablaggio delle postazioni", "presenza"),
+        ("Gestione degli accessi ai sistemi", "responsabilita"), ("Formazione degli utenti sui nuovi strumenti", "relazione")],
+    "Specialista marketing": [
+        ("Redazione dei contenuti per il sito", "operativo"), ("Analisi dei risultati delle campagne", "analisi"),
+        ("Organizzazione di eventi con i clienti", "presenza"), ("Gestione dei rapporti con l'agenzia", "relazione")],
 }
 
 
@@ -86,7 +84,7 @@ def popola(conn: psycopg.Connection) -> None:
     """Organizzazione sintetica con risultati calcolati dal motore, come in un pilota vero."""
     caso = random.Random(20261017)
     admin = inizializza_amministratore(conn, "prova|admin")
-    org = crea_organizzazione(conn, admin, nome="Cooperativa Aurora", codice="aurora", settore="servizi alla persona")
+    org = crea_organizzazione(conn, admin, nome="ACME S.p.A.", codice="acme")
     for soggetto, nome_ruolo in (("prova|comitato", "comitato_guida"), ("prova|revisore", "revisore")):
         assegna_ruolo(conn, crea_utente(conn, soggetto), nome_ruolo, org, assegnata_da=admin)
 
@@ -136,7 +134,7 @@ def popola(conn: psycopg.Connection) -> None:
                                descrizione="soglia di stabilità del quadrante", motivazione="dati di prova", org_id=None)
     approva_parametro(conn, admin, soglia, motivazione="dati di prova")
     esito = calcola_organizzazione(conn, admin, org, seme=20261017, estrazioni=500)
-    print(f"Cooperativa Aurora: {len(task_id)} task, {esito['occorrenze']} occorrenze, {esito['nuove']} risultati")
+    print(f"ACME S.p.A.: {len(task_id)} task, {esito['occorrenze']} occorrenze, {esito['nuove']} risultati")
 
 
 def main() -> None:

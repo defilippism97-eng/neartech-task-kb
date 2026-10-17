@@ -24,7 +24,6 @@ export function Accesso() {
   }
   return (
     <div className="accesso">
-      <div className="blob" aria-hidden="true" />
       <main className="card">
         <Logo variante="chiaro" dimensione={34} />
         <h1>Accedi alla tua organizzazione</h1>
