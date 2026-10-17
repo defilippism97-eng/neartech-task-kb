@@ -186,3 +186,19 @@ def test_lo_script_chiede_organizzazione_e_utente():
     assert (args.org, args.utente_sso) == ("altra_org", "sso|s")
     with pytest.raises(SystemExit):
         modulo.parser().parse_args(["--dir", "x", "--utente-sso", "sso|s"])
+
+
+def test_caricamento_come_candidati_non_tocca_il_dataset(conn, org, admin):
+    """Fase 3 (ADR 0006): le attività diventano candidati nello spazio; nessun task nuovo nel dataset."""
+    from neartech.scomposizione import carica_candidati
+
+    doc = _doc("A.docx", TESTO_A, "RESPONSABILE UFFICIO ACQUISTI")
+    prima = conn.execute("SELECT count(*) FROM canonical_tasks").fetchone()[0]
+    assert carica_candidati(conn, admin, doc, _attivita_a(doc), org_id=org, modalita="da_file") == 1
+    assert conn.execute("SELECT count(*) FROM canonical_tasks").fetchone()[0] == prima
+    assert conn.execute("SELECT titolo FROM org_sintetica.candidati").fetchall() == [
+        ("Aggiornare la banca dati fornitori",)]
+    dettagli = conn.execute(
+        """SELECT dettagli FROM registro_decisioni WHERE tipo_oggetto = 'caricamento_documento'""").fetchone()[0]
+    assert dettagli["candidati_nuovi"] == 1 and dettagli["destinazione"] == "candidati"
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")

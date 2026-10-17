@@ -26,6 +26,7 @@ from xml.etree import ElementTree as ET
 import psycopg
 from pydantic import BaseModel, Field, ValidationError
 
+from neartech.abbinamento import salva_candidati
 from neartech.crosswalk import una_riga
 from neartech.occorrenze import documento, registra_occorrenza, ruolo
 from neartech.permessi import richiedi
@@ -234,3 +235,26 @@ def carica_documento(
                            "modello": MODEL_ID, "prompt_hash": prompt_hash()},
                  dettagli_riservati={"nome_file": doc.nome_file, "ruolo": doc.ruolo})
         return nuove
+
+
+def carica_candidati(
+    conn: psycopg.Connection, utente_id: str, doc: DocumentoJob, attivita: list[_Attivita], *,
+    org_id: str, modalita: Literal["modello", "da_file"],
+    motivazione: str = "caricamento di un documento dell'organizzazione come candidati",
+) -> int:
+    """Caricamento di un documento nella fase 3 (ADR 0006): le attività diventano candidati nello spazio
+    dell'organizzazione, da abbinare al dataset (neartech.abbinamento); nessun task entra nel dataset qui.
+    Permesso, salvataggio e atto in una transazione. Ritorna i candidati nuovi."""
+    with conn.transaction():
+        richiedi(conn, utente_id, "gestire_dataset_centrale", org_id, risorsa=f"caricamento:{doc.sha256[:16]}")
+        nuovi = salva_candidati(conn, org_id, ruolo_nome=doc.ruolo, nome_file=doc.nome_file, sha256=doc.sha256,
+                                licenza=SOURCE_LICENSE, attivita=attivita, model_name=MODEL_ID,
+                                prompt_hash=prompt_hash())
+        documento_id = documento(conn, org_id, nome_file=doc.nome_file, sha256=doc.sha256,
+                                 licenza=SOURCE_LICENSE, tipo=SOURCE_KIND)
+        registra(conn, autore_id=utente_id, tipo_oggetto="caricamento_documento", oggetto_id=documento_id,
+                 atto="approvazione", motivazione=motivazione, org_id=org_id,
+                 dettagli={"attivita": len(attivita), "candidati_nuovi": nuovi, "destinazione": "candidati",
+                           "modalita": modalita, "modello": MODEL_ID, "prompt_hash": prompt_hash()},
+                 dettagli_riservati={"nome_file": doc.nome_file, "ruolo": doc.ruolo})
+        return nuovi

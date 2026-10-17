@@ -108,3 +108,9 @@ def test_tabella_markdown_non_si_spezza_con_il_testo_del_cliente(conn, org):
     from neartech.audit import _tabella
     riga = _tabella(["Testo"], [["a | b\r\nc \\"]])[2]
     assert riga == "| a \\| b c \\\\ |"
+
+
+def test_report_riporta_i_lotti_di_abbinamento(conn, org):
+    report = report_organizzazione(conn, org["auditor"], org["id"])
+    assert report["abbinamenti"] == []
+    assert "## Abbinamento al dataset" in report_in_markdown(report)

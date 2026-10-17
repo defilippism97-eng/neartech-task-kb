@@ -130,3 +130,14 @@ Correzioni tecniche dei punti medi e bassi rimasti aperti dopo le revisioni Pyth
 - **Elementi dei campioni (migrazione 0029).** Ogni elemento nuovo richiede che il campione, a fine transazione, abbia esattamente la sua dimensione: un elemento aggiunto dopo la creazione è rifiutato anche prima del primo giudizio.
 - **Misure coerenti con i parametri (migrazione 0030).** Soglia, livello di confidenza e regola sui parziali di una misura devono coincidere con il valore dei parametri che cita.
 - **Richieste di ricalibrazione.** La lettura lascia una voce nel log di accesso per ogni organizzazione letta, e ogni richiesta dice se è superata, cioè se la versione comune a cui si riferisce non è più vigente.
+
+## 16. Fase 3: abbinamento al dataset consolidato (2026-10-17)
+
+Realizzazione tecnica della canonicalizzazione rivista (handover, sezione 3), ADR 0006. Scelte tecniche, che non cambiano risultati di policy:
+- la proposta è il task attivo più vicino per embedding; si registrano i 5 vicini, la distanza e il margine sul secondo; nessuna soglia di distanza;
+- la coda di revisione è ordinata per ambiguità (margine crescente, poi distanza decrescente): un ordinamento, non un filtro;
+- la dimensione del campione è la quota del lotto per il numero di proposte, arrotondata per eccesso; la quota usata è quella vigente quando il lotto nasce;
+- con revisione a campione o completa la decisione in blocco richiede una misura sul campione del lotto, il cui esito entra nell'atto; con revisione nulla la decisione si registra come tale;
+- una proposta senza task vicino (dataset vuoto) è rifiutata d'ufficio e diventa task nuovo; un task proposto fuso nel frattempo si segue fino al superstite.
+
+**Da decidere (metodologia):** valore di `quota_revisione_abbinamenti`; approvazione di `istruzioni-abbinamento-v1`; se una decisione in blocco con misura sotto soglia vada impedita (oggi si registra); come il livello di revisione del lotto incide sullo stato dei risultati (oggi si registra con i risultati); se aggiungere un giudizio del modello sulle proposte.

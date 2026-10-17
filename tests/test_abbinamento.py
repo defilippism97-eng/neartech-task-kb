@@ -281,3 +281,21 @@ def test_tabelle_dello_spazio_append_only(conn, mondo):
     _lotto(conn, mondo)
     with pytest.raises(psycopg.errors.RaiseException):
         conn.execute(sql.SQL("UPDATE {}.proposte_abbinamento SET distanza = 0").format(SPAZIO))
+
+
+def test_il_flusso_funziona_con_il_ruolo_applicativo(conn, mondo):
+    """Il ruolo applicativo non è proprietario: deve avere i privilegi su tutte le tabelle del flusso."""
+    conn.execute("SET LOCAL ROLE neartech_app")
+    _, _, esito = _decidi_e_applica(conn, mondo)
+    assert esito == {"collegate": 1, "task_nuovi": 2}
+
+
+def test_il_report_di_audit_riassume_il_lotto(conn, mondo):
+    from neartech.audit import report_organizzazione
+
+    lotto, _, _ = _decidi_e_applica(conn, mondo)
+    auditor = crea_utente(conn, "sso|auditor")
+    assegna_ruolo(conn, auditor, "auditor", assegnata_da=mondo["admin"])
+    riepilogo = report_organizzazione(conn, auditor, mondo["org"])["abbinamenti"]
+    assert [(r["lotto_id"], r["livello_revisione"], r["proposte"], r["approvate"], r["rifiutate"],
+             r["collegate"], r["task_nuovi"]) for r in riepilogo] == [(lotto, "campione", 3, 1, 2, 1, 2)]
