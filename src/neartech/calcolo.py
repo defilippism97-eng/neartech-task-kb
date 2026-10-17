@@ -8,7 +8,10 @@ Formule del piano:
 
 Simulazione: per ogni occorrenza, estrazioni ripetute dai giudizi registrati (quelli di persone al posto di quelli
 del modello, quelli sull'occorrenza al posto di quelli sul task) e dalla copertura, uniforme fra c_low e c_high.
-Seme fisso derivato dal seme del calcolo e dall'occorrenza: stesso input, stesso risultato.
+Ogni voce si estrae a sé (metodo, sezione 17). Seme fisso derivato dal seme del calcolo e dall'occorrenza:
+stesso input, stesso risultato. I giudizi su task poi fusi valgono per il superstite (metodo, sezione 8); di una
+persona conta l'ultimo giudizio su ogni voce (una correzione non si somma alla precedente).
+Con la copertura uniforme fra c_low e c_high, la media pesata dello snapshot (c_mean) è informativa: non entra in N.
 L'aritmetica la fa solo questo codice; pesi, λ e soglie vengono dal profilo, mai da qui.
 """
 
@@ -69,7 +72,8 @@ def d_puntuale(componenti: dict[str, float], profilo: Profilo) -> tuple[float | 
 
 
 def quadrante(n: float, d: float, theta_n: float, theta_d: float) -> str:
-    n_alto, d_alto = n >= theta_n, d >= theta_d
+    # Arrotondamento a 9 decimali prima del confronto: un errore di virgola mobile non sposta il quadrante.
+    n_alto, d_alto = round(n, 9) >= round(theta_n, 9), round(d, 9) >= round(theta_d, 9)
     if n_alto:
         return "q1" if d_alto else "q2"
     return "q3" if d_alto else "q4"
@@ -133,7 +137,7 @@ def _configurazione(conn: psycopg.Connection, org_id: str) -> tuple[str, Profilo
                       theta_n=v[8], theta_d=v[9])
     snapshot = conn.execute(
         "SELECT snapshot_id, tipo_capacita FROM capability_snapshots WHERE status = 'published' "
-        "AND approved_by IS NOT NULL").fetchone()
+        "AND approved_by IS NOT NULL FOR SHARE").fetchone()
     if snapshot is None:
         raise LookupError("nessuno snapshot di capacità pubblicato e approvato")
     return rubrica[0], profilo, str(snapshot[0]), snapshot[1]
@@ -142,13 +146,18 @@ def _configurazione(conn: psycopg.Connection, org_id: str) -> tuple[str, Profilo
 def _giudizi(conn: psycopg.Connection, rubrica: str, task_id: str, occorrenza_id: str
              ) -> tuple[dict[str, list[float]], dict[str, list[str]], list[str]]:
     """Per ogni voce il gruppo di giudizi che vale: persone sull'occorrenza, persone sul task, modello
-    sull'occorrenza, modello sul task. Ritorna valori, valutatori e identificativi usati."""
+    sull'occorrenza, modello sul task. Sul task contano anche i giudizi dei task fusi in esso. Di ogni persona
+    conta l'ultimo giudizio sulla voce. Ritorna valori, valutatori e identificativi usati."""
     righe = conn.execute(
-        """SELECT run_id, target_kind, item, value, rater_kind FROM assessment_runs
-           WHERE rubric_version = %s AND ((target_kind = 'task' AND target_id = %s)
-                                          OR (target_kind = 'occurrence' AND target_id = %s))
+        """WITH RECURSIVE fusi(task_id) AS (
+             SELECT %(task)s::uuid
+             UNION SELECT t.task_id FROM canonical_tasks t JOIN fusi f ON t.merged_into = f.task_id)
+           SELECT run_id, target_kind, item, value, rater_kind, rater_ref, created_at FROM assessment_runs
+           WHERE rubric_version = %(rubrica)s
+             AND ((target_kind = 'task' AND target_id IN (SELECT task_id FROM fusi))
+                  OR (target_kind = 'occurrence' AND target_id = %(occorrenza)s))
            ORDER BY run_id""",
-        (rubrica, task_id, occorrenza_id),
+        {"rubrica": rubrica, "task": task_id, "occorrenza": occorrenza_id},
     ).fetchall()
     valori: dict[str, list[float]] = {}
     valutatori: dict[str, list[str]] = {}
@@ -157,6 +166,11 @@ def _giudizi(conn: psycopg.Connection, rubrica: str, task_id: str, occorrenza_id
         for persone, bersaglio in ((True, "occurrence"), (True, "task"), (False, "occurrence"), (False, "task")):
             gruppo = [r for r in righe if r[2] == voce and r[1] == bersaglio
                       and (r[4] in VALUTATORI_PERSONE) == persone]
+            if persone:  # una persona che corregge un giudizio lo sostituisce
+                ultimi: dict[str, tuple] = {}
+                for r in sorted(gruppo, key=lambda r: (r[6], str(r[0]))):
+                    ultimi[r[5]] = r
+                gruppo = sorted(ultimi.values(), key=lambda r: str(r[0]))
             if gruppo:
                 valori[voce] = [float(r[3]) for r in gruppo]
                 valutatori[voce] = [r[4] for r in gruppo]
@@ -183,17 +197,21 @@ def calcola_organizzazione(
 ) -> dict[str, int]:
     """Calcola N e D per tutte le occorrenze dell'organizzazione con la configurazione approvata vigente.
     Un risultato con lo stesso input esiste già: nessuna riga nuova. Ritorna i conteggi."""
+    if not 0 <= seme < 2**63:
+        raise ValueError("il seme deve stare fra 0 e 2^63 - 1")
+    if estrazioni < 1:
+        raise ValueError("servono estrazioni positive")
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_parametri_tecnici", org_id, risorsa=f"calcolo:{org_id}")
         rubrica, profilo, snapshot, tipo_capacita = _configurazione(conn, org_id)
         occorrenze = conn.execute(
-            """SELECT o.occurrence_id, o.task_id FROM task_occurrences o JOIN roles r USING (role_id)
+            """SELECT o.occurrence_id, o.task_id, o.role_id FROM task_occurrences o JOIN roles r USING (role_id)
                WHERE r.org_id = %s ORDER BY o.occurrence_id""",
             (org_id,),
         ).fetchall()
         esito = {"occorrenze": len(occorrenze), "nuove": 0, "senza_n": 0, "senza_d": 0}
-        for occorrenza_id, task_id in occorrenze:
+        for occorrenza_id, task_id, ruolo_id in occorrenze:
             occorrenza_id, task_id = str(occorrenza_id), str(task_id)
             valori, valutatori, usati = _giudizi(conn, rubrica, task_id, occorrenza_id)
             righe_c = conn.execute(
@@ -204,25 +222,31 @@ def calcola_organizzazione(
             copertura = copertura if all(k in copertura for k in K_ITEMS) else None
             seme_occorrenza = int(hashlib.sha256(f"{seme}:{occorrenza_id}".encode()).hexdigest()[:15], 16)
             r = simula(valori, copertura, profilo, estrazioni=estrazioni, seme=seme_occorrenza)
+            # L'impronta cambia con ogni input: giudizi usati, copertura, valori del profilo, snapshot, rubrica.
             impronta = hashlib.sha256(json.dumps(
                 {"giudizi": sorted(usati), "copertura": sorted((k, v) for k, v in (copertura or {}).items()),
-                 "profilo": profilo.profilo_id, "snapshot": snapshot, "rubrica": rubrica},
+                 "profilo": [profilo.profilo_id, profilo.w_k, profilo.lambda_r, profilo.w_d, profilo.theta_n,
+                             profilo.theta_d],
+                 "snapshot": [snapshot, tipo_capacita], "rubrica": rubrica, "task": task_id, "ruolo": str(ruolo_id)},
                 sort_keys=True).encode()).hexdigest()
             fonti: dict[str, Any] = {
                 "fonti": _fonti_d(valutatori, r.componenti_d, profilo) if r.d_media is not None else {},
                 "componenti": list(r.componenti_d),
                 "mancanti": [j for j in D_ITEMS if j not in r.componenti_d],
                 "provvisorio": r.provvisorio,
+                "giudizi": {voce: len(v) for voce, v in sorted(valori.items())},  # quanti giudizi per voce
             }
             q = r.p_quadranti or {}
             esito["nuove"] += conn.execute(
                 """INSERT INTO policy_estimates
-                     (occurrence_id, profile_id, snapshot_id, rubric_version, n_mean, n_sd, d_mean, d_sd,
-                      p_q1, p_q2, p_q3, p_q4, d_source_mix, versione_calcolo, seme, estrazioni, tipo_capacita,
+                     (occurrence_id, task_id, role_id, profile_id, snapshot_id, rubric_version, n_mean, n_sd, d_mean,
+                      d_sd, p_q1, p_q2, p_q3, p_q4, d_source_mix, versione_calcolo, seme, estrazioni, tipo_capacita,
                       componenti_d, d_provvisorio, impronta_input, calcolata_da)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                           %s)
                    ON CONFLICT DO NOTHING""",
-                (occorrenza_id, profilo.profilo_id, snapshot, rubrica, _arrotonda(r.n_media), _arrotonda(r.n_dev),
+                (occorrenza_id, task_id, ruolo_id, profilo.profilo_id, snapshot, rubrica, _arrotonda(r.n_media),
+                 _arrotonda(r.n_dev),
                  _arrotonda(r.d_media), _arrotonda(r.d_dev), _arrotonda(q.get("q1")), _arrotonda(q.get("q2")),
                  _arrotonda(q.get("q3")), _arrotonda(q.get("q4")), Jsonb(fonti), VERSIONE_CALCOLO, seme, estrazioni,
                  tipo_capacita if r.n_media is not None else None, list(r.componenti_d), r.provvisorio, impronta,

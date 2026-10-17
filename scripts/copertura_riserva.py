@@ -15,7 +15,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from neartech.copertura_riserva import SYSTEM_PROMPT, _messaggio, valuta_task_senza_copertura  # noqa: E402
+from neartech.copertura_riserva import (  # noqa: E402
+    MAX_ATTEMPTS,
+    MAX_TOKENS,
+    SYSTEM_PROMPT,
+    _messaggio,
+    valuta_task_senza_copertura,
+)
 from neartech.db import connect  # noqa: E402
 from neartech.permessi import configura_log  # noqa: E402
 
@@ -35,7 +41,8 @@ def main() -> None:
             titoli = [r[0] for r in conn.execute(
                 "SELECT title_it FROM canonical_tasks WHERE status = 'active' AND granularity IN (1, 2)")]
             caratteri = sum(len(SYSTEM_PROMPT) + len(_messaggio(t)) for t in titoli)
-            print(f"task attivi: {len(titoli)}; token stimati in ingresso: {caratteri / CARATTERI_PER_TOKEN:.0f}")
+            print(f"task attivi: {len(titoli)}; token stimati in ingresso: {caratteri / CARATTERI_PER_TOKEN:.0f}; "
+                  f"in uscita al massimo {len(titoli) * MAX_ATTEMPTS * MAX_TOKENS} (limite di risposta per tentativo)")
             return
         api_key = os.environ.get("NEARTECH_ANTHROPIC_API_KEY")
         if not api_key:

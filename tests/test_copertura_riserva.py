@@ -83,3 +83,23 @@ def test_limite_di_consumo(conn, mondo):
 def test_solo_chi_gestisce_i_parametri_tecnici(conn, mondo):
     with pytest.raises(PermessoNegato):
         valuta_task_senza_copertura(conn, FakeClient(_risposta()), crea_utente(conn, "sso|x"), data="2026-10-17")
+
+
+def test_errore_dell_api_lascia_comunque_l_atto(conn, mondo):
+    class ClienteRotto:
+        def __init__(self):
+            self.messages = self
+
+        def create(self, **kwargs):
+            raise ConnectionError("rete non raggiungibile")
+
+    with pytest.raises(ConnectionError):
+        valuta_task_senza_copertura(conn, ClienteRotto(), mondo["admin"], data="2026-10-17")
+    dettagli = conn.execute("SELECT dettagli FROM registro_decisioni WHERE tipo_oggetto = 'copertura_riserva'"
+                            ).fetchone()[0]
+    assert dettagli["interrotto"] is True and dettagli["task_valutati"] == 0
+
+
+def test_livello_non_intero_rifiutato():
+    with pytest.raises(CoperturaError):
+        valuta(FakeClient(json.dumps({d: {"livello": "3", "motivazione": "m"} for d in ("k1", "k2", "k3")})), "T")

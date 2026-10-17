@@ -156,3 +156,20 @@ Approvate dal responsabile del progetto.
 - **Incertezza nella simulazione.** Nelle 2.000 estrazioni Monte Carlo ogni voce si estrae dai giudizi registrati per quella voce; se esistono giudizi di persone, sostituiscono quelli del modello. La copertura tecnologica si estrae uniformemente fra `c_low` e `c_high`. Il seme è fisso e registrato: stesso input, stesso risultato.
 - **Capacità per N.** Finché la capacità di test non è calibrata sulla scala 0–4, N usa la **copertura di riserva** della rubrica (0 nessuna soluzione dimostrata … 4 esecuzione autonoma affidabile documentata), con qualità minima, dichiarata nei risultati come capacità di riserva.
 - **Abbinamento.** Quota comune di revisione a campione `quota_revisione_abbinamenti` = 0,20. Il livello di revisione di un lotto (`campione`, `completa`, `nulla`) lo sceglie il revisore con un atto, non chi propone il lotto.
+
+## 18. Fase 4: calcolo di N e D, scelte tecniche e punti aperti (2026-10-17)
+
+Realizzazione delle decisioni della sezione 17 (piano `docs/piani/fase-4-calcolo-n-d.md`). Scelte tecniche:
+- quadrante: N alto se N ≥ θ_N e D alto se D ≥ θ_D (confronto a 9 decimali);
+- giudizi: di persona sull'occorrenza, poi di persona sul task, poi del modello sull'occorrenza, poi del modello sul task; di ogni persona conta l'ultimo giudizio sulla voce; i giudizi su task poi fusi valgono per il superstite (sezione 8);
+- ogni risultato porta profilo, snapshot, rubrica, versione del calcolo, seme, estrazioni, tipo di capacità, componenti di D, numero di giudizi per voce, task e ruolo dell'occorrenza e un'impronta di tutti gli input (anche dei valori del profilo); i risultati non si modificano;
+- un profilo di pesi o una rubrica approvati non cambiano valori: un cambio è un profilo o una rubrica nuovi; l'applicazione li registra solo come bozze;
+- lo snapshot di capacità nasce proposto, si pubblica solo con l'atto di approvazione, e la sua copertura non cambia dopo; nello snapshot di riserva tutte le evidenze hanno la stessa classe di qualità (con qualità diverse servono pesi di qualità approvati); l'intervallo è dato dalle evidenze che pesano;
+- le etichette silver v2 si importano come giudizi di modello sotto la rubrica `bozza-3`, registrata come bozza.
+
+**Punti aperti (metodologia):**
+- con la copertura estratta uniformemente fra c_low e c_high (sezione 17), la media pesata con il decadimento (c_mean) non entra in N: l'emivita cambia solo un valore informativo; un'alternativa è una distribuzione centrata su c_mean;
+- con una sola evidenza di riserva per dimensione l'intervallo è nullo, e N risulta senza incertezza dalla copertura;
+- ogni voce si estrae a sé anche quando i giudizi vengono dalla stessa esecuzione del modello;
+- la copertura di riserva proposta dal modello non ha ancora un set di controllo umano;
+- in produzione mancano: rubrica corrente approvata (oggi solo `bozza-3`), profilo di pesi approvato, snapshot pubblicato, quote di tempo delle occorrenze (servono alla lettura per ruolo).

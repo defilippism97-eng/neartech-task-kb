@@ -24,8 +24,8 @@ def _weights(profile_id: str, *, org_id=None, active=True) -> tuple:
 
 WEIGHT_SQL = """
 INSERT INTO weight_profiles
-  (profile_id, org_id, w_k1, w_k2, w_k3, w_d1, w_d2, w_d3, w_d4, lambda_r, theta_n, theta_d, is_active)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (profile_id, org_id, w_k1, w_k2, w_k3, w_d1, w_d2, w_d3, w_d4, lambda_r, theta_n, theta_d, is_active, approved_by)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'comitato di prova')
 """
 
 
@@ -52,28 +52,42 @@ def _setup_base(conn: psycopg.Connection) -> dict:
            VALUES (%s, %s, 1.0, %s, 'test', 'test') RETURNING occurrence_id""",
         (task, role, src),
     ).fetchone()[0]
-    conn.execute("INSERT INTO rubric_versions (version, is_current) VALUES ('r-test', true)")
+    conn.execute("INSERT INTO rubric_versions (version, is_current, approved_by) VALUES ('r-test', true, 'comitato')")
     conn.execute(WEIGHT_SQL, _weights("default-test"))
-    return {"org": org, "role": role, "occurrence": occ}
+    utente = conn.execute("INSERT INTO utenti (soggetto_sso) VALUES ('sso|f0') RETURNING utente_id").fetchone()[0]
+    return {"org": org, "role": role, "occurrence": occ, "task": task, "utente": utente}
 
 
-def _snapshot(conn: psycopg.Connection, status: str, as_of: str) -> str:
-    return conn.execute(
+def _snapshot(conn: psycopg.Connection, status: str, as_of: str, utente=None) -> str:
+    """Snapshot nato proposto e, se richiesto, pubblicato con l'atto di approvazione (ciclo della migrazione 0033)."""
+    from neartech.registro import registra
+    snapshot = conn.execute(
         """INSERT INTO capability_snapshots (as_of, method_version, half_life_days, status, tipo_capacita)
-           VALUES (%s, 'm-test', 180, %s, 'riserva') RETURNING snapshot_id""",
-        (as_of, status),
+           VALUES (%s, 'm-test', 180, 'proposed', 'riserva') RETURNING snapshot_id""",
+        (as_of,),
     ).fetchone()[0]
+    if status == "published":
+        utente = utente or conn.execute("SELECT utente_id FROM utenti ORDER BY creato_il LIMIT 1").fetchone()[0]
+        registra(conn, autore_id=str(utente), tipo_oggetto="snapshot_capacita", oggetto_id=str(snapshot),
+                 atto="approvazione", motivazione="pubblicazione di prova")
+        conn.execute("UPDATE capability_snapshots SET status = 'retired' WHERE status = 'published'")
+        conn.execute("UPDATE capability_snapshots SET status = 'published', approved_by = 'curatore', "
+                     "approved_at = now() WHERE snapshot_id = %s", (snapshot,))
+    return snapshot
 
 
 def _estimate(conn, occ, snapshot, n: float, d: float) -> None:
     conn.execute(
         """INSERT INTO policy_estimates
-             (occurrence_id, profile_id, snapshot_id, rubric_version,
+             (occurrence_id, task_id, role_id, profile_id, snapshot_id, rubric_version,
               n_mean, n_sd, d_mean, d_sd, p_q1, p_q2, p_q3, p_q4, d_source_mix,
-              versione_calcolo, seme, estrazioni, tipo_capacita, componenti_d, d_provvisorio, impronta_input)
-           VALUES (%s, 'default-test', %s, 'r-test', %s, 0.05, %s, 0.05, 0.7, 0.1, 0.1, 0.1, '{"preliminare": 1.0}',
-                   'calcolo-test', 1, 2000, 'riserva', '{d1,d2}', true, repeat('0', 64))""",
-        (occ, snapshot, n, d),
+              versione_calcolo, seme, estrazioni, tipo_capacita, componenti_d, d_provvisorio, impronta_input,
+              calcolata_da)
+           SELECT o.occurrence_id, o.task_id, o.role_id, 'default-test', %s, 'r-test', %s, 0.05, %s, 0.05,
+                  0.7, 0.1, 0.1, 0.1, '{"preliminare": 1.0}', 'calcolo-test', 1, 2000, 'riserva', '{d1,d2}', true,
+                  repeat('0', 64), (SELECT utente_id FROM utenti ORDER BY creato_il LIMIT 1)
+           FROM task_occurrences o WHERE o.occurrence_id = %s""",
+        (snapshot, n, d, occ),
     )
 
 
@@ -113,8 +127,7 @@ def test_dopo_un_nuovo_snapshot_la_vista_restituisce_una_riga_per_ruolo(conn):
     _estimate(conn, base["occurrence"], old, 0.3, 0.6)
     assert conn.execute("SELECT count(*) FROM v_role_metrics").fetchone()[0] == 1
 
-    # Pubblicazione di un nuovo snapshot: il precedente va ritirato (un solo published).
-    conn.execute("UPDATE capability_snapshots SET status = 'retired' WHERE snapshot_id = %s", (old,))
+    # Pubblicazione di un nuovo snapshot: il precedente si ritira (un solo published).
     new = _snapshot(conn, "published", "2026-10-01")
     _estimate(conn, base["occurrence"], new, 0.5, 0.6)
 

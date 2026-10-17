@@ -10,9 +10,13 @@ LANGUAGE plpgsql SET search_path = public, pg_temp AS $$
 DECLARE
   codice_parametro text;
   org_parametro uuid;
+  dettagli jsonb;
 BEGIN
-  PERFORM abbinamento_controlla_atto(NEW.decisione_id, TG_TABLE_SCHEMA, 'livello_lotto_abbinamento', NEW.lotto_id,
-                                     'approvazione');
+  dettagli := abbinamento_controlla_atto(NEW.decisione_id, TG_TABLE_SCHEMA, 'livello_lotto_abbinamento',
+                                         NEW.lotto_id, 'approvazione');
+  IF dettagli ->> 'livello_revisione' IS DISTINCT FROM NEW.livello_revisione THEN
+    RAISE EXCEPTION 'il livello del lotto % non è quello dell''atto citato', NEW.lotto_id;
+  END IF;
   IF (NEW.livello_revisione = 'campione') <> (NEW.parametro_quota_id IS NOT NULL) THEN
     RAISE EXCEPTION 'il livello a campione del lotto % cita la quota, gli altri no', NEW.lotto_id;
   END IF;

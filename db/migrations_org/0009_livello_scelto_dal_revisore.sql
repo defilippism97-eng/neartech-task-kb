@@ -22,7 +22,8 @@ CREATE TABLE livelli_lotto (
   livello_revisione text NOT NULL CHECK (livello_revisione IN ('campione', 'completa', 'nulla')),
   parametro_quota_id uuid REFERENCES public.parametri_governance,
   decisione_id bigint NOT NULL REFERENCES public.registro_decisioni,
-  registrato_il timestamptz NOT NULL DEFAULT now()
+  registrato_il timestamptz NOT NULL DEFAULT now(),
+  CHECK ((livello_revisione = 'campione') = (parametro_quota_id IS NOT NULL))
 );
 
 CREATE TRIGGER livelli_lotto_append_only BEFORE UPDATE OR DELETE ON livelli_lotto

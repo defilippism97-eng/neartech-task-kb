@@ -120,3 +120,45 @@ def test_snapshot_e_calcolo_con_il_ruolo_applicativo(conn, mondo):
     pubblica_snapshot(conn, mondo["admin"], snapshot, nota="riserva")
     assert calcola_organizzazione(conn, mondo["admin"], org, seme=1, estrazioni=50)["nuove"] == 1
     conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_qualita_diverse_rifiutate_senza_pesi_approvati(conn, mondo):
+    _evidenza(conn, mondo, "any", 2, "2026-10-17", qualita=1)
+    _evidenza(conn, mondo, "any", 3, "2026-10-17", qualita=2)
+    with pytest.raises(ValueError, match="qualità"):
+        proponi_snapshot_riserva(conn, mondo["admin"], as_of="2026-10-17", emivita_giorni=180, motivazione="x")
+
+
+def test_evidenze_di_un_task_fuso_valgono_per_il_superstite(conn, mondo):
+    fuso = str(conn.execute("INSERT INTO canonical_tasks (title_it, granularity, status, merged_into) "
+                            "VALUES ('Task fuso', 2, 'merged', %s) RETURNING task_id", (mondo["task"],)).fetchone()[0])
+    conn.execute("""INSERT INTO evidence_items (source_id, evidence_type, task_id, dimension, raw_value, score_0_4,
+                                                quality, observed_at)
+                    VALUES (%s, 'llm_prior', %s, 'any', 3, 3, 1, '2026-10-17')""", (mondo["fonte"], fuso))
+    snapshot = proponi_snapshot_riserva(conn, mondo["admin"], as_of="2026-10-17", emivita_giorni=180, motivazione="x")
+    task = {str(r[0]) for r in conn.execute("SELECT task_id FROM task_capability WHERE snapshot_id = %s", (snapshot,))}
+    assert task == {mondo["task"]}
+
+
+def test_il_database_protegge_il_ciclo_di_vita_dello_snapshot(conn, mondo):
+    import psycopg
+    with pytest.raises(psycopg.errors.RaiseException, match="nasce proposto"):
+        conn.execute("""INSERT INTO capability_snapshots (as_of, method_version, half_life_days, status, tipo_capacita,
+                                                          approved_by, approved_at)
+                        VALUES ('2026-10-17', 'x', 180, 'published', 'riserva', 'io', now())""")
+
+
+def test_senza_atto_lo_snapshot_non_si_pubblica_e_la_copertura_pubblicata_non_cambia(conn, mondo):
+    import psycopg
+    _evidenza(conn, mondo, "any", 2, "2026-10-17")
+    snapshot = proponi_snapshot_riserva(conn, mondo["admin"], as_of="2026-10-17", emivita_giorni=180, motivazione="x")
+    with pytest.raises(psycopg.errors.RaiseException, match="atto di approvazione"):
+        with conn.transaction():
+            conn.execute("UPDATE capability_snapshots SET status = 'published', approved_by = 'io', approved_at = now()"
+                         " WHERE snapshot_id = %s", (snapshot,))
+    atto = pubblica_snapshot(conn, mondo["admin"], snapshot, nota="ok")
+    assert conn.execute("SELECT dettagli FROM registro_decisioni WHERE decisione_id = %s",
+                        (atto,)).fetchone()[0]["stesso_proponente"] is True
+    with pytest.raises(psycopg.errors.RaiseException, match="proposto"):
+        conn.execute("""INSERT INTO task_capability (snapshot_id, task_id, dimension, c_mean, c_low, c_high, n_evidence)
+                        SELECT %s, task_id, 'k1', 4, 4, 4, 1 FROM canonical_tasks LIMIT 1""", (snapshot,))

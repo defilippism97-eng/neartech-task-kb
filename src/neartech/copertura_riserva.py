@@ -25,7 +25,10 @@ from neartech.registro import registra
 MODEL_ID = "claude-haiku-5-5"
 MAX_ATTEMPTS = 2
 MAX_TOKENS = 2000
-QUALITA_MINIMA = 1  # unica classe di qualità nello snapshot di riserva: nel calcolo il valore si annulla
+# Unica classe di qualità dello snapshot di riserva: nel calcolo si annulla, e neartech.capacita rifiuta
+# snapshot con qualità diverse finché i pesi di qualità non sono approvati. Non è un peso di policy.
+QUALITA_MINIMA = 1
+MESSAGGIO = "Task: {titolo}"
 
 SYSTEM_PROMPT = (
     "Sei un valutatore della copertura tecnologica di task di lavoro. Ricevi il titolo di un task. Per ciascuna "
@@ -47,7 +50,7 @@ class CoperturaError(RuntimeError):
 
 
 class _Voce(BaseModel):
-    livello: int = Field(ge=0, le=4)
+    livello: int = Field(ge=0, le=4, strict=True)
     motivazione: str = Field(min_length=1)
 
 
@@ -58,11 +61,12 @@ class _Risposta(BaseModel):
 
 
 def prompt_hash() -> str:
-    return hashlib.sha256((SYSTEM_PROMPT + "\n" + MODEL_ID).encode("utf-8")).hexdigest()
+    """Impronta di prompt, formato del messaggio, modello e limite di risposta."""
+    return hashlib.sha256("\n".join((SYSTEM_PROMPT, MESSAGGIO, MODEL_ID, str(MAX_TOKENS))).encode("utf-8")).hexdigest()
 
 
 def _messaggio(titolo: str) -> str:
-    return f"Task: {una_riga(titolo)}"
+    return MESSAGGIO.format(titolo=una_riga(titolo))
 
 
 def valuta(client, titolo: str) -> dict[str, tuple[int, str]]:
@@ -111,11 +115,14 @@ def valuta_task_senza_copertura(
     conn: psycopg.Connection, client, utente_id: str, *, data: str | date, limite_uscita: int | None = None,
 ) -> dict[str, Any]:
     """Valuta i task attivi (granularità 1 e 2) che non hanno ancora evidenze di riserva con questo prompt.
-    Ogni task si conferma da sé; con limite_uscita si ferma prima della chiamata che lo supererebbe."""
+    Ogni task si conferma da sé. Con limite_uscita non inizia un task nuovo quando i token in uscita lo hanno
+    raggiunto (l'ultimo task può superarlo di al più MAX_ATTEMPTS × MAX_TOKENS). Un errore dell'API interrompe
+    la valutazione; l'atto nel registro con i conteggi e il consumo si scrive comunque."""
     giorno = data if isinstance(data, date) else date.fromisoformat(data)
     richiedi(conn, utente_id, "gestire_parametri_tecnici", risorsa="copertura_riserva")
     contatore = _ClienteConConsumo(client)
     with conn.transaction():
+        conn.execute("SELECT pg_advisory_xact_lock(hashtext('copertura_riserva'))")
         fonte = _fonte(conn)
     task = conn.execute(
         """SELECT t.task_id, t.title_it FROM canonical_tasks t
@@ -125,28 +132,34 @@ def valuta_task_senza_copertura(
         (fonte,),
     ).fetchall()
     esito: dict[str, Any] = {"task_da_valutare": len(task), "task_valutati": 0, "falliti": 0,
-                             "fermato_dal_limite": False}
-    for task_id, titolo in task:
-        if limite_uscita is not None and contatore.uscita >= limite_uscita:
-            esito["fermato_dal_limite"] = True
-            break
-        try:
-            valutazione = valuta(contatore, titolo)
-        except CoperturaError:
-            esito["falliti"] += 1
-            continue
+                             "fermato_dal_limite": False, "interrotto": False}
+    try:
+        for task_id, titolo in task:
+            if limite_uscita is not None and contatore.uscita >= limite_uscita:
+                esito["fermato_dal_limite"] = True
+                break
+            try:
+                valutazione = valuta(contatore, titolo)
+            except CoperturaError:
+                esito["falliti"] += 1
+                continue
+            except Exception:  # errore dell'API o di rete: ci si ferma, l'atto resta
+                esito["interrotto"] = True
+                raise
+            with conn.transaction():
+                for dimensione, (livello, _) in sorted(valutazione.items()):
+                    conn.execute(
+                        """INSERT INTO evidence_items (source_id, evidence_type, task_id, dimension, raw_value,
+                                                       score_0_4, quality, observed_at)
+                           VALUES (%s, 'llm_prior', %s, %s, %s, %s, %s, %s)""",
+                        (fonte, task_id, dimensione, livello, livello, QUALITA_MINIMA, giorno),
+                    )
+            esito["task_valutati"] += 1
+    finally:
+        esito |= {"chiamate": contatore.chiamate, "token_ingresso": contatore.ingresso,
+                  "token_uscita": contatore.uscita}
         with conn.transaction():
-            for dimensione, (livello, _) in sorted(valutazione.items()):
-                conn.execute(
-                    """INSERT INTO evidence_items (source_id, evidence_type, task_id, dimension, raw_value, score_0_4,
-                                                   quality, observed_at)
-                       VALUES (%s, 'llm_prior', %s, %s, %s, %s, %s, %s)""",
-                    (fonte, task_id, dimensione, livello, livello, QUALITA_MINIMA, giorno),
-                )
-        esito["task_valutati"] += 1
-    esito |= {"chiamate": contatore.chiamate, "token_ingresso": contatore.ingresso, "token_uscita": contatore.uscita}
-    with conn.transaction():
-        registra(conn, autore_id=utente_id, tipo_oggetto="copertura_riserva", oggetto_id=fonte, atto="proposta",
-                 motivazione="copertura di riserva proposta dal modello, qualità minima",
-                 dettagli={k: v for k, v in esito.items()} | {"modello": MODEL_ID, "prompt_hash": prompt_hash()})
+            registra(conn, autore_id=utente_id, tipo_oggetto="copertura_riserva", oggetto_id=fonte, atto="proposta",
+                     motivazione="copertura di riserva proposta dal modello, qualità minima, non ancora validata",
+                     dettagli={k: v for k, v in esito.items()} | {"modello": MODEL_ID, "prompt_hash": prompt_hash()})
     return esito

@@ -70,12 +70,14 @@ def importa_giudizi_modello(
                        WHERE NOT EXISTS (SELECT 1 FROM assessment_runs a
                                          WHERE a.target_kind = 'task' AND a.target_id = %(task)s
                                            AND a.item = %(voce)s AND a.campaign_id = %(campagna)s
+                                           AND a.rubric_version = %(rubrica)s AND a.prompt_hash = %(prompt)s
                                            AND a.rater_ref = %(modello)s AND a.value = %(valore)s
                                            AND a.rationale IS NOT DISTINCT FROM %(motivazione)s)""",
                     {"task": task_id, "voce": voce, "valore": valore, "modello": modello, "rubrica": rubrica,
                      "prompt": prompt, "motivazione": riga.get("motivazione"), "campagna": campagna},
                 ).rowcount
+        # 'proposta': sono giudizi di modello, non una decisione di persone su di essi.
         registra(conn, autore_id=utente_id, tipo_oggetto="importazione_giudizi", oggetto_id=campagna,
-                 atto="approvazione", motivazione=motivazione,
+                 atto="proposta", motivazione=motivazione,
                  dettagli={**esito, "rubrica": rubrica, "modello": modello, "prompt": prompt})
         return esito

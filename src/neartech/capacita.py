@@ -9,7 +9,10 @@ qualità minima. Lo snapshot si calcola dalle evidenze sul task con la formula d
 con m_e = 1 (evidenza sul task stesso). L'intervallo [c_low, c_high] è il disaccordo fra le evidenze
 (punteggio minimo e massimo): fonti in conflitto danno una stima incerta, non una media rassicurante.
 Le evidenze con dimensione 'any' valgono per k1, k2 e k3; quelle successive alla data dello snapshot no.
-Lo snapshot nasce proposto; lo pubblica chi approva gli snapshot, con un atto e una nota esplicativa.
+Le evidenze su un task poi fuso valgono per il superstite. Nello snapshot di riserva tutte le evidenze hanno
+la stessa classe di qualità: con qualità diverse servono i pesi di qualità approvati, e lo snapshot si ferma.
+Lo snapshot nasce proposto; lo pubblica chi approva gli snapshot, con un atto e una nota esplicativa
+(il database ne controlla il ciclo di vita, migrazione 0033).
 """
 
 import uuid
@@ -33,19 +36,31 @@ def proponi_snapshot_riserva(
     data = as_of if isinstance(as_of, date) else date.fromisoformat(as_of)
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_parametri_tecnici", risorsa="snapshot_capacita")
+        # Ogni evidenza va al task attivo in cui il suo task è confluito (catena di fusioni).
         righe = conn.execute(
-            """SELECT e.task_id, d.dimensione, e.score_0_4, e.quality,
+            """WITH RECURSIVE catena(origine, task_id, status, merged_into) AS (
+                 SELECT t.task_id, t.task_id, t.status, t.merged_into FROM canonical_tasks t
+                 UNION ALL
+                 SELECT c.origine, t.task_id, t.status, t.merged_into
+                 FROM catena c JOIN canonical_tasks t ON t.task_id = c.merged_into WHERE c.status = 'merged'
+               ), finale AS (
+                 SELECT origine, task_id FROM catena WHERE status = 'active'
+               )
+               SELECT f.task_id, d.dimensione, e.score_0_4, e.quality,
                       power(2::numeric, -((%(data)s::date - e.observed_at)::numeric / %(h)s)) AS decadimento
                FROM evidence_items e
+               JOIN finale f ON f.origine = e.task_id
                CROSS JOIN LATERAL unnest(CASE WHEN e.dimension = 'any' THEN ARRAY['k1', 'k2', 'k3']
                                               ELSE ARRAY[e.dimension] END) AS d(dimensione)
-               JOIN canonical_tasks t ON t.task_id = e.task_id AND t.status = 'active'
-               WHERE e.task_id IS NOT NULL AND e.observed_at <= %(data)s::date
-               ORDER BY e.task_id, d.dimensione, e.evidence_id""",
+               WHERE e.observed_at <= %(data)s::date
+               ORDER BY f.task_id, d.dimensione, e.evidence_id""",
             {"data": data, "h": emivita_giorni},
         ).fetchall()
         if not righe:
             raise ValueError("nessuna evidenza sui task alla data dello snapshot")
+        if len({float(r[3]) for r in righe}) > 1:
+            raise ValueError("evidenze di qualità diverse: servono i pesi di qualità approvati, non previsti "
+                             "nello snapshot di riserva")
         per_chiave: dict[tuple[str, str], list[tuple[float, float, float]]] = {}
         for task_id, dimensione, punteggio, qualita, decadimento in righe:
             per_chiave.setdefault((str(task_id), dimensione), []).append(
@@ -57,21 +72,25 @@ def proponi_snapshot_riserva(
                VALUES (%s, %s, %s, %s, 'proposed', 'riserva')""",
             (snapshot_id, data, METODO_RISERVA, emivita_giorni),
         )
+        scritte = 0
         for (task_id, dimensione), evidenze in sorted(per_chiave.items()):
-            pesi = [q * d for _, q, d in evidenze]
-            if sum(pesi) == 0:
-                continue  # evidenze di qualità nulla: non coprono nulla
-            media = sum(p * s for p, (s, _, _) in zip(pesi, evidenze)) / sum(pesi)
-            punteggi = [s for s, _, _ in evidenze]
+            contano = [(s, q * d) for s, q, d in evidenze if q * d > 0]  # solo le evidenze che pesano
+            if not contano:
+                continue
+            media = sum(p * s for s, p in contano) / sum(p for _, p in contano)
+            punteggi = [s for s, _ in contano]
             conn.execute(
                 """INSERT INTO task_capability (snapshot_id, task_id, dimension, c_mean, c_low, c_high, n_evidence)
                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                (snapshot_id, task_id, dimensione, round(media, 2), min(punteggi), max(punteggi), len(evidenze)),
+                (snapshot_id, task_id, dimensione, round(media, 2), min(punteggi), max(punteggi), len(contano)),
             )
+            scritte += 1
+        if not scritte:
+            raise ValueError("nessuna evidenza con peso alla data dello snapshot")
         registra(conn, autore_id=utente_id, tipo_oggetto="snapshot_capacita", oggetto_id=snapshot_id,
                  atto="proposta", motivazione=motivazione,
                  dettagli={"metodo": METODO_RISERVA, "tipo_capacita": "riserva", "emivita_giorni": emivita_giorni,
-                           "task_dimensioni": len(per_chiave)})
+                           "task_dimensioni": scritte})
         return snapshot_id
 
 
@@ -87,12 +106,22 @@ def pubblica_snapshot(conn: psycopg.Connection, utente_id: str, snapshot_id: str
             raise LookupError(f"snapshot {snapshot_id} inesistente")
         if stato[0] != "proposed":
             raise ValueError(f"lo snapshot {snapshot_id} non è proposto ({stato[0]})")
+        if not conn.execute("SELECT EXISTS (SELECT 1 FROM task_capability WHERE snapshot_id = %s)",
+                            (snapshot_id,)).fetchone()[0]:
+            raise ValueError(f"lo snapshot {snapshot_id} non ha copertura")
         soggetto = conn.execute("SELECT soggetto_sso FROM utenti WHERE utente_id = %s", (utente_id,)).fetchone()[0]
+        proponente = conn.execute(
+            """SELECT autore_id FROM registro_decisioni WHERE tipo_oggetto = 'snapshot_capacita'
+                 AND oggetto_id = %s AND atto = 'proposta' ORDER BY posizione LIMIT 1""", (snapshot_id,)).fetchone()
+        # L'atto viene prima del cambio di stato: il database pubblica solo uno snapshot con l'approvazione registrata.
+        atto = registra(conn, autore_id=utente_id, tipo_oggetto="snapshot_capacita", oggetto_id=snapshot_id,
+                        atto="approvazione", motivazione=nota,
+                        dettagli={"stesso_proponente": proponente is not None
+                                  and str(proponente[0]) == str(uuid.UUID(str(utente_id)))})
         conn.execute("UPDATE capability_snapshots SET status = 'retired' WHERE status = 'published'")
         conn.execute(
             """UPDATE capability_snapshots SET status = 'published', approved_by = %s, approved_at = now()
                WHERE snapshot_id = %s""",
             (soggetto, snapshot_id),
         )
-        return registra(conn, autore_id=utente_id, tipo_oggetto="snapshot_capacita", oggetto_id=snapshot_id,
-                        atto="approvazione", motivazione=nota)
+        return atto
