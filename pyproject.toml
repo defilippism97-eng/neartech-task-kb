@@ -12,6 +12,14 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.3,<9"]
+# Piattaforma web (fase 6, ADR 0007). httpx2 serve ad authlib per l'SSO e al client di test.
+api = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+    "authlib>=1.9,<2",
+    "itsdangerous>=2.2,<3",
+    "httpx2>=2,<3",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]

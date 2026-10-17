@@ -1,7 +1,7 @@
 # ADR-0007: Stack della piattaforma web (fase 6)
 
 **Data:** 2026-10-17
-**Stato:** proposto
+**Stato:** accettato (responsabile del progetto, 2026-10-17)
 **Chi decide:** responsabile del progetto
 
 ## Contesto

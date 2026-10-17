@@ -4,8 +4,22 @@
 
 ```bash
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install -e ".[dev]"
+.venv/Scripts/python.exe -m pip install -e ".[dev,api]"
 ```
+
+### Piattaforma web (fase 6)
+
+API FastAPI in `src/neartech/api`, frontend React in `web/` (ADR 0007). Per provarla in locale con dati sintetici,
+senza toccare il database di produzione:
+
+```bash
+cd web && npm ci && npm run build && cd ..
+.venv/Scripts/python.exe scripts/prova_locale.py
+```
+
+Poi `http://localhost:8000`, accesso di sviluppo con `prova|comitato`. Per lavorare sul frontend con il ricaricamento
+a caldo: lo script sopra in un terminale, `npm run dev` in `web/` in un altro (il server di Vite inoltra `/api` e
+`/accesso` alla porta 8000). Test del frontend: `npm test`; tipi e controlli: `npx tsc -b`, `npx oxlint src`.
 
 ### Ambiente per l'embedding (bge-m3)
 

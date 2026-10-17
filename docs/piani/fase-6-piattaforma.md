@@ -1,6 +1,6 @@
 # Fase 6: la piattaforma per le aziende pilota
 
-**Stato:** bozza, da approvare dal responsabile del progetto (2026-10-17). Stack: ADR 0007. Bozze delle schermate: `docs/piattaforma/mockup.html`. Decisioni di metodo: registro di metodo, sezione 27.
+**Stato:** approvato dal responsabile del progetto il 2026-10-17, insieme alle bozze e all'ADR 0007. Stack: ADR 0007. Bozze delle schermate: `docs/piattaforma/mockup.html`. Decisioni di metodo: registro di metodo, sezione 27.
 
 ## Perché
 
@@ -88,6 +88,20 @@ Ogni fetta: API con test, schermate con test, revisione (Python, database, sicur
 4. **Task non abbinati per somiglianza** e pipeline dei documenti con il worker (amministratore).
 5. **Questionari d3/d4.**
 6. **Auditor e vista bonus del rappresentante.**
+
+## Stato delle fette
+
+- **Fetta 0, fondamenta (2026-10-17):** API FastAPI (`neartech.api`) con accesso SSO (OpenID Connect con PKCE) e accesso di sviluppo solo locale; sessione con durata massima; protezione con intestazione propria, host ammessi, CSP; frontend React in `web/` con il sistema di design dell'identità v3.1 e i caratteri ospitati dalla piattaforma; CI su GitHub; ambiente di prova locale con dati sintetici (`scripts/prova_locale.py`). Voce e testi: `docs/piattaforma/voce-e-testi.md`.
+- **Fetta 1, panoramica del comitato (2026-10-17):** mappa dei task con incertezza e voci giudicate da persone, avanzamento della sperimentazione, inviti all'azione, ruoli, approvazione della restituzione con impronta. Motore: restituzione v2 (elenco delle occorrenze), `sperimentazione.avanzamento_sperimentazione`, `permessi.ruoli_utente`, lettura con lock condiviso.
+
+## Prima della messa in esercizio
+
+Emersi dalle revisioni di sicurezza e di codice della fetta 0, da fare prima dell'ambiente di prova in cloud:
+- ruolo del database dedicato all'API, non proprietario, e isolamento fra organizzazioni anche nel database (RLS sulle tabelle per organizzazione);
+- pool di connessioni; limiti di frequenza sull'accesso e sulle API; dimensione massima delle richieste;
+- revoca delle sessioni lato server (epoca di sessione per utente) e registrazione degli accessi rifiutati allo SSO;
+- test del flusso SSO con il fornitore scelto (stato, nonce, PKCE, emittente) e test con conferme reali su due connessioni;
+- dipendenze Python bloccate con hash per il rilascio; azioni della CI fissate per commit.
 
 ## Test
 

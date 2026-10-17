@@ -145,6 +145,17 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
 .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:0 56px 70px}
 .trio .soft h3{margin:10px 0 6px;font-size:18px}.trio .soft p{font-size:14px}
 .n-big{font-family:var(--f-mono);font-size:13px;color:var(--teal-ink);font-weight:600}
+.band{display:grid;grid-template-columns:1fr 1.3fr;gap:40px;align-items:end;padding:56px;margin:0 56px;border-top:1px solid var(--border)}
+.band p{font-size:18px;line-height:1.55}
+.band-h{font-size:clamp(28px,3.4vw,40px);letter-spacing:-.045em;line-height:1.08;margin-top:10px}
+.section-pub{padding:0 56px 64px}
+.section-pub.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.steps4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.steps4 h3{margin:10px 0 6px;font-size:17px}.steps4 p{font-size:14px}
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:28px 40px}
+.faq h3{font-size:17px;margin-bottom:6px}.faq p{font-size:15px}
+.final{margin:0 56px 64px;padding:48px;border-radius:24px;background:linear-gradient(120deg,#0B2559,#1B499F 70%,#007272);display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.final p{color:#CBD5E1;font-size:17px;max-width:46rem}
 
 .link{display:grid;grid-template-columns:70px 1fr 220px;gap:16px;align-items:center;padding:12px 0;border-bottom:1px dashed var(--border);font-size:14px}
 .link .pos{font-family:var(--f-mono);font-weight:600;color:var(--navy)}
@@ -156,7 +167,7 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
 .st.done{border-top:4px solid var(--emerald)}.st.run{border-top:4px solid var(--teal)}.st.wait{border-top:4px solid var(--amber)}.st.todo{border-top:4px solid var(--border)}
 .note{font-size:12px;color:var(--stone-ink);font-family:var(--f-mono);border-top:1px solid var(--border);padding:12px 20px 20px}
 
-@media (max-width:1100px){.app{grid-template-columns:1fr}.side{display:none}.g-12>*{grid-column:span 12!important}.hero{grid-template-columns:1fr;padding:30px 20px}.trio{grid-template-columns:1fr;padding:0 20px 40px}.pub nav{padding:18px 20px}.pub nav .links{display:none}.qi{grid-template-columns:1fr}.scale,.flow,.pipe{grid-template-columns:1fr 1fr}.items{grid-template-columns:repeat(4,1fr)}.exp{grid-template-columns:1fr}.main{padding:20px 16px 40px}}
+@media (max-width:1100px){.app{grid-template-columns:1fr}.side{display:none}.g-12>*{grid-column:span 12!important}.hero{grid-template-columns:1fr;padding:30px 20px}.trio{grid-template-columns:1fr;padding:0 20px 40px}.band,.section-pub.two,.steps4,.faq{grid-template-columns:1fr}.band{margin:0 20px;padding:40px 0}.section-pub{padding:0 20px 40px}.final{margin:0 20px 40px;padding:32px 24px}.pub nav{padding:18px 20px}.pub nav .links{display:none}.qi{grid-template-columns:1fr}.scale,.flow,.pipe{grid-template-columns:1fr 1fr}.items{grid-template-columns:repeat(4,1fr)}.exp{grid-template-columns:1fr}.main{padding:20px 16px 40px}}
 </style>
 </head>
 <body>
@@ -179,18 +190,18 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
   <nav>
     <div class="brand" style="color:var(--navy)"><div class="mark"></div>neartech</div>
     <div class="links"><span>Il metodo</span><span>Per chi decide</span><span>Per chi lavora</span><span>Garanzie</span></div>
-    <button class="btn btn-secondary">Accedi</button>
+    <button class="btn btn-secondary">Accedi alla piattaforma</button>
   </nav>
   <div class="hero">
     <div>
       <span class="eyebrow">Programma aziende pilota 2027</span>
-      <h1 style="margin-top:18px">Dove l'IA arriva,<br>dove la persona <em>resta</em>.</h1>
-      <p class="lead">Neartech legge i ruoli della tua organizzazione task per task e mostra dove l'automazione è possibile, dove l'apporto umano è necessario e dove è desiderabile. Con un metodo verificabile, deciso dalle tue persone.</p>
+      <h1 style="margin-top:18px">L'IA entrerà nei vostri ruoli. <em>Decidete voi</em> dove.</h1>
+      <p class="lead">Neartech scompone i mansionari in task e, per ciascuno, misura quanto serve una persona e quanto conta che lo sia. Il vostro comitato guida legge la mappa, fissa le priorità e approva. Ogni scelta resta in un registro verificabile.</p>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <button class="btn btn-pill">Candida la tua organizzazione</button>
-        <button class="btn btn-secondary">Come funziona il metodo</button>
+        <button class="btn btn-pill">Candidate la vostra organizzazione</button>
+        <button class="btn btn-secondary">Leggete come funziona il metodo</button>
       </div>
-      <p class="mono" style="margin-top:26px;font-size:12px">Sperimentazione aperta · dati in UE · nessun dato su singole persone</p>
+      <p class="mono" style="margin-top:26px;font-size:12px">Sperimentazione 2027 · dati ospitati in UE · nessuna valutazione di singole persone</p>
     </div>
     <div class="card" style="padding:18px;box-shadow:0 30px 60px rgba(11,37,89,.12)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -199,10 +210,38 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
       <div class="map" id="heroMap"></div>
     </div>
   </div>
-  <div class="trio">
-    <div class="soft"><span class="n-big">01 · N</span><h3>Quanto serve una persona</h3><p>Per ogni task confrontiamo ciò che il lavoro richiede con ciò che l'IA sa fare oggi, con fonte e data.</p></div>
-    <div class="soft"><span class="n-big">02 · D</span><h3>Quanto conta che sia una persona</h3><p>Relazione, responsabilità, senso del lavoro e valore per chi riceve il servizio, misurati con chi il lavoro lo fa e lo riceve.</p></div>
-    <div class="soft"><span class="n-big">03 · Governance</span><h3>Le persone decidono</h3><p>Il comitato guida approva soglie e risultati; ogni decisione resta in un registro verificabile.</p></div>
+  <div class="band">
+    <div><span class="eyebrow">Il problema</span><h2 class="band-h">Il ruolo è l'unità sbagliata.</h2></div>
+    <p>Nessun ruolo si automatizza per intero: si automatizzano alcuni dei suoi task. Chi decide ruolo per ruolo rischia due errori opposti. Tagliare dove la persona fa la differenza per chi riceve il servizio, e lasciare intatto il lavoro ripetitivo che toglie tempo a quello che conta.</p>
+  </div>
+  <div class="section-pub">
+    <span class="eyebrow">Come funziona</span>
+    <h2 class="band-h" style="margin:10px 0 24px">Dai mansionari a una mappa che il comitato può firmare.</h2>
+    <div class="steps4">
+      <div class="soft"><span class="n-big">01</span><h3>Caricate i mansionari</h3><p>Li scomponiamo in task e li confrontiamo con il dataset NEARTECH di task già classificati.</p></div>
+      <div class="soft"><span class="n-big">02</span><h3>Ogni task trova il suo posto</h3><p>Due misure, con la loro incertezza: quanto serve una persona (N) e quanto conta che lo sia (D).</p></div>
+      <div class="soft"><span class="n-big">03</span><h3>Il comitato dà gli indirizzi</h3><p>La vostra visione dell'innovazione calibra i pesi. I revisori controllano a campione i risultati.</p></div>
+      <div class="soft"><span class="n-big">04</span><h3>Approvate la restituzione</h3><p>Per ogni ruolo: i task da affidare all'IA, quelli da difendere e quelli su cui decidere.</p></div>
+    </div>
+  </div>
+  <div class="section-pub two">
+    <div class="card"><span class="eyebrow">Per chi decide</span><h3 style="margin:10px 0 6px;font-size:20px">Una base documentata per scegliere dove investire</h3><p>Una mappa per ruolo da presentare a consiglio, lavoratori e utenti, con l'origine di ogni numero e le decisioni del comitato in un registro che un auditor può verificare.</p></div>
+    <div class="card"><span class="eyebrow">Per chi lavora</span><h3 style="margin:10px 0 6px;font-size:20px">Voce in capitolo sui task che contano</h3><p>Un questionario anonimo di pochi minuti, via email, sui task del proprio ruolo. Le risposte cambiano la mappa e tornano a chi ha risposto, in forma aggregata.</p></div>
+  </div>
+  <div class="section-pub">
+    <span class="eyebrow">Garanzie</span>
+    <h2 class="band-h" style="margin:10px 0 24px">Le domande che ci fanno per prime.</h2>
+    <div class="faq">
+      <div><h3>Valutate le persone?</h3><p>No. Leggiamo task e ruoli, mai prestazioni individuali. Le risposte ai questionari si leggono solo in gruppi di almeno cinque persone.</p></div>
+      <div><h3>Chi decide alla fine?</h3><p>Il vostro comitato guida. Il modello propone, il calcolo è deterministico e ogni decisione è un atto firmato nel registro.</p></div>
+      <div><h3>I nostri documenti escono dall'azienda?</h3><p>Il testo dei vostri documenti resta nel vostro spazio, in UE. Nel dataset condiviso entrano solo task riscritti in forma anonima.</p></div>
+      <div><h3>Perché una sperimentazione?</h3><p>Perché la mappa diventa più precisa con i giudizi delle vostre persone. Lo vedete nella piattaforma, voce per voce.</p></div>
+    </div>
+  </div>
+  <div class="final">
+    <h2 class="band-h" style="color:#fff">Cerchiamo le prime organizzazioni pilota del 2027.</h2>
+    <p>Vi chiediamo i mansionari, un comitato guida e qualche ora dei vostri revisori. In cambio, la prima mappa task per task dei vostri ruoli.</p>
+    <button class="btn btn-pill" style="background:#fff;color:var(--navy);box-shadow:none">Candidate la vostra organizzazione</button>
   </div>
 </section>
 
