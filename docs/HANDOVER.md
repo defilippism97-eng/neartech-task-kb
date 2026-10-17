@@ -152,13 +152,22 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Stima delle chiamate API in attesa di approvazione (2026-10-17, solo lettura):** set di controllo del prompt v2 del Canonicalizer sulle 61 fusioni giudicate (59 chiamate, ~30.000 token in ingresso, ~18.000 in uscita) e crosswalk delle 11 task separate (32 chiamate, ~19.000 in ingresso, ~14.000 in uscita); totale ~49.000 + ~32.000 token con `claude-haiku-5-5`, il doppio nel caso peggiore con i tentativi ripetuti.
 
-**Seguiti aperti dalle revisioni:** il ruolo `neartech_app` può scrivere assegnazioni di ruolo e atti direttamente (la credenziale è il confine di fiducia); `scripts/scomponi_job.py` senza controllo dei permessi né atto nel registro; la fusione del Canonicalizer cancella i giudizi del crosswalk del task fuso; le note dei revisori (`giudizi_revisione.nota`) stanno in `public`; elementi aggiungibili a un campione prima del primo giudizio; i valori delle misure non sono confrontati nel database con quelli dei parametri citati.
+**Seguiti delle revisioni corretti (2026-10-17, sezione 14 del registro di metodo):** sul branch `governance-e-pulizia`, migrazioni 0026–0030 e org 0007, **da applicare in produzione** (serve l'approvazione), nello stesso giro di `scripts/migra.py --applica` con il proprietario e l'applicazione ferma, dopo 0025 e org 0006.
+- 0026: ogni assegnazione di ruolo nuova richiede il suo atto nel registro, firmato da chi aveva `gestire_utenti`; la credenziale applicativa resta il confine di fiducia (un atto falso resta visibile nel registro).
+- `scripts/scomponi_job.py`: `--org` e `--utente-sso` obbligatori (salvo `--dry-run` per l'utente), permesso `gestire_dataset_centrale` verificato prima del modello, un atto `caricamento_documento` per documento; solo connessione diretta, non HTTPS.
+- 0027: i giudizi del crosswalk del task fuso restano (append-only, niente DELETE per `neartech_app`), marcati dalla vista `v_crosswalk_giudizi`.
+- 0028 e org 0007: note dei revisori in `org_<codice>.note_giudizi`, impronta `hash_nota` in `public`; le note esistenti si spostano all'applicazione. Il vincolo `giudizi_nota_nello_spazio` resta `NOT VALID` fino a una migrazione di convalida successiva.
+- 0029: niente elementi aggiunti a un campione già creato. 0030: soglia, livello e regola della misura uguali al valore dei parametri citati.
+- `richieste_ricalibrazione`: una voce di log per organizzazione letta e il campo `superata`.
+- Test: 302 passati, 1 saltato (richiede la chiave API), su Postgres locale temporaneo.
 
 **Set di controllo del prompt v2 (2026-10-17, approvato):** 59 chiamate, 39.099 token in ingresso e 57.692 in uscita (stima superata in uscita). Precisione 82,4% su 17 proposte, sotto soglia; solo 14 delle 46 fusioni corrette mantenute. **v2 non supera il controllo** (`docs/revisione/controllo/esito-canonicalizer-v2-2026-10-17.md`). Serve una versione 3 e un nuovo controllo.
 
 **Crosswalk delle 11 task separate (2026-10-17, approvato con la stima rivista):** `scripts/esegui_crosswalk.py --solo-separati --limite-uscita 65000`; 32 chiamate, 24.270 token in ingresso e 31.343 in uscita. 33 giudizi per task e schema (31 con relazioni, 2 senza corrispondenza), 151 relazioni (7 exact, 26 broad, 35 narrow, 83 related), tutte da validare (`validated = false`), `claude-haiku-5-5`.
 
-**Restano:** versione 3 del prompt del Canonicalizer e nuovo set di controllo (chiamate API, con stima); revisione del campione casuale delle "diversa".
+**Seguiti ancora aperti:** convalida di `giudizi_nota_nello_spazio` dopo l'applicazione; `revisioni_crosswalk.nota` (tabella storica in `public`, testo libero del revisore) non è ancora nello spazio; la fusione sposta e cancella ancora le relazioni `task_mappings` del task fuso; un atto di assegnazione falso scritto con la credenziale applicativa non si distingue nel database da uno vero.
+
+**Restano:** applicazione di 0026–0030 e org 0007; versione 3 del prompt del Canonicalizer e nuovo set di controllo (chiamate API, con stima); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
