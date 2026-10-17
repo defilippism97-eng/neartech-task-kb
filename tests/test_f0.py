@@ -44,7 +44,7 @@ def _setup_base(conn: psycopg.Connection) -> dict:
     src = conn.execute(
         """WITH n AS (SELECT gen_random_uuid() AS id)
            INSERT INTO sources (source_id, kind, name, version, license, content_hash)
-           SELECT id, 'org_document', 'documento ' || id, '1', 'interno', 'hash-synth' FROM n RETURNING source_id"""
+           SELECT id, 'org_document', 'documento ' || id, '0123456789abcdef', 'interno', 'hash-synth' FROM n RETURNING source_id"""
     ).fetchone()[0]
     occ = conn.execute(
         """INSERT INTO task_occurrences

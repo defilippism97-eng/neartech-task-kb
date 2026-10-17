@@ -1,10 +1,10 @@
 """Report di audit unico di un'organizzazione (ADR 0004): JSON verificabile e versione Markdown.
 
 Uso (DATABASE_URL dall'ambiente; l'utente è indicato dal soggetto SSO e deve avere leggere_audit):
-  python scripts/report_audit.py --utente-sso S --org societa_dolce --uscita report/societa_dolce-2026-10-17
+  python scripts/report_audit.py --utente-sso S --org societa_dolce --uscita C:/audit/societa_dolce-2026-10-17
   python scripts/report_audit.py ... --ancora 23:277d2305...2d59
 
-Scrive <uscita>.json e <uscita>.md e non sovrascrive file esistenti. L'ancora (posizione:hash,
+Scrive <uscita>.json e <uscita>.md fuori dal repository e non sovrascrive file esistenti. L'ancora (posizione:hash,
 da docs/audit/ancore-registro.md) verifica che le righe del registro fino a quel punto non siano cambiate.
 Il report contiene testo dell'organizzazione: va conservato fuori dal repository.
 Sola lettura sui dati; il log di accesso usa una connessione dedicata.
@@ -16,7 +16,8 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+RADICE = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(RADICE / "src"))
 
 from neartech.audit import report_in_markdown, report_organizzazione  # noqa: E402
 from neartech.db import connect  # noqa: E402
@@ -42,7 +43,9 @@ def main() -> None:
     if os.environ.get("NEARTECH_DB_VIA", "").lower() == "https":
         raise SystemExit("questo script richiede la connessione diretta: il collegamento HTTPS non ha transazioni")
     ancora = _ancora(args.ancora)
-    file_json, file_md = Path(f"{args.uscita}.json"), Path(f"{args.uscita}.md")
+    file_json, file_md = Path(f"{args.uscita}.json").resolve(), Path(f"{args.uscita}.md").resolve()
+    if file_json.is_relative_to(RADICE):
+        raise SystemExit("il report contiene testo dell'organizzazione: scriverlo fuori dal repository")
     for percorso in (file_json, file_md):
         if percorso.exists():
             raise SystemExit(f"il file {percorso} esiste già: scegliere un altro nome")
@@ -63,9 +66,13 @@ def main() -> None:
         finally:
             configura_log(None)
 
+    # Entrambi i testi pronti prima di scrivere; "x" non sovrascrive un file comparso nel frattempo.
+    testo_json, testo_md = json.dumps(report, ensure_ascii=False, indent=2), report_in_markdown(report)
     file_json.parent.mkdir(parents=True, exist_ok=True)
-    file_json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    file_md.write_text(report_in_markdown(report), encoding="utf-8")
+    with open(file_json, "x", encoding="utf-8") as uscita:
+        uscita.write(testo_json)
+    with open(file_md, "x", encoding="utf-8") as uscita:
+        uscita.write(testo_md)
     i = report["integrita"]
     print(f"report scritto: {file_json} e {file_md}")
     print(f"catena: {i['catena']}; testi non corrispondenti: {len(i['testi'])}; "

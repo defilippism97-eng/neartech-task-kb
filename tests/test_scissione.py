@@ -20,7 +20,7 @@ TITOLO_M = "Scansionare e trasmettere documenti"
 def fusione(conn):
     admin = inizializza_amministratore(conn, "sso|admin")
     org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
-    fonte = documento(conn, org, nome_file="mansionario.docx", sha256="h", licenza="interno")
+    fonte = documento(conn, org, nome_file="mansionario.docx", sha256="0" * 64, licenza="interno")
     ruoli = {nome: ruolo(conn, org, nome) for nome in ("RUOLO UNO", "RUOLO DUE", "RUOLO TRE", "RUOLO QUATTRO")}
     a = str(conn.execute("INSERT INTO canonical_tasks (title_it, granularity) VALUES (%s, 2) RETURNING task_id",
                          (TITOLO_A,)).fetchone()[0])
@@ -94,3 +94,14 @@ def test_il_canonicalizer_non_rifonde_un_task_separato(conn, fusione):
     scindi(conn, fusione["admin"], task_id=fusione["m"], scomposizione=fusione["scomposizione"],
            org_id=fusione["org"], motivazione="giudicata errata dal revisore")
     assert _gruppi_da_fondere(conn) == []
+
+
+def test_separazione_ferma_se_il_superstite_ha_occorrenze_di_altre_organizzazioni(conn, fusione):
+    altra = crea_organizzazione(conn, fusione["admin"], nome="Altra", codice="altra")
+    fonte = documento(conn, altra, nome_file="altro.docx", sha256="1" * 64, licenza="interno")
+    registra_occorrenza(conn, altra, task_id=fusione["a"], ruolo_id=ruolo(conn, altra, "RUOLO ESTERNO"),
+                        documento_id=fonte, estratto="altro testo", nota_contesto=None,
+                        model_name="modello", prompt_hash="hash")
+    with pytest.raises(ValueError, match="altre organizzazioni"):
+        scindi(conn, fusione["admin"], task_id=fusione["m"], scomposizione=fusione["scomposizione"],
+               org_id=fusione["org"], motivazione="separazione")

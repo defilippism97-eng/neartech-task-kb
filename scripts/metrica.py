@@ -52,16 +52,25 @@ def _filtro(coppie: list[str]) -> dict[str, str]:
     return filtro
 
 
+def _cella_csv(valore):
+    """Un titolo che inizia con = + - @ Excel lo esegue come formula: si apre con un apostrofo."""
+    if isinstance(valore, str) and valore[:1] in ("=", "+", "-", "@", "\t", "\r"):
+        return "'" + valore
+    return valore
+
+
 def _scrivi_esportazione(percorso: Path, righe: list[dict]) -> None:
+    # "x": non si sovrascrive un file esistente, nemmeno uno comparso dopo il controllo.
     if percorso.suffix.lower() == ".csv":
         colonne = [*righe[0], "esito", "nota"] if righe else ["posizione", "esito", "nota"]
-        with percorso.open("w", encoding="utf-8-sig", newline="") as f:
+        with percorso.open("x", encoding="utf-8-sig", newline="") as f:
             scrittore = csv.DictWriter(f, fieldnames=colonne, delimiter=";")
             scrittore.writeheader()
             for riga in righe:
-                scrittore.writerow({**riga, "esito": "", "nota": ""})
+                scrittore.writerow({**{k: _cella_csv(v) for k, v in riga.items()}, "esito": "", "nota": ""})
         return
-    percorso.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe), encoding="utf-8")
+    with percorso.open("x", encoding="utf-8") as f:
+        f.write("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in righe))
 
 
 def _leggi_giudizi(percorso: Path) -> list[dict]:

@@ -17,7 +17,7 @@ from typing import Any
 import psycopg
 from psycopg import sql
 
-from neartech.occorrenze import registra_occorrenza, spazio_organizzazione
+from neartech.occorrenze import _spazi, registra_occorrenza, spazio_organizzazione
 from neartech.permessi import richiedi
 from neartech.registro import registra
 
@@ -71,7 +71,7 @@ def piano_scissione(
             "da_spostare": da_spostare, "da_ricreare": da_ricreare}
 
 
-def _ricrea(conn: psycopg.Connection, org_id: str, task_id: str, superstite: str, voce: dict[str, Any]) -> None:
+def _ricrea(conn: psycopg.Connection, org_id: str, task_id: str, superstite: str, voce: dict[str, Any]) -> bool:
     spazio = spazio_organizzazione(conn, org_id)
     ruolo = conn.execute(
         sql.SQL("SELECT ruolo_id FROM {}.ruoli_organizzativi WHERE nome = %s").format(spazio), (voce["ruolo"],)
@@ -90,9 +90,10 @@ def _ricrea(conn: psycopg.Connection, org_id: str, task_id: str, superstite: str
         (superstite, ruolo[0]),
     ).fetchone()
     model_name, prompt_hash = origine if origine and origine[0] else ORIGINE_RICOSTRUITA
-    registra_occorrenza(conn, org_id, task_id=task_id, ruolo_id=str(ruolo[0]), documento_id=str(documento[0]),
-                        estratto=voce["testo_originale"], nota_contesto=voce.get("nota_contesto"),
-                        model_name=model_name, prompt_hash=prompt_hash)
+    return registra_occorrenza(conn, org_id, task_id=task_id, ruolo_id=str(ruolo[0]),
+                               documento_id=str(documento[0]), estratto=voce["testo_originale"],
+                               nota_contesto=voce.get("nota_contesto"), model_name=model_name,
+                               prompt_hash=prompt_hash)
 
 
 def scindi(
@@ -107,18 +108,30 @@ def scindi(
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_dataset_centrale", risorsa=f"scissione:{task_id}")
+        # Una separazione alla volta per task, e non durante una fusione che lo tocca.
+        conn.execute("SELECT 1 FROM canonical_tasks WHERE task_id = %s FOR UPDATE", (str(uuid.UUID(str(task_id))),))
         piano = piano_scissione(conn, task_id, scomposizione, org_id)
         spazio = spazio_organizzazione(conn, org_id)
+        # La fusione sposta le occorrenze di tutte le organizzazioni; la separazione ricostruisce solo quelle
+        # dell'organizzazione indicata. Se altre organizzazioni hanno occorrenze sul superstite, non si sa
+        # quali venivano dal task fuso: ci si ferma invece di separare a metà.
+        altre = [s for s in _spazi(conn) if s != spazio and conn.execute(
+            sql.SQL("SELECT EXISTS (SELECT 1 FROM {}.occorrenze WHERE task_id = %s)").format(s),
+            (piano["superstite"],),
+        ).fetchone()[0]]
+        if altre:
+            raise ValueError(f"il task superstite {piano['superstite']} ha occorrenze di altre organizzazioni: "
+                             "la separazione va decisa su tutte")
         for occorrenza in piano["da_spostare"]:
             conn.execute("UPDATE task_occurrences SET task_id = %s WHERE occurrence_id = %s",
                          (piano["task_id"], occorrenza))
             conn.execute(sql.SQL("UPDATE {}.occorrenze SET task_id = %s WHERE occorrenza_id = %s").format(spazio),
                          (piano["task_id"], occorrenza))
-        for voce in piano["da_ricreare"]:
-            _ricrea(conn, org_id, piano["task_id"], piano["superstite"], voce)
+        ricreate = sum(_ricrea(conn, org_id, piano["task_id"], piano["superstite"], voce)
+                       for voce in piano["da_ricreare"])
         conn.execute("UPDATE canonical_tasks SET status = 'active', merged_into = NULL WHERE task_id = %s",
                      (piano["task_id"],))
-        esito = {"spostate": len(piano["da_spostare"]), "ricreate": len(piano["da_ricreare"])}
+        esito = {"spostate": len(piano["da_spostare"]), "ricreate": ricreate}
         registra(conn, autore_id=utente_id, tipo_oggetto="task_canonico", oggetto_id=piano["task_id"],
                  atto="correzione", motivazione=motivazione,
                  dettagli={"operazione": "scissione", "superstite": piano["superstite"], **esito,

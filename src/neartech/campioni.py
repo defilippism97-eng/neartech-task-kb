@@ -81,6 +81,7 @@ def _salva_campione(
     versione_istruzioni: str,
     motivazione: str,
     dettagli: dict[str, Any] | None = None,
+    dettagli_riservati: dict[str, Any] | None = None,
 ) -> str:
     campione_id = str(uuid.uuid4())
     decisione = registra(
@@ -88,6 +89,7 @@ def _salva_campione(
         atto="approvazione", motivazione=motivazione, org_id=org_id,
         dettagli={"tipo": tipo, "filtro": filtro, "criterio": criterio, "seme": seme,
                   "popolazione": popolazione_totale, "dimensione": len(elementi), **(dettagli or {})},
+        dettagli_riservati=dettagli_riservati,
     )
     conn.execute(
         """INSERT INTO campioni_revisione
@@ -264,7 +266,8 @@ def importa_revisioni_crosswalk(
             criterio="importato", seme=None, popolazione_totale=popolazione_originale or len(elementi),
             elementi=elementi, versione_istruzioni=versione_istruzioni,
             motivazione=f"importazione del campione già rivisto {campione}",
-            dettagli={"revisori_originali": sorted({r[4] for r in righe}), "revisione_cieca": False},
+            dettagli={"revisione_cieca": False},
+            dettagli_riservati={"revisori_originali": sorted({r[4] for r in righe})},
         )
         for posizione, riga in enumerate(righe, start=1):
             registra_giudizio(conn, revisore_id, campione_id, posizione, _ESITI_CROSSWALK[riga[2]],

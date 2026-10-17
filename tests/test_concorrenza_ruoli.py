@@ -7,6 +7,7 @@ revoca o di una chiusura deve vederne l'effetto appena è confermata, non all'or
 import psycopg
 import pytest
 
+from neartech.organizzazioni import crea_organizzazione
 from neartech.permessi import (
     AmministratoreGiaPresente,
     UltimoAmministratore,
@@ -54,7 +55,7 @@ def test_chiusure_concorrenti_non_lasciano_senza_amministratore(dsn_isolato):
 def test_ruolo_revocato_non_autorizza_una_transazione_iniziata_prima(dsn_isolato):
     with psycopg.connect(dsn_isolato) as setup:
         admin = inizializza_amministratore(setup, "sso|admin")
-        org = setup.execute("INSERT INTO organizations (name) VALUES ('Org') RETURNING org_id").fetchone()[0]
+        org = crea_organizzazione(setup, admin, nome="Org", codice="concorrenza")
         membro = crea_utente(setup, "sso|membro")
         assegnazione = assegna_ruolo(setup, membro, "comitato_guida", str(org), assegnata_da=admin)
         setup.commit()

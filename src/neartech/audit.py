@@ -10,7 +10,7 @@ Sola lettura; serve il permesso leggere_audit.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -29,10 +29,12 @@ def _json(valore: Any) -> Any:
         return {k: _json(v) for k, v in valore.items()}
     if isinstance(valore, (list, tuple)):
         return [_json(v) for v in valore]
-    if isinstance(valore, datetime):
+    if isinstance(valore, (datetime, date)):
         return valore.isoformat()
+    if isinstance(valore, timedelta):
+        return valore.total_seconds()
     if isinstance(valore, Decimal):
-        return float(valore)
+        return str(valore)  # il report è verificabile: nessun arrotondamento
     if isinstance(valore, uuid.UUID):
         return str(valore)
     return valore
@@ -119,13 +121,12 @@ def report_organizzazione(
              WHERE r.org_id = %s ORDER BY v.task_id, v.cambio_id DESC) ultimi
            GROUP BY stato ORDER BY stato""", (org_id,)).fetchall())
 
-    propri = {str(p["parametro_id"]) for p in parametri_propri} | {str(i["indirizzo_id"]) for i in indirizzi}
     posizione_alterata = verifica_catena(conn, ancora=ancora)
     integrita = {
         "catena": "integra" if posizione_alterata is None else f"alterata dalla posizione {posizione_alterata}",
         "ancora": list(ancora) if ancora else None,
         "testi": [{"decisione_id": d, "problema": p} for d, p in verifica_testi(conn, org_id)],
-        "contenuti": [{"tipo": t, "oggetto_id": o} for t, o in verifica_contenuti(conn) if o in propri],
+        "contenuti": [{"tipo": t, "oggetto_id": o} for t, o in verifica_contenuti(conn, org_id)],
     }
 
     return _json({
@@ -145,7 +146,9 @@ def report_organizzazione(
 
 def _tabella(intestazioni: list[str], righe: list[list[Any]]) -> list[str]:
     def cella(v: Any) -> str:
-        return ("" if v is None else str(v)).replace("|", "\\|").replace("\n", " ")
+        testo = "" if v is None else str(v)
+        testo = testo.replace("\\", "\\\\").replace("|", "\\|")
+        return " ".join(testo.split())  # a capo e ritorni a capo non spezzano la tabella
     return (["| " + " | ".join(intestazioni) + " |", "|" + "---|" * len(intestazioni)]
             + ["| " + " | ".join(cella(v) for v in r) + " |" for r in righe] + [""])
 
@@ -177,8 +180,8 @@ def report_in_markdown(report: dict[str, Any]) -> str:
         righe += [f"- Campione {c['campione_id']} ({c['tipo_proposta']}, {c['criterio']}, "
                   f"{c['dimensione']} su {c['popolazione']}, istruzioni {c['versione_istruzioni']}): "
                   f"giudizi {c['giudizi'] or {}}"]
-        righe += [f"  - misura {m['calcolata_il']}: precisione {m['precisione']:.3f} "
-                  f"[{m['intervallo_basso']:.3f}; {m['intervallo_alto']:.3f}], soglia {m['soglia']}, "
+        righe += [f"  - misura {m['calcolata_il']}: precisione {float(m['precisione']):.3f} "
+                  f"[{float(m['intervallo_basso']):.3f}; {float(m['intervallo_alto']):.3f}], soglia {m['soglia']}, "
                   f"regola parziali {m['regola_parziali']}, esito {m['esito']}" for m in c["misure"]]
     righe += ["", "## Stati dei task decisi dall'organizzazione", ""]
     righe += [f"- {stato}: {n}" for stato, n in report["stati_task"].items()] + [""]

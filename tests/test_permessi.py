@@ -6,6 +6,7 @@ from datetime import timedelta
 import psycopg
 import pytest
 
+from neartech.organizzazioni import crea_organizzazione
 from neartech.permessi import (
     AmministratoreGiaPresente,
     UltimoAmministratore,
@@ -20,17 +21,11 @@ from neartech.permessi import (
 )
 
 
-def _org(conn, nome: str) -> str:
-    return str(conn.execute(
-        "INSERT INTO organizations (name) VALUES (%s) RETURNING org_id", (nome,)
-    ).fetchone()[0])
-
-
 @pytest.fixture
 def scenario(conn):
-    a = _org(conn, "Org A sintetica")
-    b = _org(conn, "Org B sintetica")
     admin = inizializza_amministratore(conn, "sso|admin")
+    a = crea_organizzazione(conn, admin, nome="Org A sintetica", codice="sintetica_a")
+    b = crea_organizzazione(conn, admin, nome="Org B sintetica", codice="sintetica_b")
     utenti = {nome: crea_utente(conn, f"sso|{nome}") for nome in
               ("auditor", "comitato", "revisore", "rappresentante", "scaduto")}
     assegna_ruolo(conn, utenti["auditor"], "auditor", assegnata_da=admin)

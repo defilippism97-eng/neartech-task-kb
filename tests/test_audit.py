@@ -102,3 +102,9 @@ def test_report_serializzabile_e_leggibile(conn, org):
     json.dumps(report)
     testo = report_in_markdown(report)
     assert "# Report di audit" in testo and "Tutelare la relazione" in testo and "adottato" in testo
+
+
+def test_tabella_markdown_non_si_spezza_con_il_testo_del_cliente(conn, org):
+    from neartech.audit import _tabella
+    riga = _tabella(["Testo"], [["a | b\r\nc \\"]])[2]
+    assert riga == "| a \\| b c \\\\ |"

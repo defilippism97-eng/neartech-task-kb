@@ -6,6 +6,7 @@ identificativi e nomi neutri ("ruolo <id>", "documento <id>"): servono al datase
 viste, e i vincoli della migrazione 0023 impediscono che vi torni testo.
 """
 
+import re
 import uuid
 from typing import Any
 
@@ -36,9 +37,18 @@ def _spazi(conn: psycopg.Connection) -> list[sql.Identifier]:
     return spazi
 
 
+_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _blocca(conn: psycopg.Connection, chiave: str) -> None:
+    """Lock fino alla fine della transazione: due caricamenti dello stesso ruolo o documento non si sovrappongono."""
+    conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (chiave,))
+
+
 def ruolo(conn: psycopg.Connection, org_id: str, nome: str, famiglia: str | None = None) -> str:
     """Ruolo dell'organizzazione: nome nello spazio dell'organizzazione, nome neutro in public."""
     spazio = spazio_organizzazione(conn, org_id)
+    _blocca(conn, f"ruolo:{org_id}:{nome}")
     riga = conn.execute(
         sql.SQL("SELECT ruolo_id FROM {}.ruoli_organizzativi WHERE nome = %s").format(spazio), (nome,)
     ).fetchone()
@@ -56,13 +66,19 @@ def ruolo(conn: psycopg.Connection, org_id: str, nome: str, famiglia: str | None
 
 def documento(
     conn: psycopg.Connection, org_id: str, *, nome_file: str, sha256: str, licenza: str,
-    tipo: str = "org_document", versione: str | None = None,
+    tipo: str = "org_document",
 ) -> str:
-    """Documento dell'organizzazione: nome del file nello spazio dell'organizzazione, nome neutro in public."""
+    """Documento dell'organizzazione: nome del file nello spazio dell'organizzazione, nome neutro in public.
+
+    Il documento è il suo contenuto: lo stesso file con un altro nome è lo stesso documento.
+    In public la versione è l'inizio dell'impronta (vincolo della migrazione 0025).
+    """
+    if not _SHA256.fullmatch(sha256):
+        raise ValueError("sha256 del documento non valido: attesi 64 caratteri esadecimali minuscoli")
     spazio = spazio_organizzazione(conn, org_id)
+    _blocca(conn, f"documento:{org_id}:{sha256}")
     riga = conn.execute(
-        sql.SQL("SELECT documento_id FROM {}.documenti WHERE nome_file = %s AND sha256 = %s").format(spazio),
-        (nome_file, sha256),
+        sql.SQL("SELECT documento_id FROM {}.documenti WHERE sha256 = %s").format(spazio), (sha256,),
     ).fetchone()
     if riga is not None:
         return str(riga[0])
@@ -70,7 +86,7 @@ def documento(
     conn.execute(
         """INSERT INTO sources (source_id, kind, name, version, license, content_hash)
            VALUES (%s, %s, %s, %s, %s, %s)""",
-        (documento_id, tipo, f"documento {documento_id}", versione or sha256[:16], licenza, sha256),
+        (documento_id, tipo, f"documento {documento_id}", sha256[:16], licenza, sha256),
     )
     conn.execute(
         sql.SQL("INSERT INTO {}.documenti (documento_id, nome_file, sha256, tipo) VALUES (%s, %s, %s, %s)")
@@ -149,7 +165,8 @@ def togli_testo_da_public(conn: psycopg.Connection, utente_id: str, org_id: str)
             "ruoli": sql.SQL(
                 """SELECT count(*) FROM roles r WHERE r.org_id = %s AND r.name <> 'ruolo ' || r.role_id::text
                      AND NOT EXISTS (SELECT 1 FROM {}.ruoli_organizzativi c
-                                     WHERE c.ruolo_id = r.role_id AND c.nome = r.name)"""),
+                                     WHERE c.ruolo_id = r.role_id AND c.nome = r.name
+                                       AND c.famiglia IS NOT DISTINCT FROM r.family)"""),
             "documenti": sql.SQL(
                 """SELECT count(*) FROM sources s
                    WHERE s.kind = 'org_document' AND s.name <> 'documento ' || s.source_id::text

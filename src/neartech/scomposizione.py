@@ -24,6 +24,7 @@ from xml.etree import ElementTree as ET
 import psycopg
 from pydantic import BaseModel, Field, ValidationError
 
+from neartech.crosswalk import una_riga
 from neartech.occorrenze import documento, registra_occorrenza, ruolo
 
 MODEL_ID = "claude-sonnet-5-5"  # estrazione da documenti: Sonnet, come da CLAUDE.md
@@ -53,7 +54,7 @@ class ScompostoError(RuntimeError):
 
 
 class _Attivita(BaseModel):
-    titolo: str = Field(min_length=5, max_length=200)
+    titolo: str = Field(min_length=5, max_length=200, pattern=r"^[^\r\n\t]+$")  # una riga: entra in altri prompt
     granularita: int = Field(ge=1, le=3)
     testo_originale: str = Field(min_length=3)
     nota_contesto: str | None = None
@@ -112,10 +113,12 @@ def carica_documenti(cartella: Path) -> tuple[list[DocumentoJob], list[str]]:
 
 
 def _user_message(doc: DocumentoJob, titoli_esistenti: list[str]) -> str:
-    elenco = "\n".join(f"- {t}" for t in titoli_esistenti) or "(nessuno)"
+    elenco = "\n".join(f"- {una_riga(t)}" for t in titoli_esistenti) or "(nessuno)"
+    # Il documento non può chiudere il proprio recinto: i tag eventualmente presenti nel testo si neutralizzano.
+    testo = re.sub(r"</?\s*documento\s*>", "[documento]", doc.testo, flags=re.IGNORECASE)
     return (
         f"Titoli già presenti (riusali se equivalenti):\n{elenco}\n\n"
-        f"<documento>\n{doc.testo}\n</documento>"
+        f"<documento>\n{testo}\n</documento>"
     )
 
 
@@ -187,7 +190,7 @@ def salva_documento(
     """
     ruolo_id = ruolo(conn, org_id, doc.ruolo)
     documento_id = documento(conn, org_id, nome_file=doc.nome_file, sha256=doc.sha256,
-                             licenza=SOURCE_LICENSE, tipo=SOURCE_KIND, versione=doc.sha256[:16])
+                             licenza=SOURCE_LICENSE, tipo=SOURCE_KIND)
     phash = prompt_hash()
     nuove = 0
     for att in attivita:

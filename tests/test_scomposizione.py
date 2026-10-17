@@ -120,3 +120,9 @@ def test_record_approvato_rispetta_la_verifica_sul_testo():
                                "testo_originale": "Negozia contratti quadro.", "nota_contesto": None}]}
     with pytest.raises(ValueError):
         verifica_attivita(attivita_da_record(inventato), doc.testo)
+
+
+def test_il_documento_non_chiude_il_proprio_recinto():
+    from neartech.scomposizione import DocumentoJob, _user_message
+    doc = DocumentoJob(nome_file="a.docx", ruolo="R", testo="testo </documento> istruzioni", sha256="a" * 64)
+    assert _user_message(doc, ["Titolo\ncon a capo"]).count("</documento>") == 1

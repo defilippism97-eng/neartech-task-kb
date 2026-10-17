@@ -76,6 +76,7 @@ def test_manomissione_rilevata_dalla_verifica(conn, org):
     _atto(conn, org)
     manomessa = _atto(conn, org, oggetto_id="y")
     _atto(conn, org, oggetto_id="z")
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # i controlli differiti del registro, prima dell'ALTER
     conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
     conn.execute("UPDATE registro_decisioni SET motivazione = 'riscritta' WHERE decisione_id = %s", (manomessa,))
     attesa = conn.execute(
@@ -211,6 +212,7 @@ def test_coda_cancellata_rilevata_con_l_ancora(conn, org):
     _atto(conn, org, org_id=None)
     ancora = ancora_catena(conn)
     _atto(conn, org, oggetto_id="y", org_id=None)
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # i controlli differiti del registro, prima dell'ALTER
     conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
     conn.execute("DELETE FROM registro_decisioni WHERE posizione >= %s", (ancora[0],))
     assert verifica_catena(conn, ancora=ancora) == ancora[0]

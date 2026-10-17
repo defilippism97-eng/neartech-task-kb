@@ -21,7 +21,7 @@ def spazio(conn):
 
 def _registra(conn, spazio, task, nome_ruolo, estratto):
     r = ruolo(conn, spazio["org"], nome_ruolo)
-    d = documento(conn, spazio["org"], nome_file="mansionario.docx", sha256="abc123", licenza="interno")
+    d = documento(conn, spazio["org"], nome_file="mansionario.docx", sha256="a" * 64, licenza="interno")
     return registra_occorrenza(conn, spazio["org"], task_id=task, ruolo_id=r, documento_id=d, estratto=estratto,
                                nota_contesto="nota", model_name="modello", prompt_hash="hash")
 
@@ -45,8 +45,8 @@ def test_il_testo_resta_nello_spazio_dell_organizzazione(conn, spazio):
 
 def test_ruolo_e_documento_si_riusano(conn, spazio):
     assert ruolo(conn, spazio["org"], "Contabile") == ruolo(conn, spazio["org"], "Contabile")
-    assert documento(conn, spazio["org"], nome_file="a.docx", sha256="x", licenza="interno") == \
-        documento(conn, spazio["org"], nome_file="a.docx", sha256="x", licenza="interno")
+    assert documento(conn, spazio["org"], nome_file="a.docx", sha256="b" * 64, licenza="interno") == \
+        documento(conn, spazio["org"], nome_file="a.docx", sha256="b" * 64, licenza="interno")
 
 
 def test_rilancio_non_duplica(conn, spazio):
@@ -104,3 +104,21 @@ def test_togli_testo_si_ferma_se_la_copia_non_coincide(conn, spazio):
     conn.execute("UPDATE task_occurrences SET raw_snippet = 'testo diverso'")
     with pytest.raises(RuntimeError):
         togli_testo_da_public(conn, spazio["admin"], spazio["org"])
+
+
+def test_pulizia_si_ferma_se_la_famiglia_del_ruolo_non_e_copiata(conn, spazio):
+    r = ruolo(conn, spazio["org"], "Contabile", famiglia="amministrazione")
+    conn.execute("ALTER TABLE roles DROP CONSTRAINT roles_nome_neutro, DROP CONSTRAINT roles_senza_famiglia")
+    conn.execute("UPDATE roles SET name = 'Contabile', family = 'altra famiglia' WHERE role_id = %s", (r,))
+    with pytest.raises(RuntimeError, match="non identica"):
+        togli_testo_da_public(conn, spazio["admin"], spazio["org"])
+
+
+def test_stesso_contenuto_con_un_altro_nome_e_lo_stesso_documento(conn, spazio):
+    primo = documento(conn, spazio["org"], nome_file="a.docx", sha256="c" * 64, licenza="interno")
+    assert documento(conn, spazio["org"], nome_file="copia di a.docx", sha256="c" * 64, licenza="interno") == primo
+
+
+def test_impronta_del_documento_obbligatoria(conn, spazio):
+    with pytest.raises(ValueError, match="sha256"):
+        documento(conn, spazio["org"], nome_file="a.docx", sha256="Mansionario Rossi", licenza="interno")

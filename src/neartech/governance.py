@@ -15,7 +15,6 @@ o chiede una ricalibrazione motivata all'amministratore tecnico. Il valore comun
 adozione; parametro_vigente dice se la versione in uso è stata adottata (adozione_id).
 """
 
-import hashlib
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -25,7 +24,7 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from neartech.permessi import richiedi
-from neartech.registro import registra, spazio
+from neartech.registro import chiave_spazio, impronta, registra, spazio
 
 
 class ParametroAssente(LookupError):
@@ -83,12 +82,8 @@ _OGGETTI = {
 _SEPARATORE = "\x1f"
 
 
-def _hash_indirizzo(testo: str, ambito: str) -> str:
-    return hashlib.sha256(f"{testo}{_SEPARATORE}{ambito}".encode()).hexdigest()
-
-
-def _hash(testo: str) -> str:
-    return hashlib.sha256(testo.encode()).hexdigest()
+def _hash_indirizzo(chiave: bytes, testo: str, ambito: str) -> str:
+    return impronta(chiave, f"{testo}{_SEPARATORE}{ambito}")
 
 
 def _spazio_richiesto(conn: psycopg.Connection, org_id: str) -> sql.Identifier:
@@ -98,12 +93,20 @@ def _spazio_richiesto(conn: psycopg.Connection, org_id: str) -> sql.Identifier:
     return schema
 
 
-def _spazi(conn: psycopg.Connection) -> list[tuple[str, sql.Identifier]]:
+def _spazi(conn: psycopg.Connection, org_id: str | None = None) -> list[tuple[str, sql.Identifier]]:
+    """Spazi esistenti (di tutte le organizzazioni o di una). Uno spazio mancante non blocca gli altri:
+    i suoi atti non si possono scrivere (registra), e il report di quell'organizzazione lo segnala."""
     spazi = []
-    for (org_id,) in conn.execute("SELECT org_id FROM organizations WHERE codice IS NOT NULL ORDER BY codice").fetchall():
-        schema = spazio(conn, str(org_id))
+    for (org,) in conn.execute(
+        "SELECT org_id FROM organizations WHERE codice IS NOT NULL AND (%s::uuid IS NULL OR org_id = %s::uuid)"
+        " ORDER BY codice", (org_id, org_id),
+    ).fetchall():
+        try:
+            schema = spazio(conn, str(org))
+        except LookupError:
+            continue
         if schema is not None:
-            spazi.append((str(org_id), schema))
+            spazi.append((str(org), schema))
     return spazi
 
 
@@ -167,7 +170,10 @@ def _decidi(
             sql.SQL("""SELECT r.autore_id FROM {} t JOIN registro_decisioni r ON r.decisione_id = t.proposta_id
                        WHERE t.{} = %s""").format(sql.Identifier(tabella), sql.Identifier(chiave)),
             (oggetto_id,),
-        ).fetchone()[0]
+        ).fetchone()
+        if proponente is None:
+            raise LookupError(f"{tipo} {oggetto_id}: proposta non trovata nel registro")
+        proponente = proponente[0]
         return registra(conn, autore_id=utente_id, tipo_oggetto=tipo, oggetto_id=str(oggetto_id),
                         atto=atto, motivazione=motivazione, org_id=org_id,
                         dettagli={"stesso_proponente": proponente == uuid.UUID(str(utente_id))})
@@ -194,7 +200,7 @@ def proponi_parametro(
         versione = _prossima_versione(conn, "parametri_governance", codice, org_id)
         dettagli = {"codice": codice, "versione": versione, "valore": valore}
         if schema is not None:
-            dettagli["hash_descrizione"] = _hash(descrizione)
+            dettagli["hash_descrizione"] = impronta(chiave_spazio(conn, schema), descrizione)
         proposta = registra(
             conn, autore_id=utente_id, tipo_oggetto="parametro", oggetto_id=parametro_id, atto="proposta",
             motivazione=motivazione, org_id=org_id, dettagli=dettagli,
@@ -285,7 +291,8 @@ def proponi_indirizzo(
         proposta = registra(
             conn, autore_id=utente_id, tipo_oggetto="indirizzo", oggetto_id=indirizzo_id, atto="proposta",
             motivazione=motivazione, org_id=org_id,
-            dettagli={"codice": codice, "versione": versione, "hash_contenuto": _hash_indirizzo(testo, ambito)},
+            dettagli={"codice": codice, "versione": versione,
+                      "hash_contenuto": _hash_indirizzo(chiave_spazio(conn, schema), testo, ambito)},
         )
         conn.execute(
             """INSERT INTO indirizzi_comitato (indirizzo_id, org_id, codice, versione, proposta_id)
@@ -324,47 +331,54 @@ def indirizzi_vigenti(conn: psycopg.Connection, org_id: str) -> list[Indirizzo]:
     ]
 
 
-def verifica_contenuti(conn: psycopg.Connection) -> list[tuple[str, str]]:
+def verifica_contenuti(conn: psycopg.Connection, org_id: str | None = None) -> list[tuple[str, str]]:
     """Confronta parametri e indirizzi con quanto registrato nella loro proposta. Restituisce le discordanze.
 
-    I testi delle organizzazioni si confrontano, nel loro spazio, con l'hash registrato nella proposta.
+    I testi delle organizzazioni si confrontano, nel loro spazio, con l'impronta registrata nella proposta.
+    Con org_id, solo gli oggetti di quell'organizzazione.
     """
     discordanze = {
         (r[0], str(r[1]))
         for r in conn.execute(
             """SELECT 'parametro', p.parametro_id
                FROM parametri_governance p JOIN registro_decisioni r ON r.decisione_id = p.proposta_id
-               WHERE r.dettagli -> 'valore' IS DISTINCT FROM p.valore
+               WHERE (%(org)s::uuid IS NULL OR p.org_id = %(org)s::uuid)
+                 AND (r.dettagli -> 'valore' IS DISTINCT FROM p.valore
                   OR r.org_id IS DISTINCT FROM p.org_id
                   OR r.dettagli ->> 'codice' IS DISTINCT FROM p.codice
-                  OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM p.versione
+                  OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM p.versione)
                UNION ALL
                SELECT 'indirizzo', i.indirizzo_id
                FROM indirizzi_comitato i JOIN registro_decisioni r ON r.decisione_id = i.proposta_id
-               WHERE r.org_id IS DISTINCT FROM i.org_id
+               WHERE (%(org)s::uuid IS NULL OR i.org_id = %(org)s::uuid)
+                 AND (r.org_id IS DISTINCT FROM i.org_id
                   OR r.dettagli ->> 'codice' IS DISTINCT FROM i.codice
-                  OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM i.versione"""
+                  OR (r.dettagli ->> 'versione')::int IS DISTINCT FROM i.versione)""",
+            {"org": org_id},
         )
     }
-    for org_id, schema in _spazi(conn):
+    for org, schema in _spazi(conn, org_id):
         discordanze.update(
             (r[0], str(r[1]))
             for r in conn.execute(
                 sql.SQL("""SELECT 'parametro', p.parametro_id
                            FROM parametri_governance p JOIN registro_decisioni r ON r.decisione_id = p.proposta_id
                            LEFT JOIN {0}.testi_parametri t USING (parametro_id)
+                           CROSS JOIN {0}.chiave_impronte k
                            WHERE p.org_id = %(org)s
                              AND (t.descrizione IS NULL OR r.dettagli ->> 'hash_descrizione' IS DISTINCT FROM
-                                  encode(sha256(convert_to(t.descrizione, 'UTF8')), 'hex'))
+                                  encode(sha256(k.chiave || convert_to(t.descrizione, 'UTF8')), 'hex'))
                            UNION ALL
                            SELECT 'indirizzo', i.indirizzo_id
                            FROM indirizzi_comitato i JOIN registro_decisioni r ON r.decisione_id = i.proposta_id
                            LEFT JOIN {0}.testi_indirizzi t USING (indirizzo_id)
+                           CROSS JOIN {0}.chiave_impronte k
                            WHERE i.org_id = %(org)s
                              AND (t.testo IS NULL OR r.dettagli ->> 'hash_contenuto' IS DISTINCT FROM
-                                  encode(sha256(convert_to(t.testo || chr(31) || t.ambito, 'UTF8')), 'hex'))""")
+                                  encode(sha256(k.chiave || convert_to(t.testo || chr(31) || t.ambito, 'UTF8')),
+                                         'hex'))""")
                 .format(schema),
-                {"org": org_id},
+                {"org": org},
             )
         )
     return sorted(discordanze)

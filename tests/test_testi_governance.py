@@ -262,3 +262,83 @@ def test_database_rifiuta_adozione_di_un_parametro_dell_organizzazione(conn, org
     with pytest.raises(psycopg.errors.RaiseException, match="comune"):
         registra(conn, autore_id=org["comitato"], tipo_oggetto="parametro", oggetto_id=parametro,
                  atto="adozione", motivazione="m", org_id=org["id"])
+
+
+# --- rafforzamenti dopo le revisioni (2026-10-17) ------------------------------------
+
+def test_impronta_con_la_chiave_dello_spazio(conn, org):
+    """Chi legge solo public non conferma un testo indovinato: l'impronta non è lo sha256 del testo."""
+    import hashlib
+    import json
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="approvato", org_id=org["id"])
+    semplice = hashlib.sha256(json.dumps({"dettagli": {}, "motivazione": "approvato"}, sort_keys=True,
+                                         ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+    assert _atto(conn, atto)[1]["hash_testo"] != semplice
+
+
+def test_impronta_stabile_con_numeri_che_jsonb_normalizza(conn, org):
+    registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+             motivazione="m", org_id=org["id"], dettagli_riservati={"grande": 1e20, "zero": -0.0})
+    assert verifica_testi(conn, org["id"]) == []
+
+
+def _inserisci_atto(conn, org, dettagli):
+    from psycopg.types.json import Jsonb
+    conn.execute(
+        """INSERT INTO registro_decisioni (org_id, tipo_oggetto, oggetto_id, atto, autore_id, motivazione, dettagli)
+           VALUES (%s, 'prova', 'x', 'proposta', %s, %s, %s)""",
+        (org["id"], org["comitato"], MARCATORE_SPAZIO, Jsonb(dettagli)),
+    )
+
+
+def test_database_rifiuta_testo_libero_nei_dettagli(conn, org):
+    with pytest.raises(psycopg.errors.RaiseException, match="solo codici"):
+        _inserisci_atto(conn, org, {"hash_testo": "a" * 64, "nota": "testo libero del cliente"})
+
+
+def test_database_rifiuta_impronta_non_valida(conn, org):
+    with pytest.raises(psycopg.errors.RaiseException, match="spazio"):
+        _inserisci_atto(conn, org, {"hash_testo": "testo del cliente"})
+
+
+def test_atto_senza_testo_nello_spazio_rifiutato_alla_fine_della_transazione(conn, org):
+    _inserisci_atto(conn, org, {"hash_testo": "a" * 64})
+    with pytest.raises(psycopg.errors.RaiseException, match="senza testo"):
+        conn.execute("SET CONSTRAINTS registro_testo_presente IMMEDIATE")
+
+
+def test_organizzazione_senza_spazio_non_registra_atti(conn, org):
+    altra = str(conn.execute("INSERT INTO organizations (name) VALUES ('Senza spazio') RETURNING org_id").fetchone()[0])
+    with pytest.raises(LookupError, match="spazio"):
+        registra(conn, autore_id=org["admin"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                 motivazione="m", org_id=altra)
+    with pytest.raises(psycopg.errors.RaiseException, match="spazio"):
+        conn.execute(
+            """INSERT INTO registro_decisioni (org_id, tipo_oggetto, oggetto_id, atto, autore_id, motivazione)
+               VALUES (%s, 'prova', 'x', 'proposta', %s, 'testo in chiaro')""",
+            (altra, org["admin"]),
+        )
+
+
+def test_testo_di_un_altra_organizzazione_rifiutato_nello_spazio(conn, org):
+    crea_organizzazione(conn, org["admin"], nome="Altra", codice="altra")
+    atto = registra(conn, autore_id=org["comitato"], tipo_oggetto="prova", oggetto_id="x", atto="proposta",
+                    motivazione="m", org_id=org["id"])
+    with pytest.raises(psycopg.errors.RaiseException, match="altra organizzazione"):
+        conn.execute("INSERT INTO org_altra.testi_atti (decisione_id, motivazione) VALUES (%s, 'copiato')", (atto,))
+
+
+def test_database_rifiuta_adozione_di_una_versione_comune_superata(conn, org):
+    prima = _comune(conn, org)
+    _comune(conn, org, valore=0.85)
+    with pytest.raises(psycopg.errors.RaiseException, match="vigente"):
+        registra(conn, autore_id=org["comitato"], tipo_oggetto="parametro", oggetto_id=prima,
+                 atto="adozione", motivazione="m", org_id=org["id"])
+
+
+def test_verifica_dei_contenuti_per_una_sola_organizzazione(conn, org):
+    crea_organizzazione(conn, org["admin"], nome="Altra", codice="altra")
+    conn.execute("DROP SCHEMA org_altra CASCADE")  # spazio mancante: non blocca le altre organizzazioni
+    assert verifica_contenuti(conn, org["id"]) == []
+    assert verifica_contenuti(conn) == []

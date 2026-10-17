@@ -7,10 +7,12 @@ La catena rende visibile una riga alterata. Non basta contro chi cancella le ult
 righe o ricalcola tutta la catena: per questo l'auditor conserva fuori dal database
 l'ancora (posizione e hash dell'ultima riga, ancora_catena) e la passa a verifica_catena.
 
-Testi delle organizzazioni (ADR 0004): per un atto di un'organizzazione con spazio, la motivazione
-e i dettagli testuali (dettagli_riservati) stanno in org_<codice>.testi_atti; nel registro condiviso
-restano il marcatore, i dettagli strutturali (codici, versioni, valori) e l'hash del testo, che la
-catena protegge. verifica_testi confronta lo spazio con l'hash.
+Testi delle organizzazioni (ADR 0004): per un atto di un'organizzazione, la motivazione e i dettagli
+testuali (dettagli_riservati) stanno in org_<codice>.testi_atti; nel registro condiviso restano il
+marcatore, i dettagli strutturali (codici, numeri, identificativi: migrazione 0025) e l'impronta del
+testo, che la catena protegge. L'impronta usa la chiave dello spazio (chiave_impronte): chi legge solo
+public non può confermare un testo indovinato, e dopo l'uscita del cliente la chiave non c'è più.
+Un'organizzazione senza spazio non registra atti. verifica_testi confronta lo spazio con l'impronta.
 """
 
 import hashlib
@@ -25,14 +27,26 @@ HASH_INIZIALE = "0" * 64
 MARCATORE_SPAZIO = "nello spazio dell'organizzazione"  # stesso valore nella migrazione 0025
 
 
-def hash_testo(motivazione: str, dettagli: dict[str, Any]) -> str:
+def impronta(chiave: bytes, testo: str) -> str:
+    """sha256(chiave || testo): stessa formula in SQL, encode(sha256(chiave || convert_to(testo, 'UTF8')), 'hex')."""
+    return hashlib.sha256(chiave + testo.encode("utf-8")).hexdigest()
+
+
+def hash_testo(motivazione: str, dettagli: dict[str, Any], chiave: bytes) -> str:
     serializzato = json.dumps({"dettagli": dettagli, "motivazione": motivazione},
                               sort_keys=True, ensure_ascii=False, separators=(",", ":"))
-    return hashlib.sha256(serializzato.encode("utf-8")).hexdigest()
+    return impronta(chiave, serializzato)
+
+
+def chiave_spazio(conn: psycopg.Connection, schema: sql.Identifier) -> bytes:
+    riga = conn.execute(sql.SQL("SELECT chiave FROM {}.chiave_impronte").format(schema)).fetchone()
+    if riga is None:
+        raise LookupError(f"lo spazio {schema.as_string(conn)} non ha la chiave delle impronte")
+    return bytes(riga[0])
 
 
 def spazio(conn: psycopg.Connection, org_id: str) -> sql.Identifier | None:
-    """Schema dell'organizzazione, o None se non ne ha uno (organizzazioni precedenti agli spazi)."""
+    """Schema dell'organizzazione, o None se non ne ha uno. LookupError se il codice c'è ma lo schema no."""
     riga = conn.execute(
         "SELECT 'org_' || codice, to_regnamespace('org_' || codice) FROM organizations WHERE org_id = %s",
         (org_id,),
@@ -60,32 +74,40 @@ def registra(
     """Scrittura di basso livello. Chi chiama ha già verificato i permessi (governance, permessi, stato_task).
 
     dettagli: valori strutturali, restano nel registro condiviso. dettagli_riservati: testo libero,
-    nello spazio dell'organizzazione insieme alla motivazione.
+    nello spazio dell'organizzazione insieme alla motivazione. Atti comuni (org_id vuoto): tutto in public.
     """
     if not motivazione.strip():
         raise ValueError("motivazione obbligatoria")
     dettagli = dict(dettagli or {})
     riservati = dict(dettagli_riservati or {})
-    schema = spazio(conn, org_id) if org_id is not None else None
-    if schema is None:
-        # Atti comuni, o organizzazioni senza spazio: tutto nel registro condiviso.
-        testo_pubblico, dettagli_pubblici = motivazione, {**dettagli, **riservati}
-    else:
-        testo_pubblico, dettagli_pubblici = MARCATORE_SPAZIO, {**dettagli, "hash_testo": hash_testo(motivazione, riservati)}
-    decisione_id = conn.execute(
-        """INSERT INTO registro_decisioni
-             (org_id, tipo_oggetto, oggetto_id, atto, autore_id, motivazione, dettagli, corregge_id)
-           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-           RETURNING decisione_id""",
-        (org_id, tipo_oggetto, oggetto_id, atto, autore_id, testo_pubblico, Jsonb(dettagli_pubblici), corregge_id),
-    ).fetchone()[0]
-    if schema is not None:
-        conn.execute(
-            sql.SQL("INSERT INTO {}.testi_atti (decisione_id, motivazione, dettagli) VALUES (%s, %s, %s)")
-            .format(schema),
-            (decisione_id, motivazione, Jsonb(riservati)),
-        )
-    return decisione_id
+    with conn.transaction():
+        schema = None
+        if org_id is not None:
+            schema = spazio(conn, org_id)
+            if schema is None:
+                raise LookupError(f"l'organizzazione {org_id} non ha uno spazio: i suoi atti non hanno dove stare")
+        if schema is None:
+            testo_pubblico, dettagli_pubblici = motivazione, {**dettagli, **riservati}
+        else:
+            # L'impronta si calcola sui dettagli come li restituisce il database (jsonb normalizza i numeri).
+            riservati = conn.execute("SELECT %s::jsonb", (Jsonb(riservati),)).fetchone()[0]
+            impronta_testo = hash_testo(motivazione, riservati, chiave_spazio(conn, schema))
+            testo_pubblico, dettagli_pubblici = MARCATORE_SPAZIO, {**dettagli, "hash_testo": impronta_testo}
+        decisione_id = conn.execute(
+            """INSERT INTO registro_decisioni
+                 (org_id, tipo_oggetto, oggetto_id, atto, autore_id, motivazione, dettagli, corregge_id)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+               RETURNING decisione_id""",
+            (org_id, tipo_oggetto, oggetto_id, atto, autore_id, testo_pubblico, Jsonb(dettagli_pubblici),
+             corregge_id),
+        ).fetchone()[0]
+        if schema is not None:
+            conn.execute(
+                sql.SQL("INSERT INTO {}.testi_atti (decisione_id, motivazione, dettagli) VALUES (%s, %s, %s)")
+                .format(schema),
+                (decisione_id, motivazione, Jsonb(riservati)),
+            )
+        return decisione_id
 
 
 def verifica_testi(conn: psycopg.Connection, org_id: str) -> list[tuple[int, str]]:
@@ -93,6 +115,7 @@ def verifica_testi(conn: psycopg.Connection, org_id: str) -> list[tuple[int, str
     schema = spazio(conn, org_id)
     if schema is None:
         return []
+    chiave = chiave_spazio(conn, schema)
     problemi = []
     for decisione_id, hash_registrato, motivazione, dettagli in conn.execute(
         sql.SQL("""SELECT r.decisione_id, r.dettagli ->> 'hash_testo', t.motivazione, t.dettagli
@@ -102,7 +125,7 @@ def verifica_testi(conn: psycopg.Connection, org_id: str) -> list[tuple[int, str
     ):
         if motivazione is None:
             problemi.append((decisione_id, "testo mancante"))
-        elif hash_testo(motivazione, dettagli) != hash_registrato:
+        elif hash_testo(motivazione, dettagli, chiave) != hash_registrato:
             problemi.append((decisione_id, "hash diverso"))
     return problemi
 
