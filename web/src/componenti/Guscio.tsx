@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { api } from '../api'
+import { Logo } from './Logo'
 
 // Guscio dell'applicazione per i ruoli di un'organizzazione. Le voci non ancora costruite si vedono come
 // "in arrivo": la piattaforma cresce a fette (docs/piani/fase-6-piattaforma.md).
@@ -32,7 +33,7 @@ export function Guscio({ codice, nomeOrganizzazione, ruolo, soggetto, children }
   return (
     <div className="app">
       <aside className="side">
-        <div className="brand"><div className="mark" aria-hidden="true" />neartech</div>
+        <Logo variante="navy" />
         <div className="org"><b>{nomeOrganizzazione}</b><span>pilota · sperimentazione</span></div>
         <nav aria-label="Sezioni">
           <ul className="nav">

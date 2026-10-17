@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api, ErroreApi } from '../api'
+import { Logo } from '../componenti/Logo'
 
 // Accesso: SSO aziendale; in sviluppo (solo da localhost) anche indicando un soggetto esistente.
 export function Accesso() {
@@ -25,7 +26,7 @@ export function Accesso() {
     <div className="accesso">
       <div className="blob" aria-hidden="true" />
       <main className="card">
-        <div className="brand" style={{ color: 'var(--navy)' }}><div className="mark" aria-hidden="true" />neartech</div>
+        <Logo variante="chiaro" dimensione={34} />
         <h1>Accedi alla tua organizzazione</h1>
         <p>Usa l'account aziendale: Neartech riconosce il tuo ruolo e ti porta direttamente al lavoro che ti spetta.</p>
         {errore && <p className="errore" role="alert">{errore}</p>}
