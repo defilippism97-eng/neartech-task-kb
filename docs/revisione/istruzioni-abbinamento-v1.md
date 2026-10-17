@@ -1,6 +1,6 @@
 # Istruzioni di revisione: abbinamento al dataset consolidato (versione `istruzioni-abbinamento-v1`)
 
-**Stato: bozza, da approvare** dal responsabile del progetto. Una modifica richiede una versione nuova. Il codice della versione (`istruzioni-abbinamento-v1`) va indicato in ogni campione e in ogni giudizio.
+**Stato: approvata** dal responsabile del progetto il 2026-10-17 (`docs/metodologia-estensioni.md`, sezione 26). Una modifica richiede una versione nuova. Il codice della versione (`istruzioni-abbinamento-v1`) va indicato in ogni campione e in ogni giudizio.
 
 ## Cosa si rivede
 

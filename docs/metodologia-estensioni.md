@@ -224,3 +224,9 @@ Scelte tecniche della fase 5 (`neartech.restituzione`, `scripts/restituzione.py`
 Approvata dal responsabile del progetto, provvisoria fino alla revisione del comitato guida; atto nel registro alla posizione 44. Parametro comune `soglia_stabilita_quadrante` = 0,8, il valore indicato dal piano: il risultato di un'occorrenza è stabile se il suo quadrante più probabile esce in almeno l'80% delle estrazioni; sotto, l'occorrenza va nella coda da rivedere della restituzione.
 
 Con i risultati della versione 2 (sezione 23) la coda di Società Dolce ha 41 occorrenze su 454. Il comitato guida di Società Dolce deve ancora adottare il valore comune: fino ad allora la restituzione lo segnala.
+
+## 26. Istruzioni di revisione dell'abbinamento (2026-10-17)
+
+Approvate dal responsabile del progetto: `istruzioni-abbinamento-v1`, così come scritte (`docs/revisione/istruzioni-abbinamento-v1.md`). Revisione cieca delle coppie candidato–task proposto; esiti `corretto`, `parziale` (conta come errore, parametro `regola_parziali`) ed `errato`; stessa definizione delle fusioni.
+
+Deciso con le istruzioni il punto aperto 2 della fase 3: la misura di precisione sul campione accompagna la decisione in blocco ma non la impedisce. Una misura sotto la soglia `soglia_precisione_abbinamento` si registra nell'atto della decisione, e chi decide ne risponde; il software resta com'è.
