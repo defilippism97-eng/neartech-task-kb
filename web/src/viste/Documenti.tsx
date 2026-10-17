@@ -148,7 +148,7 @@ export function Documenti() {
         <div>
           <span className="eyebrow">{nome} · documenti e abbinamento</span>
           <h1>{d.documenti.length === 0 ? 'Carica i mansionari dell\'organizzazione'
-            : `${d.documenti.length} ${d.documenti.length === 1 ? 'mansionario' : 'mansionari'}, ${estratte} attività estratte`}</h1>
+            : `${d.documenti.length} ${d.documenti.length === 1 ? 'mansionario' : 'mansionari'}, ${estratte} task estratti`}</h1>
         </div>
         <Link to="/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
       </div>
@@ -167,7 +167,7 @@ export function Documenti() {
           ) : (
             <div className="tabella-scorre">
               <table className="tabella">
-                <thead><tr><th>File</th><th>Ruolo</th><th>Stato</th><th>Attività</th><th>Stima</th></tr></thead>
+                <thead><tr><th>File</th><th>Ruolo</th><th>Stato</th><th>Task</th><th>Stima</th></tr></thead>
                 <tbody>
                   {d.documenti.map((x) => (
                     <tr key={x.caricamento_id}>
@@ -190,9 +190,9 @@ export function Documenti() {
         <section className="card" aria-labelledby="titolo-abbinamento">
           <span className="eyebrow">Abbinamento al dataset</span>
           <h2 id="titolo-abbinamento" style={{ margin: '6px 0 6px' }}>
-            {d.candidati_da_proporre === 1 ? '1 attività da abbinare' : `${d.candidati_da_proporre} attività da abbinare`}
+            {d.candidati_da_proporre === 1 ? '1 task da abbinare' : `${d.candidati_da_proporre} task da abbinare`}
           </h2>
-          <p style={{ fontSize: 13 }}>Un lotto propone per ogni attività il task più vicino del dataset. Livello di revisione, campione e
+          <p style={{ fontSize: 13 }}>Un lotto propone per ogni task del mansionario il più vicino del dataset. Livello di revisione, campione e
             decisione spettano al revisore; l'applicazione torna a te.</p>
           {d.proposta_in_coda ? (
             <p className="avviso" role="status">Proposta in coda: il lavoratore calcola le vicinanze.</p>

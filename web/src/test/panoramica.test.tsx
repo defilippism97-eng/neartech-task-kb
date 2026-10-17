@@ -184,9 +184,40 @@ describe('panoramica del comitato', () => {
     expect((invio.init!.headers as Record<string, string>)['X-Neartech-Richiesta']).toBe('1')
   })
 
-  it('mostra la restituzione già approvata', async () => {
+  it('mostra la restituzione già approvata come percorso concluso', async () => {
     dati = panoramica({ approvazione: 91 })
     monta()
-    expect(await screen.findByText('Restituzione approvata · atto #91')).toBeInTheDocument()
+    expect(await screen.findByText('percorso concluso · atto #91')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Restituzione approvata' })).toBeInTheDocument()
+    expect(screen.getByText('Percorso concluso')).toBeInTheDocument()
+    expect(screen.queryByRole('listitem', { current: 'step' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Approva la restituzione' })).not.toBeInTheDocument()
+  })
+
+  it('il tracciato dice dove siete, le prove e chi deve agire', async () => {
+    dati = panoramica({}, 'indirizzi')
+    monta()
+    const corrente = await screen.findByRole('listitem', { current: 'step' })
+    expect(corrente).toHaveTextContent('Fase 2 di 4, Indirizzi: in corso. Mappa con i pesi di default NEARTECH. Attende: il comitato, sul questionario.')
+    expect(screen.getByText('fase 2 di 4 · Indirizzi')).toBeInTheDocument()
+    expect(screen.getByText('Tocca a voi')).toBeInTheDocument()
+    expect(screen.getByText('Fase 1 di 4, Avvio: fatta. 6 mansionari · 3 task nella mappa. fatto: Abbinamenti applicati.')).toBeInTheDocument()
+  })
+
+  it('una fase in corso dopo quella corrente è in anticipo, con risultati provvisori', async () => {
+    const d = panoramica({}, 'indirizzi')
+    d.percorso.fasi[2].stato = 'in_corso'
+    dati = d
+    ruolo = 'revisore'
+    monta()
+    expect(await screen.findByText(/Fase 3 di 4, Verifica: in corso in anticipo, risultati provvisori\. 2 risultati provvisori · 1 da confermare/))
+      .toBeInTheDocument()
+    expect(screen.getByText('In attesa · ora agisce il comitato guida')).toBeInTheDocument()
+  })
+
+  it('in fase di esito l\'approvazione sta nella banda del percorso, non nell\'intestazione', async () => {
+    monta()
+    const banda = await screen.findByRole('group', { name: 'Approvate la restituzione' })
+    expect(within(banda).getByRole('button', { name: 'Approva la restituzione' })).toBeInTheDocument()
   })
 })

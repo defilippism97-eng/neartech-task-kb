@@ -46,13 +46,11 @@ function Approvazione({ codice, dati, puoApprovare }: { codice: string; dati: Da
     },
     onError: aggiorna,  // dopo un conflitto la mappa mostra lo stato vero
   })
-  if (r.approvazione !== null) {
-    return <span className="state persone">Restituzione approvata · atto #{r.approvazione}</span>
-  }
-  if (!puoApprovare) return null
+  // Approvata, la restituzione la racconta il percorso (sigillo dell'esito e banda «Percorso concluso»).
+  if (r.approvazione !== null || !puoApprovare) return null
   return (
     <>
-      <button type="button" className="btn btn-primary" onClick={() => finestra.current?.showModal()}
+      <button type="button" className="btn btn-pill" onClick={() => finestra.current?.showModal()}
         disabled={r.riepilogo.con_risultato === 0}>
         Approva la restituzione
       </button>
@@ -115,38 +113,44 @@ export function Panoramica() {
           <span className="eyebrow">{r.organizzazione.nome} · {ETICHETTE_RUOLO[ruolo] ?? 'percorso del pilota'}</span>
           <h1>{r.riepilogo.con_risultato} task in {ruoli(r.ruoli.length)}: dove sta ciascuno</h1>
         </div>
-        <Approvazione codice={codice} dati={dati.data}
-          puoApprovare={ruolo === 'comitato_guida' && percorso.fase_corrente === 'esito'} />
       </div>
-      <BarraPercorso percorso={percorso} ruolo={ruolo} codice={codice} />
-      <Avanzamento dati={dati.data.avanzamento} />
+      {/* Una sola azione primaria per schermata: l'approvazione sta nella banda del percorso. */}
+      <BarraPercorso percorso={percorso} ruolo={ruolo} codice={codice}
+        comando={<Approvazione codice={codice} dati={dati.data}
+          puoApprovare={ruolo === 'comitato_guida' && percorso.fase_corrente === 'esito'} />} />
       {r.riepilogo.con_risultato === 0 ? (
-        <div className="card vuoto">
-          <h2>La mappa si riempie dopo il primo calcolo</h2>
-          <p>Servono i mansionari scomposti in task e abbinati al dataset NEARTECH. Il calcolo lo avvia
-            l'amministratore NEARTECH: appena finisce, qui vedete ogni task e il suo quadrante.</p>
+        <div className="grid" style={{ gap: 'var(--gap)' }}>
+          <div className="card vuoto">
+            <h2>La mappa si riempie dopo il primo calcolo</h2>
+            <p>Servono i mansionari scomposti in task e abbinati al dataset NEARTECH. Il calcolo lo avvia
+              l'amministratore NEARTECH: appena finisce, qui vedete ogni task e il suo quadrante.</p>
+          </div>
+          <Avanzamento dati={dati.data.avanzamento} />
         </div>
       ) : (
-        <div className="grid g-12">
-          <section className="card s7" aria-labelledby="titolo-mappa">
-            <h2 id="titolo-mappa">Ogni task, tra necessità e desiderabilità della persona</h2>
+        <div className="corpo-panoramica">
+          <section className="card mappa-card" aria-labelledby="titolo-mappa">
+            <h2 id="titolo-mappa" className="mappa-titolo">Ogni task, tra necessità e desiderabilità della persona</h2>
+            {/* Il chip etichetta la mappa stessa: sta nel suo margine alto, libero a destra dell'asse D. */}
+            <div className="mappa-area">
+              {provvisoria && <span className="state stima">mappa provvisoria</span>}
+              {soglie && <MappaQuadranti occorrenze={r.occorrenze} thetaN={soglie.theta_n} thetaD={soglie.theta_d} giudicate={giudicate} />}
+            </div>
             {provvisoria && (
               <p className="nota-mappa">
-                <span className="state stima">mappa provvisoria</span>{' '}
                 {percorso.fasi[1].stato === 'fatta'
-                  ? 'Calcolata con il vostro profilo di pesi; diventa definitiva con l\'approvazione della restituzione.'
-                  : 'Calcolata con i pesi di default NEARTECH: cambierà con gli indirizzi del comitato.'}
+                  ? 'Provvisoria: calcolata con il vostro profilo di pesi, diventa definitiva con l\'approvazione della restituzione.'
+                  : 'Provvisoria: calcolata con i pesi di default NEARTECH, cambierà con gli indirizzi del comitato.'}
               </p>
             )}
-            {soglie && <MappaQuadranti occorrenze={r.occorrenze} thetaN={soglie.theta_n} thetaD={soglie.theta_d} giudicate={giudicate} />}
             <div className="legend">
               <span><i style={{ background: 'var(--emerald)' }} />verde più pieno: più voci giudicate da persone (su {VOCI_TOTALI})</span>
               <span><i style={{ background: '#fff', border: '2px solid var(--amber)' }} />solo stime del modello</span>
               <span><i style={{ background: '#fff', border: '1.5px dashed var(--amber-ink)' }} />risultato incerto</span>
             </div>
           </section>
-          <div className="s5 grid" style={{ alignContent: 'start' }}>
-            <div className="grid kpi-coppia">
+          <div className="colonna-laterale">
+            <div className="kpi-coppia">
               <div className="kpi kpi-principale">
                 <span className="kpi-testa"><span className="kpi-icona"><Icona nome="bersaglio" /></span></span>
                 <b>{r.riepilogo.quadranti.q4}</b><span>task dove l'automazione è possibile</span>
@@ -157,6 +161,7 @@ export function Panoramica() {
                 <span>{stabili === null ? 'risultati solidi: serve la soglia' : `risultati solidi su ${r.riepilogo.con_risultato}`}</span>
               </div>
             </div>
+            <Avanzamento dati={dati.data.avanzamento} />
             {inviti(dati.data).map((invito) => (
               <div className="cta" key={invito.titolo}>
                 <div className="ic" style={{ background: invito.colore[0], color: invito.colore[1] }} aria-hidden="true">{invito.icona}</div>
@@ -164,7 +169,7 @@ export function Panoramica() {
               </div>
             ))}
           </div>
-          <section className="card s12" aria-labelledby="titolo-ruoli">
+          <section className="card ruoli-card" aria-labelledby="titolo-ruoli">
             <h2 id="titolo-ruoli" style={{ marginBottom: 8 }}>Ruoli</h2>
             <div className="ruoli-tabella">
               <table>

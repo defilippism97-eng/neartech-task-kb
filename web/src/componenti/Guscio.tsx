@@ -72,7 +72,7 @@ export function Guscio({ codice, nomeOrganizzazione, ruolo, soggetto, children }
           <button type="button" onClick={esci} aria-label="Esci"><Icona nome="esci" /></button>
         </div>
       </aside>
-      <main className="main" id="contenuto">{children}</main>
+      <main className="main" id="contenuto"><div className="main-contenuto">{children}</div></main>
     </div>
   )
 }

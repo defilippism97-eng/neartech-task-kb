@@ -39,7 +39,7 @@ function Campione({ codice, d }: { codice: string; d: DettaglioLotto }) {
   const c = d.campione!
   return (
     <div>
-      <p style={{ fontSize: 13, margin: '4px 0 12px' }}>Per ogni coppia: l'attività del mansionario è lo stesso task del dataset?
+      <p style={{ fontSize: 13, margin: '4px 0 12px' }}>Per ogni coppia: il task del mansionario è lo stesso task del dataset?
         Istruzioni <span className="mono">{c.istruzioni}</span>. Se cambi idea, scegli di nuovo: resta lo storico.</p>
       {giudica.error && <p className="errore" role="alert">{messaggio(giudica.error)}</p>}
       <ol className="coppie">
@@ -47,7 +47,7 @@ function Campione({ codice, d }: { codice: string; d: DettaglioLotto }) {
           <li key={e.posizione} className="coppia">
             <div className="coppia-testi">
               <span className="mono">#{e.posizione}</span>
-              <div><small>Attività del mansionario</small><b>{e.candidato}</b></div>
+              <div><small>Task del mansionario</small><b>{e.candidato}</b></div>
               <div><small>Task del dataset</small><b>{e.task}</b></div>
             </div>
             <div className="esiti-coppia" role="group" aria-label={`Giudizio sulla coppia ${e.posizione}`}>
@@ -149,7 +149,7 @@ function Passo({ codice, lotto }: { codice: string; lotto: Lotto }) {
       )}
       {d && lotto.stato === 'da_decidere' && <Decisione codice={codice} d={d} />}
       {d && ['deciso', 'in_applicazione', 'applicato'].includes(lotto.stato) && (
-        <p style={{ fontSize: 14 }}>{lotto.stato === 'applicato' ? 'Le attività sono collegate al dataset: i loro task entrano nel prossimo calcolo.'
+        <p style={{ fontSize: 14 }}>{lotto.stato === 'applicato' ? 'I task sono collegati al dataset ed entrano nel prossimo calcolo.'
           : 'Hai deciso il lotto. L\'amministratore tecnico lo applica al dataset.'}</p>
       )}
     </section>
@@ -196,7 +196,7 @@ export function Lotti() {
       </div>
       {lotti.data.length === 0 ? (
         <div className="card vuoto"><h2>Ancora nessun lotto</h2>
-          <p>Un lotto nasce quando l'amministratore tecnico propone l'abbinamento delle attività estratte dai mansionari.</p></div>
+          <p>Un lotto nasce quando l'amministratore tecnico propone l'abbinamento dei task estratti dai mansionari.</p></div>
       ) : (
         <div className="revisione">
           <ol className="coda" aria-label="Lotti">

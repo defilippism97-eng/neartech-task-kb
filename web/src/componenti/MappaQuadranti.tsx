@@ -1,5 +1,5 @@
 import { scaleLinear } from 'd3-scale'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import type { Occorrenza, Quadrante } from '../api'
 
 // Mappa delle occorrenze su N (orizzontale) e D (verticale). Le soglie dei quadranti vengono dal profilo di pesi
@@ -17,19 +17,44 @@ const ETICHETTE: Record<Quadrante, string> = {
 const QUADRANTI: Quadrante[] = ['q1', 'q2', 'q3', 'q4']
 export const VOCI_TOTALI = 8
 
+const NOMI: Record<Quadrante, [string, string]> = {
+  q1: ['Q1', 'persona necessaria e desiderata'],
+  q2: ['Q2', 'necessaria, poco desiderata'],
+  q3: ['Q3', 'scelta di valore'],
+  q4: ['Q4', 'automazione possibile'],
+}
+// Alone bianco sulle etichette: restano leggibili quando un punto ci passa sotto.
+const ALONE = { paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3, strokeLinejoin: 'round' } as const
+
 interface Props {
   occorrenze: Occorrenza[]
   thetaN: number
   thetaD: number
   /** Voci con giudizi di persona per occorrenza (assenti = nessuna). */
   giudicate: Record<string, number>
-  larghezza?: number
-  altezza?: number
 }
 
-export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate, larghezza = 640, altezza = 430 }: Props) {
+/** Larghezza reale del contenitore: il disegno usa px veri, così il testo non scala con la colonna. */
+function useLarghezza(iniziale: number): [React.RefObject<HTMLDivElement | null>, number] {
+  const rif = useRef<HTMLDivElement>(null)
+  const [larghezza, setLarghezza] = useState(iniziale)
+  useLayoutEffect(() => {
+    const el = rif.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const misura = () => { if (el.clientWidth > 0) setLarghezza(Math.round(el.clientWidth)) }
+    misura()
+    const osservatore = new ResizeObserver(misura)
+    osservatore.observe(el)
+    return () => osservatore.disconnect()
+  }, [])
+  return [rif, larghezza]
+}
+
+export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate }: Props) {
   const [attivo, setAttivo] = useState<Occorrenza | null>(null)
   const [fissato, setFissato] = useState<Occorrenza | null>(null)
+  const [rif, larghezza] = useLarghezza(640)
+  const altezza = Math.min(520, Math.max(320, Math.round(larghezza * 0.62)))
   const mostrato = fissato ?? attivo
   const margine = 36
   const x = scaleLinear().domain([0, 1]).range([margine, larghezza - margine])
@@ -47,8 +72,9 @@ export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate, larghezz
     QUADRANTI.map((q) => `${ETICHETTE[q]} ${conteggi[q] ?? 0}`).join('; ') + '. Dettaglio nella tabella sotto la mappa.'
 
   return (
-    <div className="mappa">
-      <svg viewBox={`0 0 ${larghezza} ${altezza}`} role="img" aria-label={descrizione} onClick={() => setFissato(null)}>
+    <div className="mappa" ref={rif}>
+      <svg viewBox={`0 0 ${larghezza} ${altezza}`} width={larghezza} height={altezza} role="img" aria-label={descrizione}
+        onClick={() => setFissato(null)}>
         <defs>
           {/* Rilievo leggero delle zone: un'ombra navy morbida, come le superfici della piattaforma. */}
           <filter id="rilievo-zona" x="-10%" y="-10%" width="120%" height="125%">
@@ -63,30 +89,31 @@ export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate, larghezz
             <g key={q}>
               <rect x={sx} y={sy} width={larga} height={alta} fill={colore} rx={14} stroke="#fff" strokeWidth={1.5}
                 filter="url(#rilievo-zona)" />
-              <text x={sx + 12} y={sy + 22} fontFamily="var(--f-mono)" fontSize={10.5} fontWeight={600} fill="#526175">
-                {ETICHETTE[q]}
+              <text x={sx + 12} y={sy + 22} fontFamily="var(--f-mono)" fontSize={12} fontWeight={600} fill="#0B2559" style={ALONE}>
+                {NOMI[q][0]}
               </text>
-              <text x={sx + larga - 12} y={sy + 26} textAnchor="end" fontFamily="var(--f-ui)" fontSize={20} fontWeight={600}
-                fill="#0B2559" fillOpacity={0.8} aria-hidden="true">{conteggi[q] ?? 0}</text>
+              <text x={sx + 12} y={sy + 39} fontFamily="var(--f-ui)" fontSize={12} fill="#526175" style={ALONE}>{NOMI[q][1]}</text>
+              <text x={sx + larga - 12} y={sy + 28} textAnchor="end" fontFamily="var(--f-ui)" fontSize={22} fontWeight={600}
+                fill="#0B2559" fillOpacity={0.85} aria-hidden="true" style={ALONE}>{conteggi[q] ?? 0}</text>
             </g>
           )
         })}
         <line x1={x(thetaN)} y1={y(0)} x2={x(thetaN)} y2={y(1)} stroke="#0B2559" strokeDasharray="4 4" strokeOpacity={0.35} />
         <line x1={x(0)} y1={y(thetaD)} x2={x(1)} y2={y(thetaD)} stroke="#0B2559" strokeDasharray="4 4" strokeOpacity={0.35} />
-        <text x={x(1)} y={altezza - 8} textAnchor="end" fontFamily="var(--f-mono)" fontSize={11} fill="#526175">N necessità →</text>
-        <text x={12} y={margine - 12} fontFamily="var(--f-mono)" fontSize={11} fill="#526175">↑ D desiderabilità</text>
+        <text x={x(1)} y={altezza - 10} textAnchor="end" fontFamily="var(--f-mono)" fontSize={12} fill="#526175">N necessità →</text>
+        <text x={x(0)} y={margine - 12} fontFamily="var(--f-mono)" fontSize={12} fill="#526175">↑ D desiderabilità</text>
         {mostrato && (
           <ellipse cx={x(mostrato.n)} cy={y(mostrato.d)} rx={Math.max(4, mostrato.n_dev * unita)} ry={Math.max(4, mostrato.d_dev * unita)}
             fill="#1B499F" fillOpacity={0.12} stroke="#1B499F" strokeOpacity={0.4} />
         )}
         {occorrenze.filter((o) => o.instabile).map((o) => (
-          <circle key={`i-${o.occorrenza_id}`} cx={x(o.n)} cy={y(o.d)} r={9} fill="none" stroke="#92400E"
+          <circle key={`i-${o.occorrenza_id}`} cx={x(o.n)} cy={y(o.d)} r={10} fill="none" stroke="#92400E"
             strokeWidth={1.2} strokeDasharray="2 2" />
         ))}
         {occorrenze.map((o) => {
           const voci = giudicate[o.occorrenza_id] ?? 0
           return (
-            <circle key={o.occorrenza_id} className="punto" cx={x(o.n)} cy={y(o.d)} r={mostrato === o ? 6 : 4.5}
+            <circle key={o.occorrenza_id} className="punto" cx={x(o.n)} cy={y(o.d)} r={mostrato === o ? 6 : 5}
               fill={voci > 0 ? '#10B981' : '#fff'} fillOpacity={voci > 0 ? 0.25 + (0.75 * voci) / VOCI_TOTALI : 1}
               stroke={voci > 0 ? '#065F46' : '#F59E0B'} strokeWidth={voci > 0 ? 1 : 1.8}
               onPointerEnter={() => setAttivo(o)} onPointerLeave={() => setAttivo(null)}
