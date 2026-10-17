@@ -59,8 +59,8 @@ def _setup_base(conn: psycopg.Connection) -> dict:
 
 def _snapshot(conn: psycopg.Connection, status: str, as_of: str) -> str:
     return conn.execute(
-        """INSERT INTO capability_snapshots (as_of, method_version, half_life_days, status)
-           VALUES (%s, 'm-test', 180, %s) RETURNING snapshot_id""",
+        """INSERT INTO capability_snapshots (as_of, method_version, half_life_days, status, tipo_capacita)
+           VALUES (%s, 'm-test', 180, %s, 'riserva') RETURNING snapshot_id""",
         (as_of, status),
     ).fetchone()[0]
 
@@ -69,8 +69,10 @@ def _estimate(conn, occ, snapshot, n: float, d: float) -> None:
     conn.execute(
         """INSERT INTO policy_estimates
              (occurrence_id, profile_id, snapshot_id, rubric_version,
-              n_mean, n_sd, d_mean, d_sd, p_q1, p_q2, p_q3, p_q4, d_source_mix)
-           VALUES (%s, 'default-test', %s, 'r-test', %s, 0.05, %s, 0.05, 0.7, 0.1, 0.1, 0.1, '{"preliminare": 1.0}')""",
+              n_mean, n_sd, d_mean, d_sd, p_q1, p_q2, p_q3, p_q4, d_source_mix,
+              versione_calcolo, seme, estrazioni, tipo_capacita, componenti_d, d_provvisorio, impronta_input)
+           VALUES (%s, 'default-test', %s, 'r-test', %s, 0.05, %s, 0.05, 0.7, 0.1, 0.1, 0.1, '{"preliminare": 1.0}',
+                   'calcolo-test', 1, 2000, 'riserva', '{d1,d2}', true, repeat('0', 64))""",
         (occ, snapshot, n, d),
     )
 
