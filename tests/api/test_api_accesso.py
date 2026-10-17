@@ -1,12 +1,15 @@
 """Accesso, sessione, impostazioni e protezioni dell'applicazione (fase 6, ADR 0007)."""
 
 import time
+from types import SimpleNamespace
 
 import pytest
+from authlib.integrations.base_client.errors import OAuthError
 from fastapi.testclient import TestClient
 
 from neartech.api.app import LogResiliente, crea_app, reindirizza_accesso_fallito
 from neartech.api.config import Impostazioni
+from neartech.permessi import crea_utente
 from supporto_api import OIDC, SCRIVE, _Connessione, _entra, _impostazioni
 
 
@@ -69,6 +72,38 @@ def test_dopo_l_accesso_si_torna_all_applicazione():
     assert risposta.status_code == 303 and risposta.headers["location"] == "/app?accesso=non-riuscito"
 
 
+class _SsoFinto:
+    """Fornitore SSO finto per /accesso/ritorno: consegna un token con il `sub` dato, o rifiuta il codice (None)."""
+
+    def __init__(self, sub):
+        self.sub = sub
+
+    async def authorize_access_token(self, request):
+        if self.sub is None:
+            raise OAuthError(error="access_denied")
+        return {"userinfo": {"sub": self.sub}}
+
+
+def _ritorno_dall_sso(client, sub):
+    client.app.state.impostazioni = _impostazioni(oidc=OIDC)
+    client.app.state.oauth = SimpleNamespace(sso=_SsoFinto(sub))
+    return client.get("/accesso/ritorno", follow_redirects=False)
+
+
+def test_il_ritorno_dall_sso_apre_la_sessione_e_porta_all_applicazione(client, conn):
+    crea_utente(conn, "entra|dipendente")  # soggetto "<fornitore>|<sub>"
+    risposta = _ritorno_dall_sso(client, "dipendente")
+    assert risposta.status_code == 303 and risposta.headers["location"] == "/app"
+    assert client.get("/api/io").json()["soggetto"] == "entra|dipendente"
+
+
+@pytest.mark.parametrize("sub", [None, "sconosciuto"], ids=["codice-rifiutato", "utente-assente"])
+def test_il_ritorno_dall_sso_non_riuscito_porta_all_accesso(client, sub):
+    risposta = _ritorno_dall_sso(client, sub)
+    assert risposta.status_code == 303 and risposta.headers["location"] == "/app?accesso=non-riuscito"
+    assert client.get("/api/io").status_code == 401
+
+
 def test_l_ambiente_va_dichiarato(monkeypatch):
     monkeypatch.delenv("NEARTECH_AMBIENTE", raising=False)
     with pytest.raises(ValueError, match="NEARTECH_AMBIENTE"):
@@ -92,7 +127,7 @@ def test_frontend_statico(conn, mondo, tmp_path):  # noqa: F811
     app = crea_app(_impostazioni(cartella_web=tmp_path), connetti=lambda: _Connessione(conn), log_dedicato=False)
     with TestClient(app) as c:
         assert c.get("/favicon.svg").text == "<svg/>"
-        assert c.get("/org/aurora/panoramica").text == "<html>app</html>"  # pagina dell'applicazione
+        assert c.get("/org/aurora/panoramica").text == "<html>app</html>"  # vecchio /org: il frontend rinvia a /app
         # Sito pubblico alla radice, applicazione autenticata sotto /app: la stessa pagina, che sceglie la vista.
         for percorso in ("/", "/app", "/app/org/aurora/panoramica"):
             assert c.get(percorso).text == "<html>app</html>"

@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { createMemoryHistory, RouterProvider } from '@tanstack/react-router'
+import { createMemoryHistory, createRoute, RouterProvider } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MODULI_API } from '../api'
-import { creaRouter, VOCI } from '../rotte'
+import { creaRouter, fuoriDalPrimoLivello, VOCI } from '../rotte'
+import { app } from '../rotte/genitori'
 import { TUTTI_I_RUOLI } from '../rotte/tipi'
 
 // Albero delle rotte (sito pubblico alla radice, applicazione sotto /app), registro delle voci del guscio e moduli
@@ -32,11 +33,13 @@ describe('sito pubblico e applicazione', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const monta = (percorso: string) => {
+    const cronologia = createMemoryHistory({ initialEntries: [percorso] })
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <RouterProvider router={creaRouter(createMemoryHistory({ initialEntries: [percorso] }))} />
+        <RouterProvider router={creaRouter(cronologia)} />
       </QueryClientProvider>,
     )
+    return cronologia
   }
 
   it('la radice è del sito pubblico e non chiede l\'accesso', async () => {
@@ -50,6 +53,13 @@ describe('sito pubblico e applicazione', () => {
     sessione = false
     monta('/app')
     expect(await screen.findByRole('heading', { name: 'Accedi alla tua organizzazione' })).toBeInTheDocument()
+  })
+
+  it('i vecchi indirizzi /org/... portano alla stessa pagina sotto /app', async () => {
+    const cronologia = monta('/org/acme/lotti?vista=1#in-cima')
+    expect(await screen.findByRole('heading', { name: 'Ancora nessun lotto' })).toBeInTheDocument()
+    const { pathname, search, hash } = cronologia.location
+    expect({ pathname, search, hash }).toEqual({ pathname: '/app/org/acme/lotti', search: '?vista=1', hash: '#in-cima' })
   })
 
   it('il guscio mostra solo le voci del ruolo, senza voci in arrivo', async () => {
@@ -70,6 +80,13 @@ describe('registri delle aree', () => {
       expect(voce.ruoli.filter((r) => !TUTTI_I_RUOLI.includes(r))).toEqual([])
     }
     expect(new Set(VOCI.map((v) => v.to)).size).toBe(VOCI.length)
+  })
+
+  it('le figlie di una rotta d\'area si appendono con addChildren, non si restituiscono', () => {
+    const pagina = createRoute({ getParentRoute: () => app, path: 'org/$codice/prova' })
+    const scheda = createRoute({ getParentRoute: () => pagina, path: 'scheda' })
+    expect(fuoriDalPrimoLivello([pagina, scheda])).toEqual(['scheda'])
+    expect(fuoriDalPrimoLivello([pagina.addChildren([scheda])])).toEqual([])
   })
 
   it('nessuna funzione del client ha lo stesso nome in due moduli', () => {

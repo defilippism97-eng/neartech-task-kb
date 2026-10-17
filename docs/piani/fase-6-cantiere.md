@@ -4,7 +4,7 @@
 
 ## Perché
 
-Il resto della fase 6 procede su **otto corsie in parallelo**. Perché lavorino senza modificare gli stessi file, il codice condiviso è stato diviso per area prima di cominciare: ogni corsia ha i propri file in ogni strato (API, test, client, rotte, semi di prova, viste) e i file che li riuniscono elencano già tutte le corsie. La ristrutturazione non cambia comportamento né indirizzi dell'API; l'unico cambiamento visibile è che **l'applicazione autenticata sta sotto `/app`** e la radice appartiene al sito pubblico.
+Il resto della fase 6 procede su **otto corsie in parallelo**. Perché lavorino senza modificare gli stessi file, il codice condiviso è stato diviso per area prima di cominciare: ogni corsia ha i propri file in ogni strato (API, test, client, rotte, semi di prova, viste) e i file che li riuniscono elencano già tutte le corsie. La ristrutturazione non cambia comportamento né indirizzi dell'API; l'unico cambiamento visibile è che **l'applicazione autenticata sta sotto `/app`** e la radice appartiene al sito pubblico. I vecchi indirizzi `/org/$codice/<vista>` (segnalibri, collegamenti già condivisi) portano alla stessa pagina sotto `/app`.
 
 ## Come è fatta la struttura
 
@@ -13,17 +13,20 @@ Il resto della fase 6 procede su **otto corsie in parallelo**. Perché lavorino 
 | Rotte dell'API | `src/neartech/api/rotte/<area>.py`, un `router = APIRouter(prefix="/api")` per modulo | `rotte/__init__.py` elenca tutti i router in `ROUTERS`, in ordine fisso; `app.py` li include tutti. Aiuti condivisi in `rotte/comune.py` (`organizzazione_consentita`, `Motivazione`) |
 | Test dell'API | `tests/api/test_api_<area>.py` | fixture `client` in `tests/api/conftest.py`; aiuti (`SCRIVE`, `_entra`, `_impostazioni`, `_Connessione`) in `tests/api/supporto_api.py` |
 | Client | `web/src/api/<area>.ts`, che esporta `export const <area> = { ... }` e i propri tipi | `api/index.ts` riunisce tutti i moduli in `api` e ne riesporta i tipi; `api/client.ts` ha `richiesta`, `org`, `ErroreApi`; `api/tipi.ts` i tipi usati da più aree |
-| Rotte e navigazione | `web/src/rotte/<area>.tsx`, che esporta `rotte(genitori)` e `voci: VoceNav[]` | `rotte/index.tsx` chiama tutte le aree e appende ogni rotta al suo genitore; le voci arrivano al guscio dal contesto del router |
+| Rotte e navigazione | `web/src/rotte/<area>.tsx`, che esporta `rotte(genitori)` e `voci: VoceNav[]` | `rotte/index.tsx` chiama tutte le aree e appende ogni rotta al suo genitore (`pubblico` o `app`); le voci arrivano al guscio dal contesto del router |
 | Semi di prova | `scripts/prova/<corsia>.py`, con `semina(conn, ctx)` | `scripts/prova/__init__.py` li esegue in ordine (`SEMI`) con un `Contesto` condiviso (`scripts/prova/comune.py`) |
-| Viste | `web/src/viste/<corsia>/` (il sito: `web/src/sito/`) | le importa solo il file di rotte della corsia |
+| Viste | `web/src/viste/<corsia>/` (il sito: `web/src/sito/`) | le importa solo il file di rotte della corsia; la cartella non esiste ancora (git non conserva cartelle vuote), la crea la corsia con il suo primo componente |
 
 Percorsi del frontend:
 
 - **`/app`**: verifica dell'accesso (`viste/Radice.tsx`) e home dell'utente; **`/app/org/$codice/<vista>`**: le pagine di un'organizzazione. Le rotte vanno appese al genitore `app` con percorso `org/$codice/<vista>`.
 - **`/` e gli altri percorsi pubblici**: sito pubblico, senza accesso; genitore `pubblico` (layout `web/src/sito/Layout.tsx`, home segnaposto `web/src/sito/Home.tsx`). Qui stanno anche le pagine per chi risponde ai questionari d3/d4.
+- **`/org/...`** è riservato: porta i vecchi indirizzi dell'applicazione (prima del cantiere `/org/$codice/<vista>`) alla stessa pagina sotto `/app`, con la stessa ricerca e lo stesso frammento (`web/src/rotte/base.tsx`). Nessuna corsia usa questo prefisso.
 - Il server restituisce `index.html` per ogni percorso fuori da `/api`, `/accesso` e `/assets`; dopo l'accesso SSO, e quando l'accesso non riesce (`/app?accesso=non-riuscito`), si torna a `/app`. L'uscita e l'accesso di sviluppo riportano a `/app` dal frontend.
 
-Navigazione: ogni voce è `{ to, etichetta, icona, ruoli, gruppo? }`. Il guscio mostra le voci il cui `ruoli` contiene il ruolo corrente, raggruppate per `gruppo` (predefinito `Lavoro`) nell'ordine delle aree. `to` è il percorso completo di una rotta registrata (es. `/app/org/$codice/lotti`), controllato da tsc; `TUTTI_I_RUOLI` vale per le voci che vede chiunque. Il gruppo "In arrivo" non esiste più: una voce compare quando la sua rotta c'è.
+**Rotte annidate.** `rotte(genitori)` restituisce solo le rotte di primo livello, figlie di `pubblico` o di `app`. Le figlie di una rotta della corsia (schede, dettagli, un layout `org/$codice/<vista>` con le sue sottopagine) si appendono a quella con `addChildren`, e `rotte()` restituisce solo il genitore così composto, che porta con sé figli e tipi. Una figlia restituita accanto al suo genitore ferma l'applicazione all'avvio con l'errore «rotte senza un genitore noto»: è voluto, perché altrimenti resterebbe fuori dall'albero senza avvisi (controllo in `fuoriDalPrimoLivello`, provato da `web/src/test/rotte.test.tsx`).
+
+Navigazione: ogni voce è `{ to, etichetta, icona, ruoli, gruppo? }`. Il guscio mostra le voci il cui `ruoli` contiene il ruolo corrente, raggruppate per `gruppo` (predefinito `Lavoro`) nell'ordine delle aree. `to` è il percorso completo di una rotta registrata (es. `/app/org/$codice/lotti`), controllato da tsc; `TUTTI_I_RUOLI` vale per le voci che vede chiunque. Il gruppo "In arrivo" non esiste più: una voce compare quando la sua rotta c'è. Il ruolo corrente lo passa al guscio la vista (prop `ruolo`): Panoramica e Indirizzi usano il ruolo dell'utente nell'organizzazione, Documenti, Lotti e Revisione il solo ruolo che la pagina ammette (come prima del cantiere). Un ruolo vuoto o sconosciuto non vede voci; in pratica non capita, perché l'API ha già rifiutato la pagina.
 
 ## Le corsie
 

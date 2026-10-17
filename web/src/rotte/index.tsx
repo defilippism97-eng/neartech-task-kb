@@ -19,6 +19,10 @@ import type { VoceNav } from './tipi'
 // Albero delle rotte, un file per area (docs/piani/fase-6-cantiere.md). Ogni area esporta `rotte(genitori)`, le
 // sue rotte appese a `pubblico` (sito, senza accesso) o ad `app` (/app, con accesso), e `voci`, le sue voci nel
 // guscio. Questo file elenca già tutte le aree, anche quelle ancora vuote delle corsie: nessuna corsia lo modifica.
+//
+// `rotte()` restituisce solo le rotte di primo livello, figlie di `pubblico` o di `app`. Una rotta figlia di
+// un'altra rotta dell'area (per esempio le schede di una sua pagina) non si restituisce: la si appende al suo
+// genitore con `addChildren`, e l'area restituisce il genitore così composto, che porta con sé i figli e i loro tipi.
 
 const AREE = [
   base, panoramica, indirizzi, revisione, documenti, lotti,
@@ -53,11 +57,18 @@ function figliDi<G extends AnyRoute>(genitore: G): Extract<Rotte[number], { pare
   return tutte.filter((r) => genitoreDi(r) === genitore) as Extract<Rotte[number], { parentRoute: G }>[]
 }
 
-// Una rotta appesa a un genitore diverso da pubblico e app resterebbe fuori dall'albero senza avvisi: meglio fermarsi.
-const fuori = tutte.filter((r) => genitoreDi(r) !== pubblico && genitoreDi(r) !== app)
+// Le rotte restituite con un genitore diverso da pubblico e app (per esempio una figlia restituita accanto al suo
+// genitore invece che appesa con addChildren): resterebbero fuori dall'albero senza avvisi, meglio fermarsi.
+export function fuoriDalPrimoLivello(rotte: readonly AnyRoute[]): string[] {
+  return rotte
+    .filter((r) => genitoreDi(r) !== pubblico && genitoreDi(r) !== app)
+    .map((r) => String(opzioni(r).path ?? opzioni(r).id))
+}
+
+const fuori = fuoriDalPrimoLivello(tutte)
 if (fuori.length > 0) {
-  const nomi = fuori.map((r) => opzioni(r).path ?? opzioni(r).id).join(', ')
-  throw new Error(`rotte senza un genitore noto (pubblico o app): ${nomi}`)
+  throw new Error(`rotte senza un genitore noto (pubblico o app): ${fuori.join(', ')}. Una rotta figlia di un'altra `
+    + `rotta dell'area va appesa al suo genitore con addChildren, e rotte() restituisce solo il genitore.`)
 }
 
 const albero = radice.addChildren([pubblico.addChildren(figliDi(pubblico)), app.addChildren(figliDi(app))])

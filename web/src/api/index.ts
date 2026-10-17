@@ -3,7 +3,7 @@
 //
 // Il file elenca già tutti i moduli, anche quelli ancora vuoti delle corsie: una corsia aggiunge funzioni e tipi nel
 // proprio modulo e non tocca questo file. Un nome doppio fra due moduli è un errore di tsc (tipi) e del test
-// src/test/api.test.ts (funzioni).
+// src/test/rotte.test.tsx (funzioni).
 import { amministrazione } from './amministrazione'
 import { ascolto } from './ascolto'
 import { base } from './base'
