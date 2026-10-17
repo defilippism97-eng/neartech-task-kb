@@ -114,6 +114,24 @@ def report_organizzazione(
                FROM misure_precisione WHERE campione_id = %s ORDER BY calcolata_il""",
             (campione["campione_id"],))
 
+    # Abbinamento al dataset (fase 3): un riepilogo per lotto, con le sue chiavi.
+    abbinamenti = _righe(conn, sql.SQL(
+        """SELECT l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, l.livello_revisione,
+                  l.parametro_quota_id,
+                  count(p.proposta_id) AS proposte,
+                  count(p.proposta_id) FILTER (WHERE p.task_id IS NULL) AS senza_vicini,
+                  count(d.proposta_id) FILTER (WHERE d.esito = 'approvata') AS approvate,
+                  count(d.proposta_id) FILTER (WHERE d.esito = 'rifiutata') AS rifiutate,
+                  count(a.proposta_id) FILTER (WHERE a.task_nuovo) AS task_nuovi,
+                  count(a.proposta_id) FILTER (WHERE NOT a.task_nuovo) AS collegate
+           FROM {0}.lotti_abbinamento l
+           LEFT JOIN {0}.proposte_abbinamento p USING (lotto_id)
+           LEFT JOIN {0}.decisioni_abbinamento d USING (proposta_id)
+           LEFT JOIN {0}.applicazioni_abbinamento a USING (proposta_id)
+           GROUP BY l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, l.livello_revisione,
+                    l.parametro_quota_id
+           ORDER BY l.creato_il""").format(schema), ())
+
     stati_task = dict(conn.execute(
         """SELECT stato, count(*) FROM (
              SELECT DISTINCT ON (v.task_id) v.stato
@@ -140,6 +158,7 @@ def report_organizzazione(
         "ruoli": ruoli,
         "campioni": campioni,
         "stati_task": stati_task,
+        "abbinamenti": abbinamenti,
         "atti": atti,
     })
 
@@ -183,7 +202,13 @@ def report_in_markdown(report: dict[str, Any]) -> str:
         righe += [f"  - misura {m['calcolata_il']}: precisione {float(m['precisione']):.3f} "
                   f"[{float(m['intervallo_basso']):.3f}; {float(m['intervallo_alto']):.3f}], soglia {m['soglia']}, "
                   f"regola parziali {m['regola_parziali']}, esito {m['esito']}" for m in c["misure"]]
-    righe += ["", "## Stati dei task decisi dall'organizzazione", ""]
+    righe += ["", "## Abbinamento al dataset", ""]
+    righe += _tabella(["Lotto", "Data", "Revisione", "Proposte", "Senza vicini", "Approvate", "Rifiutate",
+                       "Collegate", "Task nuovi"],
+                      [[x["lotto_id"], x["creato_il"], x["livello_revisione"], x["proposte"], x["senza_vicini"],
+                        x["approvate"], x["rifiutate"], x["collegate"], x["task_nuovi"]]
+                       for x in report["abbinamenti"]])
+    righe += ["## Stati dei task decisi dall'organizzazione", ""]
     righe += [f"- {stato}: {n}" for stato, n in report["stati_task"].items()] + [""]
     righe += ["## Atti", ""]
     righe += _tabella(["Pos.", "Data", "Oggetto", "Atto", "Autore", "Motivazione", "Stesso proponente"],

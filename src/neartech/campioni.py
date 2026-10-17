@@ -19,6 +19,7 @@ import psycopg
 from psycopg import sql
 from psycopg.types.json import Jsonb
 
+from neartech.occorrenze import spazio_organizzazione
 from neartech.permessi import richiedi
 from neartech.registro import chiave_spazio, impronta, registra, spazio
 
@@ -28,6 +29,7 @@ CRITERI = ("tutte", "casuale")
 _FILTRI = {
     "fusione": {"decisione": "decisione"},
     "crosswalk": {"relation": "relation"},
+    "abbinamento": {"lotto": "p.lotto_id"},  # proposte nello spazio dell'organizzazione (ADR 0006)
 }
 _ESITI_CROSSWALK = {"ok": "corretto", "parziale": "parziale", "no": "errato"}
 
@@ -46,13 +48,30 @@ class GiaImportato(RuntimeError):
     """Il campione già rivisto è stato importato in precedenza."""
 
 
-def popolazione(conn: psycopg.Connection, tipo: str, filtro: dict[str, Any]) -> list[Elemento]:
-    """Proposte candidate, in ordine stabile per identificativo. Sola lettura."""
+def popolazione(
+    conn: psycopg.Connection, tipo: str, filtro: dict[str, Any], org_id: str | None = None
+) -> list[Elemento]:
+    """Proposte candidate, in ordine stabile per identificativo. Sola lettura.
+
+    Le proposte di abbinamento stanno nello spazio dell'organizzazione: servono org_id e il lotto.
+    """
     if tipo not in _FILTRI:
         raise ValueError(f"tipo di proposta non gestito: {tipo!r}")
     sconosciuti = set(filtro) - set(_FILTRI[tipo])
     if sconosciuti:
         raise ValueError(f"filtri non ammessi per {tipo}: {sorted(sconosciuti)}")
+    if tipo == "abbinamento":
+        if org_id is None or "lotto" not in filtro:
+            raise ValueError("le proposte di abbinamento si estraggono per organizzazione e lotto")
+        righe = conn.execute(
+            sql.SQL("""SELECT p.proposta_id, l.modello_embedding, l.vicini
+                       FROM {0}.proposte_abbinamento p JOIN {0}.lotti_abbinamento l USING (lotto_id)
+                       WHERE p.lotto_id = %s AND p.task_id IS NOT NULL ORDER BY p.proposta_id""")
+            .format(spazio_organizzazione(conn, org_id)),
+            (str(uuid.UUID(str(filtro["lotto"]))),),
+        ).fetchall()
+        # Origine: il metodo di proposta (modello di embedding e numero di vicini), al posto del prompt.
+        return [({"proposta_id": str(r[0])}, {"model_name": r[1], "prompt_hash": f"vicini-{r[2]}"}) for r in righe]
     condizioni = " AND ".join(f"{_FILTRI[tipo][chiave]} = %({chiave})s" for chiave in sorted(filtro)) or "true"
     if tipo == "fusione":
         righe = conn.execute(
@@ -131,7 +150,7 @@ def crea_campione(
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_campioni", org_id, risorsa=f"campione:{tipo}")
-        candidati = popolazione(conn, tipo, filtro)
+        candidati = popolazione(conn, tipo, filtro, org_id)
         if not candidati:
             raise ValueError("la popolazione delle proposte è vuota")
         if criterio == "tutte":
@@ -182,6 +201,17 @@ def esporta_campione(conn: psycopg.Connection, utente_id: str, campione_id: str)
              "proposta": "stessa attività" if r[3] == "stessa_attivita" else "attività diverse"}
             for r in righe
         ]
+    elif tipo == "abbinamento":
+        righe = conn.execute(
+            sql.SQL("""SELECT e.posizione, c.titolo, t.title_it
+                       FROM elementi_campione e
+                       JOIN {0}.proposte_abbinamento p ON p.proposta_id = (e.riferimento ->> 'proposta_id')::uuid
+                       JOIN {0}.candidati c USING (candidato_id)
+                       JOIN canonical_tasks t ON t.task_id = p.task_id
+                       WHERE e.campione_id = %s ORDER BY e.posizione""").format(spazio_organizzazione(conn, org_id)),
+            (campione_id,),
+        ).fetchall()
+        esportati = [{"posizione": r[0], "candidato": r[1], "task": r[2], "proposta": "stesso task"} for r in righe]
     else:
         righe = conn.execute(
             """SELECT e.posizione, t.title_it, n.scheme, n.code, n.label, m.relation

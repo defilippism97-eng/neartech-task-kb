@@ -9,6 +9,9 @@ serve gestire_dataset_centrale (verificato prima di chiamare il modello), e ogni
 lascia un atto nel registro (neartech.scomposizione.carica_documento).
 Il caricamento richiede la connessione diretta: con NEARTECH_DB_VIA=https ogni istruzione è una
 transazione a sé, e l'atto non troverebbe il suo testo nello spazio (controllo differito, migrazione 0025).
+--destinazione candidati (predefinita, fase 3, ADR 0006): le attività diventano candidati nello spazio,
+da abbinare al dataset con scripts/abbina.py. --destinazione dataset: percorso della prima scomposizione,
+che crea subito i task nel dataset condiviso (solo per riprodurre il pilota).
 --dry-run stampa le proposte senza scrivere nel database: da usare per la revisione prima del caricamento.
 Lo script si può rilanciare: documenti già caricati (stessa impronta) e occorrenze esistenti non cambiano.
 """
@@ -29,6 +32,7 @@ from neartech.permessi import richiedi  # noqa: E402
 from neartech.scomposizione import (  # noqa: E402
     ScompostoError,
     attivita_da_record,
+    carica_candidati,
     carica_documenti,
     carica_documento,
     proponi_attivita,
@@ -50,7 +54,12 @@ def _utente_autorizzato(conn, soggetto_sso: str, org_id: str) -> str:
     return utente_id
 
 
-def carica_da_file(cartella: Path, file_proposte: Path, codice_org: str, soggetto_sso: str) -> None:
+def _carica(destinazione: str):
+    return carica_candidati if destinazione == "candidati" else carica_documento
+
+
+def carica_da_file(cartella: Path, file_proposte: Path, codice_org: str, soggetto_sso: str,
+                   destinazione: str = "candidati") -> None:
     """Carica esattamente le attività del file approvato. Ogni passo viene ricontrollato sul documento."""
     docs, _ = carica_documenti(cartella)
     per_nome = {d.nome_file: d for d in docs}
@@ -61,10 +70,12 @@ def carica_da_file(cartella: Path, file_proposte: Path, codice_org: str, soggett
         for i, rec in enumerate(records, start=1):
             doc = per_nome[rec["documento"]]
             attivita = verifica_attivita(attivita_da_record(rec), doc.testo)
-            nuove = carica_documento(conn, utente_id, doc, attivita, org_id=org_id, modalita="da_file",
-                                     motivazione=f"caricamento dal file di proposte approvato {file_proposte.name}")
+            nuove = _carica(destinazione)(
+                conn, utente_id, doc, attivita, org_id=org_id, modalita="da_file",
+                motivazione=f"caricamento dal file di proposte approvato {file_proposte.name}")
             conn.commit()
-            print(f"[{i}/{len(records)}] {doc.ruolo}: {len(attivita)} attività, occorrenze nuove: {nuove}", flush=True)
+            print(f"[{i}/{len(records)}] {doc.ruolo}: {len(attivita)} attività, nuove ({destinazione}): {nuove}",
+                  flush=True)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -75,6 +86,7 @@ def parser() -> argparse.ArgumentParser:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--proposte", type=Path, help="scrive le proposte in JSON, per confrontarle con la revisione")
     ap.add_argument("--da-file", type=Path, help="carica le attività da un file di proposte approvato, senza chiamare il modello")
+    ap.add_argument("--destinazione", choices=("candidati", "dataset"), default="candidati")
     return ap
 
 
@@ -85,7 +97,7 @@ def main() -> None:
         ap.error("--utente-sso è obbligatorio, salvo con --dry-run")
 
     if args.da_file:
-        return carica_da_file(args.dir, args.da_file, args.org, args.utente_sso)
+        return carica_da_file(args.dir, args.da_file, args.org, args.utente_sso, args.destinazione)
 
     api_key = os.environ.get("NEARTECH_ANTHROPIC_API_KEY")
     if not api_key:
@@ -119,10 +131,10 @@ def main() -> None:
                 for a in attivita:
                     print(f"    g{a.granularita} {a.titolo}", flush=True)
                 continue
-            nuove = carica_documento(conn, utente_id, doc, attivita, org_id=org_id, modalita="modello",
-                                     motivazione="caricamento delle attività proposte dal modello")
+            nuove = _carica(args.destinazione)(conn, utente_id, doc, attivita, org_id=org_id, modalita="modello",
+                                               motivazione="caricamento delle attività proposte dal modello")
             conn.commit()
-            print(f"    occorrenze nuove: {nuove}", flush=True)
+            print(f"    nuove ({args.destinazione}): {nuove}", flush=True)
     if falliti:
         raise SystemExit(f"documenti da rielaborare: {len(falliti)}: {falliti}")
 

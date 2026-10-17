@@ -93,7 +93,7 @@ Neartech costruisce una base di conoscenza di **task professionali** che misura,
 **Ordine di costruzione:**
 1. ~~Fondazioni: schema multi-organizzazione, ruoli, registro decisioni, coda job~~: costruite sul branch `fondazioni` (sezione 4.1), in attesa di unione e di applicazione in produzione.
 2. ~~**Metrica di abbinamento** sul campione rivisto~~: software costruito sul branch `fase-2-metrica` (sezione 4.2); mancano i giudizi delle persone sulle 61 fusioni.
-3. Abbinamento al database consolidato e priorità di revisione.
+3. Abbinamento al database consolidato e priorità di revisione: **software costruito** sul branch `fase-3-abbinamento` (2026-10-17; piano `docs/piani/fase-3-abbinamento.md`, ADR 0006). Candidati nello spazio dell'organizzazione, proposte per vicinanza (bge-m3 locale), coda per ambiguità, campione con la quota approvata, decisione in blocco del revisore, applicazione deterministica con atto nel registro; `scripts/scomponi_job.py --destinazione candidati` (predefinita) e `scripts/abbina.py`. Per usarlo servono: il parametro comune `quota_revisione_abbinamenti` approvato, le istruzioni `docs/revisione/istruzioni-abbinamento-v1.md` approvate (oggi bozza), un ambiente con `sentence-transformers` per l'embedding (non installabile nel `.venv` con Python 3.15).
 4. Calcolo deterministico di N (con capacità di test, quando calibrata) e D (con pavimento e variazioni).
 5. Output aggregati e dashboard del comitato.
 6. Survey per d3 e d4, in un modulo separato.
