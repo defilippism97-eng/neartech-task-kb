@@ -1,0 +1,206 @@
+/* ==========================================================================
+   NEARTECH · Identità visiva v3 · foglio di stile condiviso
+   Versione 3.1 «Luce»: Inter per titoli e interfaccia, JetBrains Mono per dati e accenti, superfici bianche.
+   Token, tipografia e componenti. Usato da: guida-identita.html, elevator-pitch.html
+   Ogni colore di testo rispetta almeno WCAG AA (4,5:1) sugli sfondi indicati.
+   ========================================================================== */
+
+:root {
+  /* Marchio */
+  --navy: #0B2559;          /* Deep Navy: stabilità, fiducia */
+  --navy-800: #07193D;
+  --cobalt: #1B499F;        /* Cognitive Cobalt: metodo */
+  --cobalt-400: #4E77C6;    /* solo variante su fondo navy del logo */
+  --teal: #00B4B4;          /* Augmentation Teal: superfici, mai testo piccolo */
+  --teal-ink: #007272;      /* Teal per testo su chiaro (5,75:1) */
+  --violet: #521983;        /* Synthetic Violet: automazione, algoritmi */
+  --amber: #F59E0B;         /* Human Amber: presenza umana, supervisione */
+  --amber-ink: #92400E;     /* Amber per testo (6,37:1 su ambra chiaro) */
+  --emerald: #10B981;       /* Ethical Emerald: valore, verifica */
+  --emerald-ink: #065F46;
+  --risk: #E11D48;          /* Coral: rischio, blocco */
+  --risk-ink: #9F1239;
+
+  /* Superfici e neutri */
+  --paper: #FFFFFF;         /* Paper: fondo di pagina e di slide (v3.1) */
+  --card: #F5F6F8;          /* Card: pannelli e carte su Paper, senza bordo */
+  --alabaster: #F8F7F4;     /* Warm Alabaster: superficie calda secondaria */
+  --cloud: #FFFFFF;         /* Pure Cloud: card e tabelle */
+  --subtle: #F1EFEA;        /* Warm Slate 100 */
+  --obsidian: #0F172A;      /* testo principale (16,7:1) */
+  --slate: #475569;         /* testo secondario (7,1:1) */
+  --stone-ink: #526175;     /* testo di supporto, metadati (5,9:1) */
+  --stone: #64748B;         /* solo decorativo: assi, filetti (4,4:1, non è testo) */
+  --border: #E2E8F0;        /* bordo architettonico 1px */
+
+  /* Gradiente di trasformazione: solo su superfici grandi, mai sotto testo */
+  --gradient: linear-gradient(135deg, #00B4B4 0%, #1B499F 52%, #521983 100%);
+
+  /* Font */
+  --f-head: 'Inter', -apple-system, 'Segoe UI', sans-serif;   /* titoli: peso 600, tracking stretto */
+  --f-edit: 'Inter', -apple-system, 'Segoe UI', sans-serif;   /* nome mantenuto per compatibilità: non è più un serif */
+  --f-ui: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  /* Scala spaziale su multipli di 8 */
+  --s1: 8px; --s2: 16px; --s3: 24px; --s4: 32px; --s5: 48px; --s6: 64px; --s7: 96px;
+
+  --radius: 12px;
+  --radius-sm: 6px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);   /* nessun rimbalzo */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  background-color: var(--paper);
+  color: var(--obsidian);
+  font-family: var(--f-ui);
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+svg { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---------- Tipografia ---------- */
+.eyebrow {
+  font-family: var(--f-mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--teal-ink);
+  display: inline-flex; align-items: center; gap: 8px; margin-bottom: var(--s2);
+}
+.eyebrow::before { content: ""; width: 8px; height: 8px; background: var(--teal); border-radius: 2px; }
+.display {
+  font-family: var(--f-head); font-weight: 600; font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.02; letter-spacing: -0.05em; color: var(--navy);
+}
+h1, .h1 {
+  font-family: var(--f-head); font-weight: 600; font-size: clamp(36px, 5vw, 56px);
+  line-height: 1.04; letter-spacing: -0.05em; color: var(--navy);
+}
+h2, .h2 {
+  font-family: var(--f-head); font-weight: 600; font-size: clamp(28px, 3.6vw, 40px);
+  line-height: 1.1; letter-spacing: -0.045em; color: var(--navy); margin-bottom: var(--s2);
+}
+h3, .h3 {
+  font-family: var(--f-head); font-weight: 600; font-size: 22px; line-height: 1.25;
+  letter-spacing: -0.02em; color: var(--navy); margin-bottom: var(--s1);
+}
+h4, .h4 { font-family: var(--f-ui); font-weight: 600; font-size: 17px; color: var(--obsidian); margin-bottom: 6px; }
+p { color: var(--slate); margin-bottom: var(--s2); max-width: 68ch; }
+/* L'accento di un titolo passa al monospazio: il tono di un'analisi, non di un volantino. */
+em, .serif-em { font-family: var(--f-mono); font-style: normal; font-weight: 500; font-size: 0.86em; letter-spacing: -0.05em; color: var(--teal-ink); }
+.lead {
+  font-family: var(--f-ui); font-size: clamp(18px, 1.9vw, 22px); line-height: 1.5; letter-spacing: -0.015em;
+  color: var(--slate); max-width: 46rem;
+}
+.mono { font-family: var(--f-mono); font-size: 12px; color: var(--stone-ink); letter-spacing: 0.02em; }
+.muted { color: var(--stone-ink); }
+
+/* ---------- Chip, tag e stati dei dati ---------- */
+.tag {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.02em;
+  padding: 4px 9px; border-radius: 4px; display: inline-block; background: var(--subtle); color: var(--slate);
+}
+.tag.navy { background: #EEF2F9; color: var(--navy); }
+.tag.teal { background: #E6FAFA; color: #005151; }
+.tag.amber { background: #FEF3C7; color: var(--amber-ink); }
+.tag.emerald { background: #D1FAE5; color: var(--emerald-ink); }
+.tag.violet { background: #F1E9F9; color: var(--violet); }
+.tag.risk { background: #FFF1F2; color: var(--risk-ink); }
+
+/* Stati del dato: sempre con testo, mai solo colore */
+.state {
+  font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+  padding: 4px 10px; border-radius: 99px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; }
+.state.validato { background: #D1FAE5; color: var(--emerald-ink); }
+.state.validato::before { background: var(--emerald); }
+.state.stima { background: #FEF3C7; color: var(--amber-ink); }
+.state.stima::before { background: var(--amber); border: 1px solid var(--amber-ink); }
+.state.nuovo { background: #EEF2F9; color: var(--navy); }
+.state.nuovo::before { background: var(--cobalt); border-radius: 2px; }
+.state.blocco { background: #FFF1F2; color: var(--risk-ink); }
+.state.blocco::before { background: var(--risk); }
+
+/* ---------- Bottoni ---------- */
+.btn {
+  font-family: var(--f-ui); font-size: 15px; font-weight: 600; line-height: 1;
+  padding: 14px 22px; border-radius: 10px; border: 1.5px solid transparent; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+  transition: background-color .25s var(--ease), color .25s var(--ease), border-color .25s var(--ease);
+}
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: var(--cobalt); }
+.btn-teal { background: var(--teal); color: var(--navy-800); }
+.btn-teal:hover { background: #26CECE; }
+.btn-secondary { background: transparent; color: var(--navy); border-color: var(--teal); }
+.btn-secondary:hover { background: #E6FAFA; }
+.btn-ghost-light { background: transparent; color: #fff; border-color: var(--teal); }
+.btn-ghost-light:hover { background: rgba(0,180,180,0.12); }
+/* Pulsante a pillola (v3.1): cobalto verso teal scuro; il bianco resta leggibile (5,7:1 al punto più chiaro). */
+.btn-pill {
+  border-radius: 99px; padding: 14px 28px; color: #fff; border-color: transparent;
+  background: linear-gradient(90deg, var(--cobalt), var(--teal-ink)); box-shadow: 0 8px 24px rgba(27,73,159,0.28);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.btn-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(27,73,159,0.34); }
+.btn-link { background: transparent; color: var(--cobalt); padding-left: 6px; padding-right: 6px; }
+.btn-link:hover { color: var(--navy); }
+
+/* ---------- Superfici ---------- */
+.card {
+  background: var(--cloud); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: var(--s3); box-shadow: 0 1px 3px rgba(15,23,42,0.03);
+}
+.card-navy {
+  background: var(--navy); color: #fff; border: 1px solid #14387D; border-radius: var(--radius); padding: var(--s3);
+}
+.card-navy h3, .card-navy h4 { color: #fff; }
+.card-navy p { color: #CBD5E1; }
+.card-line { border-top: 4px solid var(--teal); }
+/* Carta morbida (v3.1): grigio chiarissimo, angoli ampi, nessun bordo. */
+.card-soft { background: var(--card); border-radius: 22px; padding: var(--s3); }
+
+/* Macchia di colore (v3.1): una per schermata, morbida, lontana dal testo lungo. */
+.blob {
+  position: absolute; width: min(66vw, 92vh); aspect-ratio: 1; border-radius: 50%; pointer-events: none; filter: blur(34px);
+  background:
+    radial-gradient(circle at 32% 38%, rgba(0,180,180,0.95) 0%, rgba(0,180,180,0) 56%),
+    radial-gradient(circle at 68% 62%, rgba(27,73,159,0.9) 0%, rgba(27,73,159,0) 62%),
+    radial-gradient(circle at 70% 26%, rgba(139,92,246,0.55) 0%, rgba(139,92,246,0) 50%);
+}
+
+/* ---------- Griglie ---------- */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s3); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); }
+
+/* ---------- Marchio ---------- */
+.lockup { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+.wordmark {
+  font-family: var(--f-head); font-weight: 700; letter-spacing: -0.04em; color: var(--navy); line-height: 1;
+}
+.wordmark small {
+  font-weight: 500; font-size: 0.62em; color: var(--stone-ink); margin-left: 6px; letter-spacing: -0.01em;
+}
+
+/* ---------- Pagina ---------- */
+.page { max-width: 1200px; margin: 0 auto; padding: 0 var(--s3) var(--s7); }
+.section { padding: var(--s7) 0; border-bottom: 1px solid var(--border); }
+.section:last-of-type { border-bottom: none; }
+.section-head { margin-bottom: var(--s5); }
+
+@media (max-width: 960px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .page { padding: 0 var(--s2) var(--s6); }
+  .section { padding: var(--s6) 0; }
+}
