@@ -148,3 +148,11 @@ Dopo le revisioni Python e database della fase 3:
 - il database controlla che lotti, decisioni e applicazioni citino l'atto giusto della stessa organizzazione, che le decisioni e le applicazioni coprano il lotto intero con un solo atto, e che un'applicazione segua la decisione.
 
 **Da decidere (metodologia):** chi sceglie il livello di revisione del lotto (oggi chi propone il lotto, con `gestire_dataset_centrale`); valore di `quota_revisione_abbinamenti`; approvazione di `istruzioni-abbinamento-v1`; se una decisione in blocco con misura sotto soglia vada impedita (oggi si registra); come il livello di revisione del lotto incide sullo stato dei risultati (oggi si registra con i risultati); se aggiungere un giudizio del modello sulle proposte.
+
+## 17. Calcolo di N e D, quota dei lotti di abbinamento (2026-10-17)
+
+Approvate dal responsabile del progetto.
+- **D senza survey.** Finché d3 e d4 non sono raccolti (solo con survey, mai con il modello), D si calcola come provvisorio su d1 e d2, con i loro pesi del profilo riportati a somma 1. Ogni risultato lo dichiara ("provvisorio: mancano d3 e d4") e non può motivare una riorganizzazione.
+- **Incertezza nella simulazione.** Nelle 2.000 estrazioni Monte Carlo ogni voce si estrae dai giudizi registrati per quella voce; se esistono giudizi di persone, sostituiscono quelli del modello. La copertura tecnologica si estrae uniformemente fra `c_low` e `c_high`. Il seme è fisso e registrato: stesso input, stesso risultato.
+- **Capacità per N.** Finché la capacità di test non è calibrata sulla scala 0–4, N usa la **copertura di riserva** della rubrica (0 nessuna soluzione dimostrata … 4 esecuzione autonoma affidabile documentata), con qualità minima, dichiarata nei risultati come capacità di riserva.
+- **Abbinamento.** Quota comune di revisione a campione `quota_revisione_abbinamenti` = 0,20. Il livello di revisione di un lotto (`campione`, `completa`, `nulla`) lo sceglie il revisore con un atto, non chi propone il lotto.

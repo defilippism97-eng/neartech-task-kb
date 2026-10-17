@@ -116,8 +116,8 @@ def report_organizzazione(
 
     # Abbinamento al dataset (fase 3): un riepilogo per lotto, con le sue chiavi.
     abbinamenti = _righe(conn, sql.SQL(
-        """SELECT l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, l.livello_revisione,
-                  l.parametro_quota_id,
+        """SELECT l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, v.livello_revisione,
+                  v.parametro_quota_id,
                   count(p.proposta_id) AS proposte,
                   count(p.proposta_id) FILTER (WHERE p.task_id IS NULL) AS senza_vicini,
                   count(d.proposta_id) FILTER (WHERE d.esito = 'approvata') AS approvate,
@@ -125,11 +125,12 @@ def report_organizzazione(
                   count(a.proposta_id) FILTER (WHERE a.task_nuovo) AS task_nuovi,
                   count(a.proposta_id) FILTER (WHERE NOT a.task_nuovo) AS collegate
            FROM {0}.lotti_abbinamento l
+           LEFT JOIN {0}.livelli_lotto v USING (lotto_id)
            LEFT JOIN {0}.proposte_abbinamento p USING (lotto_id)
            LEFT JOIN {0}.decisioni_abbinamento d USING (proposta_id)
            LEFT JOIN {0}.applicazioni_abbinamento a USING (proposta_id)
-           GROUP BY l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, l.livello_revisione,
-                    l.parametro_quota_id
+           GROUP BY l.lotto_id, l.creato_il, l.modello_embedding, l.vicini, v.livello_revisione,
+                    v.parametro_quota_id
            ORDER BY l.creato_il""").format(schema), ())
 
     stati_task = dict(conn.execute(

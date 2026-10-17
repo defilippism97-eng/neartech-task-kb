@@ -2,7 +2,8 @@
 
 Uso (DATABASE_URL dall'ambiente; l'utente è indicato dal soggetto SSO). Nessuna chiamata all'API:
 l'embedding (bge-m3) si calcola in locale.
-  python scripts/abbina.py proponi  --utente-sso S --org CODICE --livello campione --motivazione "..."
+  python scripts/abbina.py proponi  --utente-sso S --org CODICE --motivazione "..."
+  python scripts/abbina.py livello  --utente-sso REVISORE --org CODICE --lotto L --livello campione --motivazione "..."
   python scripts/abbina.py coda     --utente-sso S --org CODICE --lotto L [--quante 30]
   python scripts/abbina.py campione --utente-sso S --org CODICE --lotto L --seme 20261017 \\
       --istruzioni istruzioni-abbinamento-v1 --motivazione "..."
@@ -29,6 +30,7 @@ from neartech.abbinamento import (  # noqa: E402
     coda_revisione,
     crea_campione_del_lotto,
     decidi_lotto,
+    imposta_livello,
     proponi_abbinamenti,
 )
 from neartech.db import connect  # noqa: E402
@@ -60,15 +62,15 @@ def _rifiutate(percorso: Path | None) -> list[str]:
 def parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     comandi = ap.add_subparsers(dest="comando", required=True)
-    for nome in ("proponi", "coda", "campione", "decidi", "applica"):
+    for nome in ("proponi", "livello", "coda", "campione", "decidi", "applica"):
         c = comandi.add_parser(nome)
         c.add_argument("--utente-sso", required=True)
         c.add_argument("--org", required=True, help="codice dell'organizzazione")
         if nome != "proponi":
             c.add_argument("--lotto", required=True)
-        if nome in ("proponi", "campione", "decidi", "applica"):
+        if nome in ("proponi", "livello", "campione", "decidi", "applica"):
             c.add_argument("--motivazione", required=True)
-    comandi.choices["proponi"].add_argument("--livello", choices=("campione", "completa", "nulla"), required=True)
+    comandi.choices["livello"].add_argument("--livello", choices=("campione", "completa", "nulla"), required=True)
     comandi.choices["coda"].add_argument("--quante", type=int, default=30)
     comandi.choices["campione"].add_argument("--seme", type=int, required=True)
     comandi.choices["campione"].add_argument("--istruzioni", required=True)
@@ -89,9 +91,12 @@ def main() -> None:
                 raise SystemExit("utente sconosciuto")
             utente, org = str(riga[0]), organizzazione_per_codice(conn, args.org)
             if args.comando == "proponi":
-                lotto = proponi_abbinamenti(conn, utente, org, livello_revisione=args.livello,
-                                            incorpora=_incorpora(), motivazione=args.motivazione)
-                print(f"lotto creato: {lotto}")
+                lotto = proponi_abbinamenti(conn, utente, org, incorpora=_incorpora(), motivazione=args.motivazione)
+                print(f"lotto creato: {lotto}; il livello di revisione lo sceglie il revisore (comando livello)")
+            elif args.comando == "livello":
+                atto = imposta_livello(conn, utente, org, args.lotto, livello_revisione=args.livello,
+                                       motivazione=args.motivazione)
+                print(f"livello di revisione registrato, atto {atto}")
             elif args.comando == "coda":
                 for voce in coda_revisione(conn, utente, org, args.lotto)[: args.quante]:
                     margine = "-" if voce["margine"] is None else f"{voce['margine']:.3f}"

@@ -17,6 +17,7 @@ from neartech.abbinamento import (
     coda_revisione,
     crea_campione_del_lotto,
     decidi_lotto,
+    imposta_livello,
     proponi_abbinamenti,
     salva_candidati,
 )
@@ -104,8 +105,11 @@ def mondo(conn):
 
 
 def _lotto(conn, mondo, livello="campione"):
-    return proponi_abbinamenti(conn, mondo["admin"], mondo["org"], livello_revisione=livello, incorpora=incorpora,
-                               motivazione="primo lotto")
+    lotto = proponi_abbinamenti(conn, mondo["admin"], mondo["org"], incorpora=incorpora, motivazione="primo lotto")
+    if livello is not None:
+        imposta_livello(conn, mondo["revisore"], mondo["org"], lotto, livello_revisione=livello,
+                        motivazione="livello scelto dal revisore")
+    return lotto
 
 
 def _spazio(conn, query, *parametri):
@@ -136,8 +140,9 @@ def test_proposta_e_il_task_piu_vicino_con_le_chiavi_del_lotto(conn, mondo):
     righe = dict(_spazio(conn, """SELECT c.titolo, p.task_id FROM {0}.proposte_abbinamento p
                                   JOIN {0}.candidati c USING (candidato_id)"""))
     assert str(righe["Registrare la prima nota"]) == mondo["task"]["Redigere la prima nota contabile"]
-    chiavi = _spazio(conn, "SELECT modello_embedding, vicini, livello_revisione, parametro_quota_id "
-                           "FROM {}.lotti_abbinamento WHERE lotto_id = %s", lotto)[0]
+    chiavi = _spazio(conn, "SELECT l.modello_embedding, l.vicini, v.livello_revisione, v.parametro_quota_id "
+                           "FROM {0}.lotti_abbinamento l JOIN {0}.livelli_lotto v USING (lotto_id) "
+                           "WHERE l.lotto_id = %s", lotto)[0]
     assert chiavi[:3] == (MODELLO_EMBEDDING, 5, "campione")
     assert str(chiavi[3]) == mondo["parametri"][PARAMETRO_QUOTA]
 
@@ -158,14 +163,24 @@ def test_senza_quota_approvata_il_lotto_a_campione_si_ferma(conn, mondo):
 
 def test_lotto_senza_revisione_dichiarato(conn, mondo):
     lotto = _lotto(conn, mondo, livello="nulla")
-    assert _spazio(conn, "SELECT livello_revisione, parametro_quota_id FROM {}.lotti_abbinamento "
+    assert _spazio(conn, "SELECT livello_revisione, parametro_quota_id FROM {}.livelli_lotto "
                          "WHERE lotto_id = %s", lotto) == [("nulla", None)]
 
 
 def test_solo_chi_gestisce_il_dataset_propone(conn, mondo):
     with pytest.raises(PermessoNegato):
-        proponi_abbinamenti(conn, mondo["revisore"], mondo["org"], livello_revisione="campione",
-                            incorpora=incorpora, motivazione="x")
+        proponi_abbinamenti(conn, mondo["revisore"], mondo["org"], incorpora=incorpora, motivazione="x")
+
+
+def test_il_livello_lo_sceglie_il_revisore_una_volta(conn, mondo):
+    lotto = _lotto(conn, mondo, livello=None)
+    with pytest.raises(PermessoNegato):
+        imposta_livello(conn, mondo["admin"], mondo["org"], lotto, livello_revisione="nulla", motivazione="x")
+    with pytest.raises(ValueError, match="livello"):
+        decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="x")
+    imposta_livello(conn, mondo["revisore"], mondo["org"], lotto, livello_revisione="completa", motivazione="ok")
+    with pytest.raises(DecisioneGiaPresa):
+        imposta_livello(conn, mondo["revisore"], mondo["org"], lotto, livello_revisione="nulla", motivazione="x")
 
 
 def test_candidati_gia_proposti_non_entrano_in_un_lotto_nuovo(conn, mondo):
@@ -391,15 +406,13 @@ def test_task_proposto_fuso_si_segue_fino_al_superstite(conn, mondo):
 
 def test_embedding_incompleto_o_di_un_altro_modello_rifiutato(conn, mondo):
     with pytest.raises(ValueError, match="vettore"):
-        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], livello_revisione="nulla",
-                            incorpora=lambda titoli: [], motivazione="x")
+        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], incorpora=lambda titoli: [], motivazione="x")
 
     def altro(titoli):
         return incorpora(titoli)
     altro.modello = "altro-modello"
     with pytest.raises(ValueError, match="modello"):
-        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], livello_revisione="nulla", incorpora=altro,
-                            motivazione="x")
+        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], incorpora=altro, motivazione="x")
 
 
 def test_due_candidati_dello_stesso_ruolo_sullo_stesso_task(conn, mondo):
