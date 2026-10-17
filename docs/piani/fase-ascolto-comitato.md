@@ -169,10 +169,10 @@ Alternative considerate:
 
 1. **Additività lineare:** la desiderabilità di tenere un task alle persone cresce linearmente con d1–d4, con gli stessi pesi per tutti i task. È l'ipotesi della formula di D: se non regge per le scelte, non regge neanche per il calcolo, e la fase lo fa vedere (bassa nettezza, molte incoerenze).
 2. **I valori di d1–d4 dei task sono corretti.** La stima li prende come dati. Errori nei valori attenuano i pesi verso il profilo di partenza (non li inventano). I task con giudizi di persona hanno priorità nella composizione delle schede.
-3. **La premessa regge:** il comitato sceglie sulla desiderabilità, non su fattibilità o costo. Le schede di controllo e la plenaria lo verificano in parte; l'ipotesi resta.
+3. **La premessa regge:** il comitato sceglie sulla desiderabilità, non su fattibilità o costo. Le schede di controllo e la discussione nella restituzione lo verificano in parte; l'ipotesi resta.
 4. **Indipendenza dalle alternative irrilevanti** dentro la scheda (proprietà del logit). Le schede da quattro task dello stesso processo la rendono ragionevole.
 5. **Un solo profilo per l'organizzazione:** le scelte dei membri si mettono insieme. L'eterogeneità fra membri si misura (sezione 3.5) ma non si modella con pesi per persona, che non si calcolano né si mostrano.
-6. **Scelte indipendenti nel giro individuale**, prima della plenaria.
+6. **Scelte indipendenti nel giro individuale**, prima della restituzione.
 7. **Preferenze stabili durante la sessione**: verificata con la scheda ripetuta.
 
 ### 3.4 Quante schede servono
@@ -191,7 +191,7 @@ Questi numeri vanno nel parametro del metodo (per esempio `minimo_schede_membro`
 Il codice calcola, solo in forma aggregata:
 - **coerenza:** quota di risposte uguali nella scheda ripetuta, quota di risposte attese nella scheda di dominanza;
 - **nettezza:** la stima di `α` (scelte nette o quasi casuali);
-- **accordo:** quanto spesso la maggioranza dei membri indica lo stesso task in una scheda. Se il comitato è molto diviso, la proposta lo dice e la plenaria si concentra lì.
+- **accordo:** quanto spesso la maggioranza dei membri indica lo stesso task in una scheda. Se il comitato è molto diviso, la proposta lo dice e la restituzione si concentra lì.
 
 Nessuna misura per singolo membro compare in un output. Con meno membri del minimo di gruppo (`minimo_rispondenti_gruppo`) l'accordo si mostra solo come "alto" o "basso", per evitare che si risalga alla scelta di una persona.
 
@@ -256,7 +256,7 @@ Regole operative:
 
 1. **Formato delle schede:** best–worst da quattro task (proposta) oppure confronti a coppie, più semplici ma con circa il doppio delle schede per la stessa precisione.
 2. **Componenti mancanti:** nella prima applicazione stimare solo il rapporto fra w_d1 e w_d2 e lasciare w_d3 e w_d4 al profilo di partenza (proposta), oppure usare stime del modello di d3 e d4 marcate provvisorie, oppure aspettare i questionari d3/d4.
-3. **Giro individuale o di consenso:** la stima usa le scelte individuali messe insieme, e la plenaria serve a discutere (proposta), oppure la stima usa una scelta di consenso per scheda (meno dati, meno indipendenza, ma "una voce del comitato").
+3. **Giro individuale o di consenso:** la stima usa le scelte individuali messe insieme, e la restituzione serve a discutere (proposta), oppure la stima usa una scelta di consenso per scheda (meno dati, meno indipendenza, ma "una voce del comitato").
 4. **Chi approva le schede prima della sessione:** il comitato con un atto (proposta), oppure il facilitatore con il comitato informato. Se le approva il comitato, conosce in anticipo i task: va deciso se questo indebolisce le preferenze rivelate.
 5. **Margine del comitato sulla stima:** il comitato può approvare un profilo diverso dalla stima dentro l'insieme ammesso, con motivazione registrata e controllo dell'auditor (proposta); oppure solo approvare o respingere la stima e ripetere la fase.
 6. **Vincoli dichiarati dai documenti:** restano testo per la discussione, oppure possono diventare, con un atto del comitato, un pavimento dell'organizzazione sopra il pavimento legale (oggi non registrato), con un controllo automatico nella verifica.
