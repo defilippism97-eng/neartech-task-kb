@@ -220,6 +220,8 @@ def calcola_organizzazione(
     org_id = str(uuid.UUID(str(org_id)))
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_parametri_tecnici", org_id, risorsa=f"calcolo:{org_id}")
+        # Lo stesso lock della restituzione: chi la legge non vede un calcolo a metà (restituzione.BLOCCO).
+        conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (f"risultati:{org_id}",))
         rubrica, profilo, snapshot, tipo_capacita = _configurazione(conn, org_id)
         occorrenze = conn.execute(
             """SELECT o.occurrence_id, o.task_id, o.role_id FROM task_occurrences o JOIN roles r USING (role_id)
@@ -258,16 +260,16 @@ def calcola_organizzazione(
                 """INSERT INTO policy_estimates
                      (occurrence_id, task_id, role_id, profile_id, snapshot_id, rubric_version, n_mean, n_sd, d_mean,
                       d_sd, p_q1, p_q2, p_q3, p_q4, d_source_mix, versione_calcolo, seme, estrazioni, tipo_capacita,
-                      componenti_d, d_provvisorio, impronta_input, calcolata_da)
+                      componenti_d, d_provvisorio, impronta_input, calcolata_da, giudizi_usati)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                           %s)
+                           %s, %s::uuid[])
                    ON CONFLICT DO NOTHING""",
                 (occorrenza_id, task_id, ruolo_id, profilo.profilo_id, snapshot, rubrica, _arrotonda(r.n_media),
                  _arrotonda(r.n_dev),
                  _arrotonda(r.d_media), _arrotonda(r.d_dev), _arrotonda(q.get("q1")), _arrotonda(q.get("q2")),
                  _arrotonda(q.get("q3")), _arrotonda(q.get("q4")), Jsonb(fonti), VERSIONE_CALCOLO, seme, estrazioni,
                  tipo_capacita if r.n_media is not None else None, list(r.componenti_d), r.provvisorio, impronta,
-                 utente_id),
+                 utente_id, sorted(usati)),
             ).rowcount
             esito["senza_n"] += r.n_media is None
             esito["senza_d"] += r.d_media is None

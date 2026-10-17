@@ -201,3 +201,20 @@ Approvate dal responsabile del progetto.
 ## 23. Ricalcolo con la versione 2 (2026-10-17)
 
 Stesso seme (20261017), stessa rubrica, profilo e snapshot; versione `calcolo-nd-v2` (sezione 22). Su 454 occorrenze con N e D: quadrante più probabile Q1 4, Q2 2, Q3 80, Q4 368; 413 stabili, 41 sotto l'80%. N medio 0,11 (massimo 0,71), D medio 0,30 (massimo 0,75). I 36 ruoli hanno la lettura per ruolo, tutti provvisori con pesi uguali. I risultati della versione 1 restano nella tabella (append-only); la vista dei ruoli legge l'ultimo calcolo.
+
+## 24. Restituzione dei risultati a un'organizzazione (2026-10-17)
+
+Scelte tecniche della fase 5 (`neartech.restituzione`, `scripts/restituzione.py`, migrazione 0036), senza nuove decisioni di metodo.
+- **Che cosa contiene.** Per l'organizzazione e per ogni ruolo (nome dallo spazio dell'organizzazione): baricentro di N e D, dispersione, stabilità, pesi usati, se è provvisorio, numero di occorrenze per quadrante più probabile. In più le chiavi dei risultati (rubriche, profili di pesi, con le soglie dei quadranti, snapshot e loro metodo, versioni del calcolo, tipo di capacità, componenti di D, modelli dei giudizi usati) e le avvertenze che spiegano perché i risultati sono provvisori. Nessun dato su persone: i valutatori persona non compaiono.
+- **Giudizi usati.** Da questa versione ogni risultato registra gli identificativi dei giudizi che ha usato (`giudizi_usati`, migrazione 0036); i modelli della restituzione sono quelli di questi giudizi. Per i risultati calcolati prima (oggi tutti quelli in produzione) sono i modelli con giudizi registrati prima del calcolo, e la restituzione lo dichiara.
+- **Lettura coerente.** La restituzione e il calcolo prendono lo stesso lock dell'organizzazione: una lettura non vede un calcolo a metà, e un calcolo non cambia i risultati fra il controllo e l'atto di approvazione.
+- **Quale risultato vale.** Per ogni occorrenza l'ultimo risultato con N e D calcolato con la configurazione vigente, se l'occorrenza ha ancora lo stesso task e lo stesso ruolo. La scelta sta in una vista sola (`v_risultati_vigenti`), letta sia dalla lettura per ruolo sia dalla restituzione, che così non possono divergere.
+- **Quadrante più probabile.** A pari probabilità vale l'ordine Q1, Q2, Q3, Q4 (come `GREATEST` nella stabilità del ruolo); la restituzione conta e segnala i casi a pari probabilità.
+- **Coda da rivedere.** Le occorrenze il cui quadrante più probabile ha probabilità sotto la soglia `soglia_stabilita_quadrante`, dalla meno certa. La soglia è un parametro di governance (proprio dell'organizzazione o comune): senza un valore approvato la coda non si calcola e la restituzione lo dichiara; se vale il valore comune non adottato dal comitato guida, lo dichiara. Il piano indica 0,8; il valore va approvato.
+- **Approvazione.** La restituzione ha un'impronta (sha256 del suo contenuto, esclusi data e approvazione). Il comitato guida la approva con un atto del registro il cui oggetto è l'impronta; l'approvazione ricalcola la restituzione e la rifiuta se i risultati o la configurazione sono cambiati dopo la lettura. Una restituzione si approva una volta (indice unico nella 0036).
+- **Conservazione.** Contiene i nomi dei ruoli: si scrive fuori dal repository, come il report di audit.
+
+**Punti aperti:**
+- la coda elenca occorrenze; un task presente in più ruoli compare una volta per ruolo;
+- la probabilità del quadrante si confronta con la soglia sul valore registrato, arrotondato a tre decimali;
+- i ruoli senza alcun risultato vigente non compaiono fra i ruoli (le loro occorrenze contano fra quelle senza risultato).
