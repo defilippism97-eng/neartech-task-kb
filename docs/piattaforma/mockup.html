@@ -165,9 +165,10 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
   <span class="lbl">BOZZE · vista come</span>
   <button data-v="pubblica" aria-pressed="true">Pagina pubblica</button>
   <button data-v="comitato" aria-pressed="false">Comitato guida</button>
+  <button data-v="indirizzi" aria-pressed="false">Indirizzi del comitato</button>
   <button data-v="revisore" aria-pressed="false">Revisore</button>
   <button data-v="questionari" aria-pressed="false">Questionari d3/d4</button>
-  <button data-v="rappresentante" aria-pressed="false">Rappresentante (facoltativo)</button>
+  <button data-v="rappresentante" aria-pressed="false">Rappresentante (vista bonus)</button>
   <button data-v="admin" aria-pressed="false">Amministratore</button>
   <button data-v="auditor" aria-pressed="false">Auditor</button>
 </div>
@@ -213,11 +214,11 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
     <div class="org"><b>Cooperativa Aurora</b><span>pilota · avviato 2026-10</span></div>
     <nav class="nav">
       <a class="on" href="#">Panoramica</a>
-      <a href="#">Ruoli <span class="n">24</span></a>
+      <a href="#">Indirizzi <span class="n">1</span></a>
+      <a href="#">Ruoli e task <span class="n">24</span></a>
       <a href="#">Restituzione <span class="n">1</span></a>
       <a href="#">Questionari</a>
-      <a href="#">Parametri e soglie <span class="n">2</span></a>
-      <a href="#">Indirizzi e nomine</a>
+      <a href="#">Parametri e soglie</a>
       <a href="#">Registro</a>
     </nav>
     <div class="who"><b>Comitato guida</b>Sessione SSO · aurora.coop</div>
@@ -257,6 +258,7 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
           <div class="soft kpi"><b>312</b><span>task analizzati in 24 ruoli</span></div>
           <div class="soft kpi"><b>271</b><span>stabili sopra la soglia dell'80%</span></div>
         </div>
+        <div class="cta" style="border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,180,180,.12)"><div class="ic" style="background:#E6FAFA;color:var(--teal-ink)">→</div><div><h3>Date i vostri indirizzi</h3><p>8 domande sulla vostra visione dell'innovazione: calibrano i pesi di D e riclassificano i task.</p><button class="btn btn-pill">Inizia il questionario del comitato</button></div></div>
         <div class="cta"><div class="ic" style="background:#FEF3C7;color:var(--amber-ink)">41</div><div><h3>Conferma 41 risultati incerti</h3><p>Il quadrante più probabile è sotto l'80%. I revisori ne hanno già giudicati 12.</p><button class="btn btn-secondary">Vedi la coda</button></div></div>
         <div class="cta"><div class="ic" style="background:#E6FAFA;color:var(--teal-ink)">d3</div><div><h3>Prepara il primo questionario</h3><p>La piattaforma propone le domande dai task di ogni famiglia professionale e lo invia per email.</p><button class="btn btn-pill">Prepara la campagna</button></div></div>
         <div class="cta"><div class="ic" style="background:#F1E9F9;color:var(--violet)">0,8</div><div><h3>Adotta la soglia di stabilità</h3><p>Valore comune NEARTECH, non ancora adottato dal vostro comitato.</p><button class="btn btn-secondary">Adotta o ricalibra</button></div></div>
@@ -264,6 +266,46 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
       <div class="card s12">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><h2>Ruoli</h2><span class="mono" style="font-size:12px;color:var(--stone-ink)">baricentro pesato · pesi uguali finché mancano le quote di tempo</span></div>
         <table><thead><tr><th>Ruolo</th><th>Task</th><th>N</th><th>D</th><th>Quadranti</th><th>Stabilità</th><th>Giudizi</th></tr></thead><tbody id="roles"></tbody></table>
+      </div>
+    </div>
+  </main>
+</div>
+</section>
+
+<!-- ====================== INDIRIZZI DEL COMITATO ====================== -->
+<section class="view" id="indirizzi">
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="mark"></div>neartech</div>
+    <div class="org"><b>Cooperativa Aurora</b><span>pilota</span></div>
+    <nav class="nav"><a href="#">Panoramica</a><a class="on" href="#">Indirizzi <span class="n">1</span></a><a href="#">Ruoli e task</a><a href="#">Restituzione</a><a href="#">Questionari</a><a href="#">Parametri e soglie</a><a href="#">Registro</a></nav>
+    <div class="who"><b>Comitato guida</b></div>
+  </aside>
+  <main class="main">
+    <div class="blob"></div>
+    <div class="head"><div><span class="eyebrow">Comitato guida · indirizzi</span><h1>La vostra visione,<br>tradotta in pesi</h1></div><span class="state nuovo">profilo «Aurora 2026» · in attesa dell'auditor</span></div>
+    <div class="flow" style="grid-template-columns:repeat(6,1fr)">
+      <div class="fs done"><div class="t">1 · Questionario</div><b>8 risposte</b><span>visione dell'innovazione</span></div>
+      <div class="fs done"><div class="t">2 · Pesi proposti</div><b>d1–d4</b><span>dal sistema, dalle risposte</span></div>
+      <div class="fs done"><div class="t">3 · Effetto</div><b>27 task</b><span>cambiano quadrante</span></div>
+      <div class="fs done"><div class="t">4 · Comitato</div><b>approvato</b><span>atto #91</span></div>
+      <div class="fs run"><div class="t">5 · Auditor</div><b>in verifica</b><span>pavimento legale rispettato</span></div>
+      <div class="fs todo"><div class="t">6 · Ricalcolo</div><b>tutti i task</b><span>poi controllo a campione</span></div>
+    </div>
+    <div class="grid g-12">
+      <div class="card s7">
+        <h2>Che cosa avete detto</h2>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:14px">
+          <div><div class="mono" style="font-size:11px;color:var(--stone-ink)">DOMANDA 3 DI 8</div><b style="color:var(--navy)">Nei servizi alla persona, la relazione con l'utente deve restare umana anche quando la tecnologia la potrebbe gestire?</b>
+            <div class="seg" style="margin-top:8px"><button>Mai</button><button>Raramente</button><button>Dipende</button><button class="ok">Quasi sempre</button><button>Sempre</button></div></div>
+          <div><div class="mono" style="font-size:11px;color:var(--stone-ink)">DOMANDA 5 DI 8</div><b style="color:var(--navy)">Per i compiti amministrativi ripetitivi, quanto volete spingere l'automazione?</b>
+            <div class="seg" style="margin-top:8px"><button>Per niente</button><button>Poco</button><button>Abbastanza</button><button class="ok">Molto</button><button>Al massimo</button></div></div>
+          <div class="soft" style="padding:14px"><span class="mono" style="font-size:11px;color:var(--stone-ink)">NOTA DEL COMITATO (resta nello spazio dell'organizzazione)</span><p style="margin-top:4px;color:var(--obsidian)">Vogliamo liberare tempo dalle pratiche per restituirlo alla relazione con utenti e famiglie.</p></div>
+        </div>
+      </div>
+      <div class="s5 grid" style="align-content:start">
+        <div class="card"><h2>Pesi di D</h2><p style="font-size:13px;margin:4px 0 12px">Dai valori di default NEARTECH al vostro profilo.</p><div id="pesi"></div></div>
+        <div class="card"><h3>Il pavimento legale non si tocca</h3><p style="font-size:13px;margin-top:4px">Gli indirizzi possono solo dare enfasi sopra il minimo di legge. L'auditor lo verifica prima che il profilo diventi vigente.</p></div>
       </div>
     </div>
   </main>
@@ -386,7 +428,7 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
   </aside>
   <main class="main">
     <div class="head"><div><span class="eyebrow">Rappresentante · ultimo calcolo</span><h1>Variazioni di D da guardare</h1></div></div>
-    <p style="max-width:64ch;margin:-8px 0 20px">Il ruolo è facoltativo: lo nomina il comitato guida, anche fra i suoi membri. Quando D di un task scende, puoi accettare la variazione oppure sospenderla e portarla al comitato, che decide.</p>
+    <p style="max-width:64ch;margin:-8px 0 20px">Vista bonus, invisibile finché l'amministratore tecnico non la attiva per l'organizzazione. Quando gli indirizzi del comitato abbassano D di un task, puoi accettare la variazione oppure sospenderla e riportarla al comitato, che decide.</p>
     <div class="grid" id="drops"></div>
   </main>
 </div>
@@ -406,13 +448,14 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
     <div class="pipe">
       <div class="st done"><div class="t">Documenti</div><b>38</b><span class="state validato">caricati</span></div>
       <div class="st done"><div class="t">Scomposizione</div><b>412</b><span class="state validato">attività</span></div>
-      <div class="st run"><div class="t">Abbinamento</div><b>318 / 412</b><span class="state nuovo">94 task nuovi</span></div>
+      <div class="st run"><div class="t">Abbinamento</div><b>318 / 412</b><span class="state nuovo">94 per somiglianza</span></div>
       <div class="st wait"><div class="t">Revisione</div><b>2 lotti</b><span class="state stima">in attesa</span></div>
       <div class="st todo"><div class="t">Calcolo N e D</div><b>—</b><span class="mono" style="font-size:11px">dopo la revisione</span></div>
       <div class="st todo"><div class="t">Restituzione</div><b>—</b><span class="mono" style="font-size:11px">al comitato</span></div>
     </div>
     <div class="grid g-12" style="margin-top:18px">
       <div class="card s7"><h2>La base di conoscenza cresce</h2><p style="font-size:13px;margin:4px 0 12px">Ogni pilota aggiunge task al dataset condiviso, senza testo del cliente.</p><div id="growth"></div></div>
+      <div class="card s12" style="display:flex;justify-content:space-between;align-items:center"><div><h3>Vista del rappresentante dei lavoratori</h3><p style="font-size:13px">Vista bonus: se attiva, il comitato nomina chi la usa.</p></div><div class="seg"><button class="ok">Disattivata</button><button>Attiva</button></div></div>
       <div class="card s5"><h2>Prossima chiamata a pagamento</h2><p style="font-size:13px;margin:4px 0 12px">Scomposizione di 6 documenti nuovi con Haiku 5.5.</p>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border)"><span>Stima</span><b class="mono">≈ 0,05 €</b></div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border)"><span>Token</span><b class="mono">32k in · 48k out</b></div>
@@ -428,11 +471,15 @@ td{padding:11px 10px;border-bottom:1px solid var(--border)}
   <aside class="side">
     <div class="brand"><div class="mark"></div>neartech</div>
     <div class="org"><b>Cooperativa Aurora</b><span>sola lettura</span></div>
-    <nav class="nav"><a class="on" href="#">Registro</a><a href="#">Integrità</a><a href="#">Report di audit</a></nav>
+    <nav class="nav"><a class="on" href="#">Da verificare <span class="n">1</span></a><a href="#">Registro</a><a href="#">Integrità</a><a href="#">Report di audit</a></nav>
     <div class="who"><b>Auditor</b></div>
   </aside>
   <main class="main">
-    <div class="head"><div><span class="eyebrow">Auditor · registro delle decisioni</span><h1>Ogni decisione, in catena</h1></div><button class="btn btn-secondary">Scarica il report di audit</button></div>
+    <div class="head"><div><span class="eyebrow">Auditor · processo dell'impresa</span><h1>Ogni decisione, in catena</h1></div><button class="btn btn-secondary">Scarica il report di audit</button></div>
+    <div class="card" style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;margin-bottom:18px;border-color:var(--teal)">
+      <div><span class="eyebrow">Da verificare</span><h2 style="margin:6px 0 4px">Profilo di pesi «Aurora 2026», dagli indirizzi del comitato</h2><p style="font-size:13px">Approvato dal comitato (atto #91). Controlli automatici: nessun task sotto il pavimento legale · pesi a somma uno · 27 task cambiano quadrante.</p></div>
+      <div style="display:flex;gap:8px"><button class="btn btn-secondary">Chiedi chiarimenti</button><button class="btn btn-primary">Dai l'ok</button></div>
+    </div>
     <div class="grid g-12">
       <div class="soft s4"><span class="state validato">catena integra</span><h2 style="margin:12px 0 4px">87 atti</h2><p style="font-size:13px">Verificata fino all'ancora 84, registrata fuori dal database.</p></div>
       <div class="card s8" id="chain"></div>
@@ -494,6 +541,8 @@ document.getElementById('drops').innerHTML = drops.map(d => `<div class="card" s
   p.forEach((q,i)=>{svg+=`<circle cx="${X(q[0])}" cy="${Y(q[1])}" r="5" fill="${i<2?'#1B499F':'#fff'}" stroke="#1B499F" stroke-width="2"/><text x="${X(q[0])}" y="${Y(q[1])-12}" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="#0B2559">${q[1]}</text>`;});
   ['avvio','pilota 1','pilota 2','pilota 3','pilota 4'].forEach((t,i)=>svg+=`<text x="${X(i)}" y="${h-4}" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#526175">${t}</text>`);
   document.getElementById('growth').innerHTML=svg+'</svg>'; })();
+
+document.getElementById('pesi').innerHTML = [['d1 Relazione e fiducia',.25,.34],['d2 Responsabilità',.25,.26],['d3 Senso del lavoro',.25,.22],['d4 Valore per il beneficiario',.25,.18]].map(p => `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${p[0]}</span><span class="mono">${p[1].toFixed(2)} → <b style="color:var(--navy)">${p[2].toFixed(2)}</b></span></div><div style="position:relative;height:10px;background:var(--subtle);border-radius:99px;margin-top:5px"><div style="position:absolute;height:10px;width:${p[2]*200}%;background:var(--teal);border-radius:99px"></div><div style="position:absolute;left:${p[1]*200}%;top:-3px;width:2px;height:16px;background:var(--navy)"></div></div></div>`).join('') + '<p class="mono" style="font-size:11px">tacca: default NEARTECH · barra: vostro profilo</p>';
 
 const atti = [[87,'restituzione','approvazione','comitato guida','a91c…7e2f'],[86,'questionario','chiusura della campagna','comitato guida','4be0…19ac'],[85,'campione','giudizio','revisore','0d7f…c3b1'],[84,'lotto','decisione in blocco','revisore','77a2…e590'],[83,'nomina','rappresentante dei lavoratori','comitato guida','e13c…a4d8']];
 document.getElementById('chain').innerHTML = atti.map(a => `<div class="link"><span class="pos">#${a[0]}</span><div><b style="font-weight:600;color:var(--navy)">${a[2]}</b> · ${a[1]} <span style="color:var(--stone-ink)">· ${a[3]}</span></div><span class="h">hash ${a[4]}</span></div>`).join('');
