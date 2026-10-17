@@ -140,4 +140,11 @@ Realizzazione tecnica della canonicalizzazione rivista (handover, sezione 3), AD
 - con revisione a campione o completa la decisione in blocco richiede una misura sul campione del lotto, il cui esito entra nell'atto; con revisione nulla la decisione si registra come tale;
 - una proposta senza task vicino (dataset vuoto) è rifiutata d'ufficio e diventa task nuovo; un task proposto fuso nel frattempo si segue fino al superstite.
 
-**Da decidere (metodologia):** valore di `quota_revisione_abbinamenti`; approvazione di `istruzioni-abbinamento-v1`; se una decisione in blocco con misura sotto soglia vada impedita (oggi si registra); come il livello di revisione del lotto incide sullo stato dei risultati (oggi si registra con i risultati); se aggiungere un giudizio del modello sulle proposte.
+Dopo le revisioni Python e database della fase 3:
+- un solo campione per lotto (indice nel database): la misura non si sceglie fra più estrazioni; la decisione verifica che la misura copra esattamente la dimensione prevista dalla quota (aritmetica decimale) o tutte le proposte con revisione completa;
+- un lotto senza proposte con un task (dataset vuoto) si decide senza misura, e l'atto lo dice (`proposte_con_task` = 0);
+- le proposte giudicate errate o parziali nel campione e non rifiutate si contano nell'atto (`campione_non_corrette_approvate`);
+- un task proposto ritirato prima dell'applicazione ferma l'applicazione del lotto; un task fuso si segue fino al superstite;
+- il database controlla che lotti, decisioni e applicazioni citino l'atto giusto della stessa organizzazione, che le decisioni e le applicazioni coprano il lotto intero con un solo atto, e che un'applicazione segua la decisione.
+
+**Da decidere (metodologia):** chi sceglie il livello di revisione del lotto (oggi chi propone il lotto, con `gestire_dataset_centrale`); valore di `quota_revisione_abbinamenti`; approvazione di `istruzioni-abbinamento-v1`; se una decisione in blocco con misura sotto soglia vada impedita (oggi si registra); come il livello di revisione del lotto incide sullo stato dei risultati (oggi si registra con i risultati); se aggiungere un giudizio del modello sulle proposte.

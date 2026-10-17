@@ -203,10 +203,11 @@ def report_in_markdown(report: dict[str, Any]) -> str:
                   f"[{float(m['intervallo_basso']):.3f}; {float(m['intervallo_alto']):.3f}], soglia {m['soglia']}, "
                   f"regola parziali {m['regola_parziali']}, esito {m['esito']}" for m in c["misure"]]
     righe += ["", "## Abbinamento al dataset", ""]
-    righe += _tabella(["Lotto", "Data", "Revisione", "Proposte", "Approvate", "Rifiutate", "Collegate",
-                       "Task nuovi"],
-                      [[x["lotto_id"], x["creato_il"], x["livello_revisione"], x["proposte"], x["approvate"],
-                        x["rifiutate"], x["collegate"], x["task_nuovi"]] for x in report["abbinamenti"]])
+    righe += _tabella(["Lotto", "Data", "Revisione", "Proposte", "Senza vicini", "Approvate", "Rifiutate",
+                       "Collegate", "Task nuovi"],
+                      [[x["lotto_id"], x["creato_il"], x["livello_revisione"], x["proposte"], x["senza_vicini"],
+                        x["approvate"], x["rifiutate"], x["collegate"], x["task_nuovi"]]
+                       for x in report["abbinamenti"]])
     righe += ["## Stati dei task decisi dall'organizzazione", ""]
     righe += [f"- {stato}: {n}" for stato, n in report["stati_task"].items()] + [""]
     righe += ["## Atti", ""]

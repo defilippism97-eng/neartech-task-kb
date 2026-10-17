@@ -15,6 +15,7 @@ titoli, estratti e note dei candidati stanno nello spazio fino a quando un task 
 import math
 import uuid
 from collections.abc import Callable, Sequence
+from decimal import Decimal
 from typing import Any, Protocol
 
 import psycopg
@@ -33,7 +34,12 @@ VICINI = 5  # come il Canonicalizer: quanti task vicini si registrano, non una s
 PARAMETRO_QUOTA = "quota_revisione_abbinamenti"
 LIVELLI = ("campione", "completa", "nulla")
 
+# Funzione di embedding. Se ha l'attributo `modello`, deve coincidere con il modello del lotto.
 Incorpora = Callable[[list[str]], Sequence[Sequence[float]]]
+
+
+class TaskNonAttivo(LookupError):
+    """Il task proposto o con lo stesso titolo non è più attivo (ritirato): il candidato va riproposto."""
 
 
 class AttivitaCandidata(Protocol):
@@ -55,6 +61,21 @@ def _blocca(conn: psycopg.Connection, chiave: str) -> None:
     conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (chiave,))
 
 
+def _vettori(incorpora: Incorpora, titoli: list[str], modello: str) -> Sequence[Sequence[float]]:
+    dichiarato = getattr(incorpora, "modello", None)
+    if dichiarato is not None and dichiarato != modello:
+        raise ValueError(f"embedding con {dichiarato}, ma il lotto usa {modello}")
+    vettori = incorpora(titoli)
+    if len(vettori) != len(titoli):
+        raise ValueError("l'embedding non ha restituito un vettore per titolo")
+    return vettori
+
+
+def dimensione_campione(quota: str | float | Decimal, popolazione: int) -> int:
+    """Quota per numero di proposte, arrotondata per eccesso, in aritmetica decimale (0,07 × 100 = 7)."""
+    return max(1, math.ceil(Decimal(str(quota)) * popolazione))
+
+
 def _lotto(conn: psycopg.Connection, schema: sql.Identifier, lotto_id: str) -> tuple[str, str | None, str, int]:
     riga = conn.execute(
         sql.SQL("SELECT livello_revisione, parametro_quota_id, modello_embedding, vicini "
@@ -72,7 +93,9 @@ def salva_candidati(
     attivita: Sequence[AttivitaCandidata], model_name: str, prompt_hash: str,
 ) -> int:
     """Attività di un documento come candidati nello spazio. Le aree di responsabilità (granularità 3) non
-    sono task e restano fuori. Ritorna i candidati nuovi; un rilancio non duplica."""
+    sono task e restano fuori. Ritorna i candidati nuovi; un rilancio non duplica.
+
+    Scrittura di basso livello, senza permessi né atto: la usa neartech.scomposizione.carica_candidati."""
     schema = spazio_organizzazione(conn, org_id)
     ruolo_id = ruolo(conn, org_id, ruolo_nome)
     documento_id = documento(conn, org_id, nome_file=nome_file, sha256=sha256, licenza=licenza)
@@ -109,6 +132,8 @@ def proponi_abbinamenti(
     """Un lotto con una proposta per ogni candidato non ancora proposto. Ritorna l'identificativo del lotto."""
     if livello_revisione not in LIVELLI:
         raise ValueError(f"livello di revisione sconosciuto: {livello_revisione!r}")
+    if vicini < 1:
+        raise ValueError("servono almeno un vicino")
     org_id = _uuid(org_id)
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_dataset_centrale", org_id, risorsa="abbinamento")
@@ -123,9 +148,7 @@ def proponi_abbinamenti(
         if not candidati:
             raise ValueError("nessun candidato da proporre")
         quota_id = _quota(conn, org_id)[0] if livello_revisione == "campione" else None
-        vettori = incorpora([r[1] for r in candidati])
-        if len(vettori) != len(candidati):
-            raise ValueError("l'embedding non ha restituito un vettore per candidato")
+        vettori = _vettori(incorpora, [r[1] for r in candidati], modello_embedding)
         lotto_id = str(uuid.uuid4())
         atto = registra(conn, autore_id=utente_id, tipo_oggetto="lotto_abbinamento", oggetto_id=lotto_id,
                         atto="proposta", motivazione=motivazione, org_id=org_id,
@@ -160,10 +183,12 @@ def proponi_abbinamenti(
 
 def coda_revisione(conn: psycopg.Connection, utente_id: str, org_id: str, lotto_id: str) -> list[dict[str, Any]]:
     """Proposte del lotto dalla più ambigua: margine sul secondo vicino crescente, poi distanza decrescente.
-    È un ordinamento, non un filtro. Le proposte senza task vicino vanno in fondo."""
+    È un ordinamento, non un filtro. Un solo vicino (margine ignoto) va in testa: l'ambiguità non è misurabile.
+    Le proposte senza task vicino vanno in fondo: diventano task nuovi."""
     org_id, lotto_id = _uuid(org_id), _uuid(lotto_id)
     richiedi(conn, utente_id, "leggere", org_id, risorsa=f"lotto_abbinamento:{lotto_id}")
     schema = spazio_organizzazione(conn, org_id)
+    _lotto(conn, schema, lotto_id)
     righe = conn.execute(
         sql.SQL("""SELECT p.proposta_id, c.titolo, p.task_id, t.title_it, p.distanza, p.margine
                    FROM {0}.proposte_abbinamento p JOIN {0}.candidati c USING (candidato_id)
@@ -186,6 +211,7 @@ def crea_campione_del_lotto(
     """Campione di revisione del lotto: casuale con la quota registrata nel lotto (arrotondata per eccesso),
     oppure tutte le proposte se la revisione è completa. Un lotto senza revisione non ha campione."""
     org_id, lotto_id = _uuid(org_id), _uuid(lotto_id)
+    richiedi(conn, utente_id, "gestire_campioni", org_id, risorsa=f"lotto_abbinamento:{lotto_id}")
     schema = spazio_organizzazione(conn, org_id)
     livello, quota_id, _, _ = _lotto(conn, schema, lotto_id)
     filtro = {"lotto": lotto_id}
@@ -195,29 +221,34 @@ def crea_campione_del_lotto(
         return campioni.crea_campione(conn, utente_id, org_id=org_id, tipo="abbinamento", filtro=filtro,
                                       criterio="tutte", versione_istruzioni=versione_istruzioni,
                                       motivazione=motivazione)
-    # La quota è quella vigente quando il lotto è nato, non quella di oggi: il campione resta ripetibile.
-    valore = conn.execute("SELECT valore ->> 'valore' FROM parametri_governance WHERE parametro_id = %s",
-                          (quota_id,)).fetchone()[0]
     popolazione = len(campioni.popolazione(conn, "abbinamento", filtro, org_id))
     if popolazione == 0:
         raise ValueError("il lotto non ha proposte con un task vicino")
-    dimensione = max(1, math.ceil(float(valore) * popolazione))
+    dimensione = _dimensione_attesa(conn, quota_id, popolazione)
     return campioni.crea_campione(conn, utente_id, org_id=org_id, tipo="abbinamento", filtro=filtro,
                                   criterio="casuale", dimensione=dimensione, seme=seme,
                                   versione_istruzioni=versione_istruzioni, motivazione=motivazione)
 
 
+def _dimensione_attesa(conn: psycopg.Connection, quota_id: str, popolazione: int) -> int:
+    # La quota è quella vigente quando il lotto è nato, non quella di oggi: il campione resta ripetibile.
+    valore = conn.execute("SELECT valore ->> 'valore' FROM parametri_governance WHERE parametro_id = %s",
+                          (quota_id,)).fetchone()[0]
+    return dimensione_campione(valore, popolazione)
+
+
 # --- decisione e applicazione ------------------------------------------------------
 
-def _misura_del_lotto(conn: psycopg.Connection, lotto_id: str, criterio: str) -> tuple[str, str] | None:
+def _misura_del_lotto(conn: psycopg.Connection, org_id: str, lotto_id: str) -> tuple[str, str, int, bool, str] | None:
+    """Ultima misura dell'unico campione del lotto (indice campioni_uno_per_lotto)."""
     riga = conn.execute(
-        """SELECT m.misura_id, m.esito FROM misure_precisione m
+        """SELECT m.misura_id, m.esito, m.n_elementi, m.censimento, c.campione_id FROM misure_precisione m
            JOIN campioni_revisione c USING (campione_id)
-           WHERE c.tipo_proposta = 'abbinamento' AND c.filtro ->> 'lotto' = %s AND c.criterio = %s
+           WHERE c.org_id = %s AND c.tipo_proposta = 'abbinamento' AND c.filtro ->> 'lotto' = %s
            ORDER BY m.calcolata_il DESC LIMIT 1""",
-        (lotto_id, criterio),
+        (org_id, lotto_id),
     ).fetchone()
-    return (str(riga[0]), riga[1]) if riga else None
+    return (str(riga[0]), riga[1], riga[2], riga[3], str(riga[4])) if riga else None
 
 
 def decidi_lotto(
@@ -228,12 +259,12 @@ def decidi_lotto(
     sono rifiutate: diventeranno task nuovi. Con revisione a campione o completa serve la misura del lotto,
     di cui l'atto riporta l'esito. Ritorna l'atto nel registro."""
     org_id, lotto_id = _uuid(org_id), _uuid(lotto_id)
-    rifiutate = {_uuid(p) for p in rifiutate}
     with conn.transaction():
         richiedi(conn, utente_id, "approvare_abbinamenti", org_id, risorsa=f"lotto_abbinamento:{lotto_id}")
+        rifiutate = {_uuid(p) for p in rifiutate}
         schema = spazio_organizzazione(conn, org_id)
         _blocca(conn, f"lotto_abbinamento:{lotto_id}")
-        livello, _, _, _ = _lotto(conn, schema, lotto_id)
+        livello, quota_id, _, _ = _lotto(conn, schema, lotto_id)
         proposte = conn.execute(
             sql.SQL("""SELECT p.proposta_id, p.task_id, d.proposta_id IS NOT NULL
                        FROM {0}.proposte_abbinamento p
@@ -246,12 +277,28 @@ def decidi_lotto(
         sconosciute = rifiutate - {str(r[0]) for r in proposte}
         if sconosciute:
             raise ValueError(f"proposte non del lotto: {sorted(sconosciute)}")
-        dettagli: dict[str, Any] = {"livello_revisione": livello}
-        if livello != "nulla":
-            misura = _misura_del_lotto(conn, lotto_id, "casuale" if livello == "campione" else "tutte")
+        con_task = sum(1 for r in proposte if r[1] is not None)
+        dettagli: dict[str, Any] = {"livello_revisione": livello, "proposte_con_task": con_task}
+        # Senza proposte con un task (dataset vuoto) non c'è nulla da campionare: si decide senza misura.
+        if livello != "nulla" and con_task:
+            misura = _misura_del_lotto(conn, org_id, lotto_id)
             if misura is None:
                 raise ValueError("serve una misura di precisione sul campione del lotto prima di decidere")
-            dettagli |= {"misura_id": misura[0], "esito_misura": misura[1]}
+            misura_id, esito_misura, n_elementi, censimento, campione_id = misura
+            attesi = con_task if livello == "completa" else _dimensione_attesa(conn, quota_id, con_task)
+            if n_elementi != attesi or (livello == "completa" and not censimento):
+                raise ValueError(f"la misura del lotto copre {n_elementi} proposte, non le {attesi} previste")
+            # Proposte giudicate errate o parziali nel campione che il revisore non rifiuta: restano nell'atto.
+            non_rifiutate = conn.execute(
+                """SELECT e.riferimento ->> 'proposta_id' FROM elementi_campione e
+                   JOIN LATERAL (SELECT g.esito FROM giudizi_revisione g
+                                 WHERE g.campione_id = e.campione_id AND g.posizione = e.posizione
+                                 ORDER BY g.giudizio_id DESC LIMIT 1) g ON true
+                   WHERE e.campione_id = %s AND g.esito IN ('errato', 'parziale')""",
+                (campione_id,),
+            ).fetchall()
+            dettagli |= {"misura_id": misura_id, "esito_misura": esito_misura,
+                         "campione_non_corrette_approvate": sum(1 for (p,) in non_rifiutate if p not in rifiutate)}
         esiti = {str(p): ("rifiutata" if str(p) in rifiutate or task is None else "approvata")
                  for p, task, _ in proposte}
         dettagli |= {"approvate": sum(e == "approvata" for e in esiti.values()),
@@ -268,14 +315,17 @@ def decidi_lotto(
 
 
 def _task_attivo(conn: psycopg.Connection, task_id: str) -> str:
-    """Il task stesso o, se nel frattempo è stato fuso, quello in cui è confluito."""
+    """Il task stesso o, se nel frattempo è stato fuso, quello in cui è confluito. La riga resta bloccata
+    fino alla fine della transazione: una fusione concorrente aspetta. Un task ritirato non si usa."""
     visti = set()
     while True:
         stato, fuso_in = conn.execute(
-            "SELECT status, merged_into FROM canonical_tasks WHERE task_id = %s", (task_id,)
+            "SELECT status, merged_into FROM canonical_tasks WHERE task_id = %s FOR SHARE", (task_id,)
         ).fetchone()
-        if stato != "merged" or fuso_in is None or task_id in visti:
+        if stato == "active":
             return task_id
+        if stato != "merged" or fuso_in is None or task_id in visti:
+            raise TaskNonAttivo(f"il task {task_id} non è attivo ({stato}): il candidato va riproposto")
         visti.add(task_id)
         task_id = str(fuso_in)
 
@@ -299,7 +349,8 @@ def applica_lotto(
                        FROM {0}.proposte_abbinamento p JOIN {0}.candidati c USING (candidato_id)
                        LEFT JOIN {0}.decisioni_abbinamento d USING (proposta_id)
                        LEFT JOIN {0}.applicazioni_abbinamento a USING (proposta_id)
-                       WHERE p.lotto_id = %s ORDER BY c.creato_il, p.proposta_id""").format(schema),
+                       WHERE p.lotto_id = %s
+                       ORDER BY c.creato_il, c.documento_id, c.ruolo_id, c.titolo""").format(schema),
             (lotto_id,),
         ).fetchall()
         if any(r[3] for r in righe):
@@ -325,20 +376,21 @@ def applica_lotto(
                     esistente = conn.execute("SELECT task_id FROM canonical_tasks WHERE title_it = %s",
                                              (titolo,)).fetchone()[0]
                     task_id, task_nuovo = _task_attivo(conn, str(esistente)), False
-            registra_occorrenza(conn, org_id, task_id=task_id, ruolo_id=str(ruolo_id),
-                                documento_id=str(documento_id), estratto=estratto, nota_contesto=nota,
-                                model_name=model_name, prompt_hash=prompt_hash)
+            nuova = registra_occorrenza(conn, org_id, task_id=task_id, ruolo_id=str(ruolo_id),
+                                        documento_id=str(documento_id), estratto=estratto, nota_contesto=nota,
+                                        model_name=model_name, prompt_hash=prompt_hash)
             occorrenza = conn.execute(
                 "SELECT occurrence_id FROM task_occurrences WHERE task_id = %s AND role_id = %s",
                 (task_id, ruolo_id),
-            ).fetchone()
+            ).fetchone() if nuova else None
             applicazioni.append((str(proposta_id), task_id, task_nuovo, str(occorrenza[0]) if occorrenza else None))
         if nuovi:
-            vettori = incorpora(list(nuovi.values()))
+            vettori = _vettori(incorpora, list(nuovi.values()), modello_embedding)
             for task_id, vettore in zip(nuovi, vettori):
                 conn.execute("INSERT INTO task_embeddings (task_id, model_name, vec) VALUES (%s, %s, %s::vector)",
                              (task_id, modello_embedding, _vettore(vettore)))
-        esito = {"collegate": sum(not a[2] for a in applicazioni), "task_nuovi": len(nuovi)}
+        esito = {"collegate": sum(not a[2] for a in applicazioni), "task_nuovi": len(nuovi),
+                 "occorrenze_nuove": sum(a[3] is not None for a in applicazioni)}
         atto = registra(conn, autore_id=utente_id, tipo_oggetto="applicazione_abbinamento", oggetto_id=lotto_id,
                         atto="approvazione", motivazione=motivazione, org_id=org_id, dettagli=esito)
         for proposta_id, task_id, task_nuovo, occorrenza_id in applicazioni:

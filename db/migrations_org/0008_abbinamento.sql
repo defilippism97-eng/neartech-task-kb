@@ -4,6 +4,8 @@
 -- rielaborato di un candidato che diventa task nuovo. Tutte le tabelle sono append-only.
 -- Si applica dopo la 0031 di public.
 
+SET LOCAL lock_timeout = '10s';
+
 DO $$
 BEGIN
   IF current_schema() = 'public' THEN
@@ -47,12 +49,14 @@ CREATE TABLE proposte_abbinamento (
   lotto_id uuid NOT NULL REFERENCES lotti_abbinamento,
   candidato_id uuid NOT NULL UNIQUE REFERENCES candidati,
   task_id uuid REFERENCES public.canonical_tasks,
-  distanza double precision CHECK (distanza >= 0),
-  margine double precision CHECK (margine >= 0),
+  distanza double precision CHECK (distanza >= 0 AND distanza < 'Infinity'),
+  margine double precision CHECK (margine >= 0 AND margine < 'Infinity'),
   vicini jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(vicini) = 'array'),
-  CHECK ((task_id IS NULL) = (distanza IS NULL))
+  CHECK ((task_id IS NULL) = (distanza IS NULL)),
+  CHECK (task_id IS NOT NULL OR margine IS NULL)
 );
 CREATE INDEX proposte_per_lotto ON proposte_abbinamento (lotto_id);
+CREATE INDEX proposte_per_task ON proposte_abbinamento (task_id);
 
 -- Una decisione per proposta, legata all'atto del registro che decide il lotto.
 CREATE TABLE decisioni_abbinamento (
@@ -67,10 +71,26 @@ CREATE TABLE applicazioni_abbinamento (
   proposta_id uuid PRIMARY KEY REFERENCES decisioni_abbinamento,
   task_id uuid NOT NULL REFERENCES public.canonical_tasks,
   task_nuovo boolean NOT NULL,
-  occorrenza_id uuid,  -- vuota se il ruolo aveva già il task
+  occorrenza_id uuid,  -- l'occorrenza creata; vuota se il ruolo aveva già il task. Informativa: una fusione
+                       -- successiva può spostare o togliere l'occorrenza in public (neartech.occorrenze)
   decisione_id bigint NOT NULL REFERENCES public.registro_decisioni,
   applicata_il timestamptz NOT NULL DEFAULT now()
 );
+CREATE INDEX applicazioni_per_task ON applicazioni_abbinamento (task_id);
+
+-- Coerenza con il registro, la proposta e la decisione (funzioni della migrazione 0031 di public).
+CREATE TRIGGER lotti_abbinamento_controllo BEFORE INSERT ON lotti_abbinamento
+  FOR EACH ROW EXECUTE FUNCTION public.abbinamento_controlla_lotto();
+CREATE TRIGGER decisioni_abbinamento_controllo BEFORE INSERT ON decisioni_abbinamento
+  FOR EACH ROW EXECUTE FUNCTION public.abbinamento_controlla_decisione();
+CREATE TRIGGER applicazioni_abbinamento_controllo BEFORE INSERT ON applicazioni_abbinamento
+  FOR EACH ROW EXECUTE FUNCTION public.abbinamento_controlla_applicazione();
+CREATE CONSTRAINT TRIGGER decisioni_abbinamento_lotto_intero AFTER INSERT ON decisioni_abbinamento
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW
+  EXECUTE FUNCTION public.abbinamento_lotto_intero('decisioni_abbinamento');
+CREATE CONSTRAINT TRIGGER applicazioni_abbinamento_lotto_intero AFTER INSERT ON applicazioni_abbinamento
+  DEFERRABLE INITIALLY DEFERRED FOR EACH ROW
+  EXECUTE FUNCTION public.abbinamento_lotto_intero('applicazioni_abbinamento');
 
 CREATE TRIGGER candidati_append_only BEFORE UPDATE OR DELETE ON candidati
   FOR EACH ROW EXECUTE FUNCTION public.vieta_modifiche();

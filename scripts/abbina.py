@@ -37,14 +37,16 @@ from neartech.scomposizione import organizzazione_per_codice  # noqa: E402
 
 
 def _incorpora():
-    """bge-m3 in locale, caricato solo quando serve; vettori normalizzati come per i task del dataset."""
-    from sentence_transformers import SentenceTransformer
-
-    modello = SentenceTransformer(MODELLO_EMBEDDING, device="cpu")
+    """bge-m3 in locale, caricato alla prima chiamata; vettori normalizzati come per i task del dataset."""
+    caricato = []
 
     def incorpora(titoli: list[str]):
-        return modello.encode(titoli, batch_size=64, normalize_embeddings=True).tolist()
+        if not caricato:
+            from sentence_transformers import SentenceTransformer
+            caricato.append(SentenceTransformer(MODELLO_EMBEDDING, device="cpu"))
+        return caricato[0].encode(titoli, batch_size=64, normalize_embeddings=True).tolist()
 
+    incorpora.modello = MODELLO_EMBEDDING
     return incorpora
 
 
@@ -107,7 +109,8 @@ def main() -> None:
             else:
                 esito = applica_lotto(conn, utente, org, args.lotto, incorpora=_incorpora(),
                                       motivazione=args.motivazione)
-                print(f"lotto applicato: {esito['collegate']} collegate, {esito['task_nuovi']} task nuovi")
+                print(f"lotto applicato: {esito['collegate']} collegate, {esito['task_nuovi']} task nuovi, "
+                      f"{esito['occorrenze_nuove']} occorrenze nuove")
         except (LookupError, ValueError, PermissionError, RuntimeError) as errore:
             raise SystemExit(f"errore ({type(errore).__name__}): {errore}") from None
         finally:

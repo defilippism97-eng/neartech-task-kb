@@ -244,7 +244,7 @@ def test_seconda_decisione_rifiutata(conn, mondo):
 
 def test_applicazione_collega_le_approvate_e_crea_i_task_nuovi(conn, mondo):
     _, _, esito = _decidi_e_applica(conn, mondo)
-    assert esito == {"collegate": 1, "task_nuovi": 2}
+    assert esito == {"collegate": 1, "task_nuovi": 2, "occorrenze_nuove": 3}
     nota = mondo["task"]["Redigere la prima nota contabile"]
     pubblico = conn.execute("SELECT raw_snippet FROM task_occurrences WHERE task_id = %s", (nota,)).fetchall()
     assert pubblico == [(None,)]  # nessun testo in public
@@ -287,7 +287,8 @@ def test_il_flusso_funziona_con_il_ruolo_applicativo(conn, mondo):
     """Il ruolo applicativo non è proprietario: deve avere i privilegi su tutte le tabelle del flusso."""
     conn.execute("SET LOCAL ROLE neartech_app")
     _, _, esito = _decidi_e_applica(conn, mondo)
-    assert esito == {"collegate": 1, "task_nuovi": 2}
+    assert esito == {"collegate": 1, "task_nuovi": 2, "occorrenze_nuove": 3}
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # anche i controlli differiti passano con il ruolo applicativo
 
 
 def test_il_report_di_audit_riassume_il_lotto(conn, mondo):
@@ -299,3 +300,163 @@ def test_il_report_di_audit_riassume_il_lotto(conn, mondo):
     riepilogo = report_organizzazione(conn, auditor, mondo["org"])["abbinamenti"]
     assert [(r["lotto_id"], r["livello_revisione"], r["proposte"], r["approvate"], r["rifiutate"],
              r["collegate"], r["task_nuovi"]) for r in riepilogo] == [(lotto, "campione", 3, 1, 2, 1, 2)]
+
+
+# --- correzioni dopo le revisioni della fase 3 ---------------------------------------
+
+def test_dimensione_del_campione_in_aritmetica_decimale():
+    from neartech.abbinamento import dimensione_campione
+    assert dimensione_campione("0.07", 100) == 7  # con i float sarebbe 8
+    assert dimensione_campione(0.5, 3) == 2
+    assert dimensione_campione("0.01", 10) == 1
+
+
+def test_un_solo_campione_per_lotto(conn, mondo):
+    lotto = _lotto(conn, mondo)
+    crea_campione_del_lotto(conn, mondo["revisore"], mondo["org"], lotto, seme=1, versione_istruzioni="v1",
+                            motivazione="primo")
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        crea_campione_del_lotto(conn, mondo["revisore"], mondo["org"], lotto, seme=2, versione_istruzioni="v1",
+                                motivazione="secondo seme")
+
+
+def test_la_quota_non_si_aggira_con_un_campione_piu_piccolo(conn, mondo):
+    from neartech.campioni import crea_campione
+    lotto = _lotto(conn, mondo)
+    campione = crea_campione(conn, mondo["revisore"], org_id=mondo["org"], tipo="abbinamento",
+                             filtro={"lotto": lotto}, criterio="casuale", dimensione=1, seme=3,
+                             versione_istruzioni="v1", motivazione="campione ridotto")
+    riga = esporta_campione(conn, mondo["revisore"], campione)[0]
+    registra_giudizio(conn, mondo["revisore"], campione, riga["posizione"], "corretto", nota=None,
+                      versione_istruzioni="v1")
+    calcola_precisione(conn, mondo["revisore"], campione)
+    with pytest.raises(ValueError, match="previste"):
+        decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="ok")
+
+
+def test_lotto_a_campione_su_dataset_vuoto_si_decide_senza_misura(conn, mondo):
+    conn.execute("UPDATE canonical_tasks SET status = 'retired'")
+    lotto = _lotto(conn, mondo)
+    atto = decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="dataset vuoto")
+    dettagli = conn.execute("SELECT dettagli FROM registro_decisioni WHERE decisione_id = %s", (atto,)).fetchone()[0]
+    assert dettagli["proposte_con_task"] == 0 and "misura_id" not in dettagli
+    conn.execute("UPDATE canonical_tasks SET status = 'active'")
+    esito = applica_lotto(conn, mondo["admin"], mondo["org"], lotto, incorpora=incorpora, motivazione="x")
+    assert esito["task_nuovi"] == 3
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_revisione_completa_dall_inizio_alla_fine(conn, mondo):
+    lotto = _lotto(conn, mondo, livello="completa")
+    campione = crea_campione_del_lotto(conn, mondo["revisore"], mondo["org"], lotto, seme=0,
+                                       versione_istruzioni="v1", motivazione="tutte")
+    for riga in esporta_campione(conn, mondo["revisore"], campione):
+        registra_giudizio(conn, mondo["revisore"], campione, riga["posizione"], "corretto", nota=None,
+                          versione_istruzioni="v1")
+    calcola_precisione(conn, mondo["revisore"], campione)
+    decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="tutte riviste")
+    assert applica_lotto(conn, mondo["admin"], mondo["org"], lotto, incorpora=incorpora,
+                         motivazione="x")["task_nuovi"] == 0
+
+
+def test_campione_con_giudizi_errati_non_rifiutati_resta_nell_atto(conn, mondo):
+    lotto = _lotto(conn, mondo)
+    campione, righe = _campione_giudicato(conn, mondo, lotto, {"Registrare la prima nota": "errato",
+                                                               "Curare le pratiche amministrative": "errato",
+                                                               "Pianificare i turni di lavoro": "errato"})
+    calcola_precisione(conn, mondo["revisore"], campione)
+    atto = decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="approvo tutto")
+    dettagli = conn.execute("SELECT dettagli FROM registro_decisioni WHERE decisione_id = %s", (atto,)).fetchone()[0]
+    assert dettagli["campione_non_corrette_approvate"] == len(righe)
+
+
+def test_task_proposto_ritirato_ferma_l_applicazione(conn, mondo):
+    from neartech.abbinamento import TaskNonAttivo
+    lotto = _lotto(conn, mondo, livello="nulla")
+    decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="approvo")
+    conn.execute("UPDATE canonical_tasks SET status = 'retired'")
+    with pytest.raises(TaskNonAttivo):
+        applica_lotto(conn, mondo["admin"], mondo["org"], lotto, incorpora=incorpora, motivazione="x")
+
+
+def test_task_proposto_fuso_si_segue_fino_al_superstite(conn, mondo):
+    lotto = _lotto(conn, mondo, livello="nulla")
+    decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="approvo")
+    nota, personale = mondo["task"]["Redigere la prima nota contabile"], mondo["task"]["Gestire le pratiche del personale"]
+    conn.execute("UPDATE canonical_tasks SET status = 'merged', merged_into = %s WHERE task_id = %s", (personale, nota))
+    applica_lotto(conn, mondo["admin"], mondo["org"], lotto, incorpora=incorpora, motivazione="x")
+    assert conn.execute("SELECT count(*) FROM task_occurrences WHERE task_id = %s", (nota,)).fetchone()[0] == 0
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_embedding_incompleto_o_di_un_altro_modello_rifiutato(conn, mondo):
+    with pytest.raises(ValueError, match="vettore"):
+        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], livello_revisione="nulla",
+                            incorpora=lambda titoli: [], motivazione="x")
+
+    def altro(titoli):
+        return incorpora(titoli)
+    altro.modello = "altro-modello"
+    with pytest.raises(ValueError, match="modello"):
+        proponi_abbinamenti(conn, mondo["admin"], mondo["org"], livello_revisione="nulla", incorpora=altro,
+                            motivazione="x")
+
+
+def test_due_candidati_dello_stesso_ruolo_sullo_stesso_task(conn, mondo):
+    VETTORI["Tenere la prima nota"] = _vettore((0, 1.0), (1, 0.05))
+    salva_candidati(conn, mondo["org"], ruolo_nome="Impiegato amministrativo", nome_file="mansionario.docx",
+                    sha256="a" * 64, licenza="interno", attivita=[Attivita("Tenere la prima nota", 2, "tiene")],
+                    model_name="modello", prompt_hash="hash")
+    lotto = _lotto(conn, mondo, livello="nulla")
+    decidi_lotto(conn, mondo["revisore"], mondo["org"], lotto, rifiutate=[], motivazione="approvo")
+    esito = applica_lotto(conn, mondo["admin"], mondo["org"], lotto, incorpora=incorpora, motivazione="x")
+    applicate = esito["collegate"] + esito["task_nuovi"]
+    vuote = _spazio(conn, "SELECT count(*) FROM {}.applicazioni_abbinamento WHERE occorrenza_id IS NULL")[0][0]
+    # Lo stesso ruolo sullo stesso task ha una sola occorrenza: le altre applicazioni restano senza.
+    assert vuote >= 1 and esito["occorrenze_nuove"] == applicate - vuote
+
+
+def test_un_lotto_di_un_altra_organizzazione_non_si_trova(conn, mondo):
+    altra = crea_organizzazione(conn, mondo["admin"], nome="Altra", codice="altra")
+    lotto = _lotto(conn, mondo, livello="nulla")
+    with pytest.raises(LookupError):
+        coda_revisione(conn, mondo["admin"], altra, lotto)
+
+
+# --- vincoli nel database -------------------------------------------------------------
+
+def test_database_rifiuta_una_decisione_con_l_atto_sbagliato(conn, mondo):
+    lotto = _lotto(conn, mondo, livello="nulla")
+    proposta = coda_revisione(conn, mondo["revisore"], mondo["org"], lotto)[0]["proposta_id"]
+    atto_lotto = _spazio(conn, "SELECT decisione_id FROM {}.lotti_abbinamento WHERE lotto_id = %s", lotto)[0][0]
+    with pytest.raises(psycopg.errors.RaiseException, match="non è l'atto"):
+        conn.execute(sql.SQL("INSERT INTO {}.decisioni_abbinamento (proposta_id, esito, decisione_id) "
+                             "VALUES (%s, 'approvata', %s)").format(SPAZIO), (proposta, atto_lotto))
+
+
+def test_database_rifiuta_un_lotto_deciso_a_meta(conn, mondo):
+    from neartech.registro import registra
+    lotto = _lotto(conn, mondo, livello="nulla")
+    proposta = coda_revisione(conn, mondo["revisore"], mondo["org"], lotto)[0]["proposta_id"]
+    atto = registra(conn, autore_id=mondo["revisore"], tipo_oggetto="lotto_abbinamento", oggetto_id=lotto,
+                    atto="approvazione", motivazione="a metà", org_id=mondo["org"])
+    conn.execute(sql.SQL("INSERT INTO {}.decisioni_abbinamento (proposta_id, esito, decisione_id) "
+                         "VALUES (%s, 'rifiutata', %s)").format(SPAZIO), (proposta, atto))
+    with pytest.raises(psycopg.errors.RaiseException, match="per intero"):
+        conn.execute("SET CONSTRAINTS ALL IMMEDIATE")
+
+
+def test_database_rifiuta_un_elemento_di_un_altro_lotto(conn, mondo):
+    primo = _lotto(conn, mondo, livello="campione")
+    salva_candidati(conn, mondo["org"], ruolo_nome="Impiegato amministrativo", nome_file="mansionario.docx",
+                    sha256="a" * 64, licenza="interno",
+                    attivita=[Attivita("Gestire le pratiche del personale", 2, "gestisce")],
+                    model_name="modello", prompt_hash="hash")
+    VETTORI.setdefault("Gestire le pratiche del personale", _vettore((1, 1.0)))
+    secondo = _lotto(conn, mondo, livello="campione")
+    estranea = coda_revisione(conn, mondo["revisore"], mondo["org"], secondo)[0]["proposta_id"]
+    campione = crea_campione_del_lotto(conn, mondo["revisore"], mondo["org"], primo, seme=1,
+                                       versione_istruzioni="v1", motivazione="x")
+    with pytest.raises(psycopg.errors.RaiseException, match="non del lotto"):
+        conn.execute("INSERT INTO elementi_campione (campione_id, posizione, riferimento) VALUES (%s, 99, %s)",
+                     (campione, psycopg.types.json.Jsonb({"proposta_id": estranea})))
