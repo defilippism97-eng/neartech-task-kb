@@ -107,3 +107,10 @@ Approvata dal responsabile del progetto. Misura ufficiale delle 61 fusioni "stes
 ## 12. Testo del cliente fuori da `public` (2026-10-17)
 
 Realizzazione dell'ADR 0001, approvata nella sezione 10 (passi di produzione). In `public` restano i legami task–ruolo–documento con gli stessi identificativi dello spazio dell'organizzazione e nomi neutri; il testo sta solo in `org_<codice>`. Vincoli nel database (migrazioni 0023 e 0024). Eseguita su Società Dolce il 2026-10-17 dopo la verifica che ogni riga avesse la copia identica nello spazio. Vedi ADR 0005.
+
+## 13. Parametri comuni esaminati dal comitato, proponente e approvatore, testi nello spazio (2026-10-17)
+
+Realizzazione delle decisioni b, e, g della sezione 10.
+- **b:** il comitato guida vede i parametri comuni vigenti e per ciascuno li adotta o chiede una ricalibrazione motivata (atti `adozione` e `richiesta_ricalibrazione`, permessi `adottare_parametro_comune` e `chiedere_ricalibrazione`, migrazione 0025). L'adozione vale per una versione. Il valore comune si applica anche senza adozione; `parametro_vigente` riporta `adozione_id`. Se l'adozione debba diventare obbligatoria prima dei calcoli è una decisione di governance aperta. Linee guida: `docs/governance/linee-guida-parametri-comuni.md`.
+- **e:** ogni approvazione, rifiuto o ritiro registra `stesso_proponente` nei dettagli.
+- **g:** testi di governance dell'organizzazione nel suo spazio, hash nel registro (ADR 0004, sezione Realizzazione).

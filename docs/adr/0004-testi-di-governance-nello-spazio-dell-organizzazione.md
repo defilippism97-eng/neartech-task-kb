@@ -1,7 +1,7 @@
 # ADR-0004: I testi di governance dell'organizzazione stanno nel suo spazio
 
 **Data:** 2026-10-16
-**Stato:** accettato; realizzazione in corso
+**Stato:** accettato; realizzato il 2026-10-17 (migrazioni 0025 e org 0006)
 **Chi decide:** responsabile del progetto (integra l'ADR 0001 e modifica in parte l'ADR 0003)
 
 ## Contesto
@@ -38,3 +38,11 @@ L'ADR 0001 tiene fuori dal dataset condiviso il testo dei documenti del cliente.
 
 ### Rischi
 - Gli atti già scritti in `public` restano dove sono (append-only). Oggi in produzione non ce ne sono: lo spostamento va fatto prima che il comitato guida inizi a usare il sistema.
+
+## Realizzazione (2026-10-17)
+
+- `neartech.registro.registra`: per un atto di un'organizzazione con spazio, motivazione e `dettagli_riservati` vanno in `org_<codice>.testi_atti`; nel registro restano il marcatore `nello spazio dell'organizzazione`, i dettagli strutturali e `hash_testo`. Un trigger (migrazione 0025) rifiuta testo in chiaro per le organizzazioni con spazio. `verifica_testi` confronta lo spazio con l'hash.
+- Indirizzi: testo e ambito in `testi_indirizzi`; parametri dell'organizzazione: descrizione in `testi_parametri`, hash nella proposta. `verifica_contenuti` li controlla nello spazio. Le descrizioni dei parametri comuni restano in `public`.
+- Segnalazioni dei revisori: motivazione e dettagli nello spazio.
+- Gli atti scritti prima della 0025 (5 in produzione, tutti dell'amministratore tecnico) restano in `public`, append-only.
+- Organizzazioni senza spazio (solo nei test o precedenti agli spazi): i testi restano in `public`; indirizzi e parametri dell'organizzazione richiedono lo spazio.

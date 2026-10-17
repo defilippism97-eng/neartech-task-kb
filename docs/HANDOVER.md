@@ -148,7 +148,9 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Testo del cliente fuori da `public` (2026-10-17, ADR 0005):** migrazioni 0023, 0024 e org 0005 applicate; `togli_testo_da_public` eseguita su Società Dolce (504 occorrenze, 36 ruoli, 36 documenti); in `public` restano legami con nomi neutri, i vincoli impediscono il ritorno del testo. Ancora alla posizione 23.
 
-**Restano:** decisioni b, e, g (sezione 10 del registro di metodo); crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
+**Decisioni b, e, g (2026-10-17, sezione 13 del registro di metodo):** in codice sul branch `governance-e-pulizia`; migrazioni 0025 e org 0006 **da applicare in produzione** (serve l'approvazione). Linee guida per il comitato: `docs/governance/linee-guida-parametri-comuni.md`.
+
+**Restano:** applicazione di 0025 e org 0006; report di audit per organizzazione (ADR 0004); crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).
