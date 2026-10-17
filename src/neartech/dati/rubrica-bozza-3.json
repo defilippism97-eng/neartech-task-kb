@@ -1,0 +1,42 @@
+{
+  "versione": "bozza-3",
+  "fonte": "docs/silver/pacchetto-gemini.md, sezioni 1 e 2 (rubrica usata per le stime del modello)",
+  "voci": [
+    {"codice": "k1", "nome": "Variabilità dell'input", "asse": "N", "livelli": [
+      "Input strutturato e completo. Es.: registrare presenze da badge.",
+      "Semi-strutturato con varianti note. Es.: registrare fatture fornitori.",
+      "Non strutturato in un dominio delimitato. Es.: sintetizzare una relazione di servizio.",
+      "Incompleto o contraddittorio, va ricostruito. Es.: ricostruire il bisogno di un utente da famiglia e servizi.",
+      "Contesto aperto che cambia durante l'esecuzione. Es.: gestire un'uscita con imprevisti."]},
+    {"codice": "k2", "nome": "Giudizio", "asse": "N", "livelli": [
+      "Regole esaustive. Es.: calcolare maggiorazioni da contratto collettivo.",
+      "Scelta tra opzioni documentate. Es.: assegnare una sostituzione da graduatoria.",
+      "Bilanciare 2–3 vincoli noti. Es.: comporre turni con vincoli orari e di competenza.",
+      "Dati incompleti, senza precedenti standard. Es.: rivedere un progetto dopo un peggioramento.",
+      "Sintesi inedita in scenari mai visti. Es.: riorganizzare un servizio in emergenza."]},
+    {"codice": "k3", "nome": "Componente fisico-percettiva", "asse": "N", "livelli": [
+      "Nessuna. Es.: redigere un verbale.",
+      "Dispositivi standard. Es.: stampare e archiviare.",
+      "Manipolazione ordinaria in ambiente stabile. Es.: riordinare il magazzino.",
+      "Manipolazione o percezione in ambiente variabile. Es.: igiene della persona a domicilio.",
+      "Intervento fine e non pianificabile su persone. Es.: soccorrere un utente caduto."]},
+    {"codice": "r", "nome": "Affidabilità richiesta", "asse": "N", "livelli": [
+      "Errore reversibile senza conseguenze.",
+      "Errore intercettato dai controlli ordinari di processo.",
+      "Errore che richiede rilavorazione o chiarimento con terzi.",
+      "Errore con costo elevato, correggibile solo con sforzo significativo.",
+      "Errore non correggibile, con effetti gravi sulla sicurezza fisica."]},
+    {"codice": "d1", "nome": "Relazione e fiducia", "asse": "D", "livelli": [
+      "Transazione funzionale. Es.: comunicare un orario.",
+      "Cortesia procedurale. Es.: fissare un appuntamento.",
+      "Supporto che aumenta la chiarezza. Es.: spiegare una pratica.",
+      "Relazione d'aiuto o mediazione. Es.: colloquio con una famiglia in disaccordo.",
+      "Vulnerabilità acuta, lutto, crisi. Es.: accompagnare una persona nel fine vita."]},
+    {"codice": "d2", "nome": "Responsabilità", "asse": "D", "livelli": [
+      "Nessun effetto su diritti o doveri.",
+      "Applicazione di regola senza discrezionalità. Es.: calcolo delle ferie.",
+      "Verifica di conformità interna. Es.: controllare la completezza di una cartella.",
+      "Incide su diritti, carriera, risorse individuali o reputazione dell'organizzazione. Es.: contestazione disciplinare.",
+      "Atto riservato per legge a una figura abilitata."]}
+  ]
+}

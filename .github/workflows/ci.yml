@@ -1,0 +1,53 @@
+name: CI
+
+# A ogni PR e a ogni push su main: test del motore e dell'API su PostgreSQL 16 con pgvector, controlli, test e
+# build del frontend (ADR 0007). Nessuna chiamata a pagamento: il test dello Scorer reale ha un workflow manuale.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: neartech_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # Credenziali del solo contenitore di test, distrutto a fine job.
+      NEARTECH_TEST_DSN: postgresql://postgres:postgres@localhost:5432/neartech_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.15"
+      - run: pip install -e ".[dev,api]"
+      - run: python -m pytest -q -p no:cacheprovider
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx tsc -b
+      - run: npx oxlint src
+      - run: npm test
+      - run: npm run build

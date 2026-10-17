@@ -12,3 +12,4 @@ Modello vuoto: `template.md`.
 | [0004](0004-testi-di-governance-nello-spazio-dell-organizzazione.md) | I testi di governance dell'organizzazione stanno nel suo spazio | accettato | 2026-10-16 |
 | [0005](0005-scheletro-senza-testo-in-public.md) | In `public` resta uno scheletro senza testo del cliente | accettato | 2026-10-17 |
 | [0006](0006-abbinamento-candidati-nello-spazio-decisione-in-blocco.md) | Abbinamento al dataset: candidati e proposte nello spazio, decisione in blocco | accettato | 2026-10-17 |
+| [0007](0007-stack-della-piattaforma.md) | Stack della piattaforma web: FastAPI sul motore, React con Vite, SSO, UE | accettato | 2026-10-17 |

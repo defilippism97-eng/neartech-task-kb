@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neartech — Guida all'identità visiva v3.1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="neartech-identita.css">
+  <style>
+    .topbar { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+    .topbar-in { max-width: 1200px; margin: 0 auto; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .toc { display: flex; gap: 18px; font-size: 13px; font-weight: 500; overflow-x: auto; }
+    .toc a { color: var(--slate); text-decoration: none; white-space: nowrap; }
+    .toc a:hover { color: var(--navy); }
+    .hero { background: var(--navy); color: #fff; border-radius: 16px; padding: clamp(32px, 6vw, 64px); margin-top: var(--s3); position: relative; overflow: hidden;
+      border: 1px solid #14387D;
+      background-image: radial-gradient(circle at 88% 18%, rgba(0,180,180,0.22), transparent 42%), radial-gradient(circle at 96% 92%, rgba(82,25,131,0.32), transparent 45%); }
+    .hero h1 { color: #fff; margin: 18px 0 18px; max-width: 820px; }
+    .hero em { color: #80E6E6; }
+    .hero p { color: #CBD5E1; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 14px 30px; margin-top: 32px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.14); font-family: var(--f-mono); font-size: 12px; color: #94A3B8; }
+    .hero-meta strong { color: #fff; font-weight: 600; }
+
+    .logo-stage { border-radius: var(--radius); display: flex; align-items: center; justify-content: center; min-height: 200px; padding: var(--s4); }
+    .logo-light { background: var(--cloud); border: 1px solid var(--border); }
+    .logo-navy { background: var(--navy); border: 1px solid #14387D; }
+    .logo-mono { background: var(--cloud); border: 1px solid var(--border); }
+    .logo-lockup { display: flex; align-items: center; gap: 16px; }
+    .logo-lockup .wordmark { font-size: 30px; }
+    .logo-lockup .sub { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--stone-ink); margin-top: 6px; }
+    .logo-navy .wordmark { color: #fff; }
+    .logo-navy .sub { color: #94A3B8; }
+    .caption { font-family: var(--f-mono); font-size: 11px; color: var(--stone-ink); margin-top: 10px; letter-spacing: 0.02em; }
+
+    .swatch { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--cloud); }
+    .swatch-chip { height: 96px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: flex-end; font-family: var(--f-mono); font-size: 12px; font-weight: 600; }
+    .swatch-body { padding: 14px 16px; }
+    .swatch-body h4 { margin-bottom: 2px; }
+    .swatch-body .mono { display: block; margin-top: 4px; }
+    .swatch-body p { font-size: 13px; margin: 6px 0 0; }
+    .ok { color: var(--emerald-ink); font-weight: 600; }
+    .no { color: var(--risk-ink); font-weight: 600; }
+
+    table.spec { width: 100%; border-collapse: collapse; background: var(--cloud); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; font-size: 14px; }
+    table.spec th { text-align: left; font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); background: var(--subtle); padding: 12px 16px; }
+    table.spec td { padding: 14px 16px; border-top: 1px solid var(--border); vertical-align: top; color: var(--obsidian); }
+
+    .do-dont { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+    .do { border-top: 4px solid var(--emerald); }
+    .dont { border-top: 4px solid var(--risk); }
+    .do h4 { color: var(--emerald-ink); }
+    .dont h4 { color: var(--risk-ink); }
+
+    .type-row { display: grid; grid-template-columns: 220px 1fr; gap: var(--s3); align-items: baseline; padding: var(--s3) 0; border-top: 1px solid var(--border); }
+    .type-row:first-child { border-top: none; padding-top: 0; }
+    .type-row .spec-label { font-family: var(--f-mono); font-size: 11px; color: var(--stone-ink); line-height: 1.5; }
+
+    .quad-demo { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--cloud); }
+    .quad-cell { padding: 22px; min-height: 160px; }
+    .quad-cell h4 { font-family: var(--f-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .quad-cell p { font-size: 13.5px; margin: 0; }
+    .q1 { background: rgba(11,37,89,0.06); } .q1 h4 { color: var(--cobalt); }
+    .q2 { background: rgba(245,158,11,0.10); } .q2 h4 { color: var(--amber-ink); }
+    .q3 { background: rgba(0,180,180,0.10); } .q3 h4 { color: var(--teal-ink); }
+    .q4 { background: rgba(82,25,131,0.07); } .q4 h4 { color: var(--violet); }
+    .pattern-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 8px; vertical-align: -2px; border: 1.5px solid var(--obsidian); }
+
+    .chip-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .btn-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+    .field { display: grid; gap: 6px; max-width: 360px; }
+    .field label { font-family: var(--f-ui); font-size: 13px; font-weight: 600; color: var(--obsidian); }
+    .field input { font-family: var(--f-ui); font-size: 15px; padding: 12px 14px; border: 1.5px solid #94A3B8; border-radius: 8px; background: var(--cloud); color: var(--obsidian); }
+    .field .help { font-size: 12.5px; color: var(--stone-ink); }
+
+    .changes { counter-reset: ch; display: grid; gap: 10px; }
+    .changes li { list-style: none; position: relative; padding: 12px 14px 12px 46px; background: var(--cloud); border: 1px solid var(--border); border-radius: 10px; font-size: 14.5px; color: var(--slate); }
+    .changes li::before { counter-increment: ch; content: counter(ch); position: absolute; left: 14px; top: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: #fff; font-family: var(--f-mono); font-size: 11px; display: grid; place-items: center; }
+    .changes strong { color: var(--obsidian); }
+
+    footer { margin-top: var(--s6); padding-top: var(--s3); border-top: 1px solid var(--border); font-family: var(--f-mono); font-size: 11px; color: var(--stone-ink); line-height: 1.7; }
+
+    @media (max-width: 960px) {
+      .toc { display: none; }
+      .do-dont, .quad-demo { grid-template-columns: 1fr; }
+      .type-row { grid-template-columns: 1fr; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="topbar-in">
+      <a class="lockup" href="#top" aria-label="Neartech Consulting">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+          <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+          <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+          <rect x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+          <circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+        </svg>
+        <span class="wordmark" style="font-size:19px;">Neartech<small>Identità v3</small></span>
+      </a>
+      <nav class="toc" aria-label="Sezioni">
+        <a href="#logo">Marchio</a><a href="#colore">Colore</a><a href="#tipografia">Tipografia</a>
+        <a href="#forma">Forma</a><a href="#dati">Dati</a><a href="#componenti">Componenti</a>
+        <a href="#voce">Voce</a><a href="#movimento">Movimento</a><a href="#versione">Versione 3</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page" id="top">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="eyebrow" style="color:#80E6E6;">Guida all'identità visiva · versione 3.1 «Luce»</div>
+      <div class="display" style="color:#fff; font-size:clamp(40px,5.6vw,68px);">Chiarezza che si <em>misura</em>, <br>persone che <em>decidono</em>.</div>
+      <p class="lead" style="color:#CBD5E1; margin-top:20px;">Un sistema visivo per un prodotto che rende leggibile il lavoro: sobrio come un documento, preciso come un'analisi, caldo come una conversazione tra persone.</p>
+      <div class="hero-meta">
+        <div><strong>Logo:</strong> Task Matrix</div>
+        <div><strong>Base:</strong> Paper #FFFFFF · Card #F5F6F8</div>
+        <div><strong>Font:</strong> Inter · JetBrains Mono</div>
+      </div>
+    </div>
+
+    <!-- MARCHIO -->
+    <section class="section" id="logo">
+      <div class="section-head">
+        <div class="eyebrow">01 · Marchio</div>
+        <h2>Task Matrix</h2>
+        <p class="lead">Un'asta solida, due moduli diagonali che scompongono il processo, una sfera ambra: il punto in cui una persona guarda e decide. Ogni elemento ha un significato, nessuno è decorativo.</p>
+      </div>
+
+      <div class="grid-3">
+        <div>
+          <div class="logo-stage logo-light">
+            <div class="logo-lockup">
+              <svg width="58" height="58" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <rect x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+                <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+                <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+                <rect x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+                <circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+              </svg>
+              <div><div class="wordmark">Neartech</div><div class="sub">AI &amp; CONSULTING</div></div>
+            </div>
+          </div>
+          <p class="caption">A · Versione primaria, su chiaro</p>
+        </div>
+        <div>
+          <div class="logo-stage logo-navy">
+            <div class="logo-lockup">
+              <svg width="58" height="58" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <rect x="6" y="8" width="9" height="32" rx="2" fill="#FFFFFF"/>
+                <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+                <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#4E77C6"/>
+                <rect x="34" y="20" width="9" height="20" rx="2" fill="#FFFFFF"/>
+                <circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+              </svg>
+              <div><div class="wordmark">Neartech</div><div class="sub">AI &amp; CONSULTING</div></div>
+            </div>
+          </div>
+          <p class="caption">B · Variante su navy: il modulo centrale usa Cobalt 400 (#4E77C6)</p>
+        </div>
+        <div>
+          <div class="logo-stage logo-mono">
+            <svg width="120" height="120" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect x="6" y="8" width="9" height="32" rx="2" fill="#0F172A"/>
+              <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#0F172A"/>
+              <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#0F172A" opacity="0.55"/>
+              <rect x="34" y="20" width="9" height="20" rx="2" fill="#0F172A"/>
+              <circle cx="38.5" cy="12.5" r="4.5" fill="#0F172A"/>
+            </svg>
+          </div>
+          <p class="caption">C · Monocromatica, per stampa in un colore, fax e timbri</p>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top:var(--s4); align-items:start;">
+        <div class="card">
+          <h3>Area di rispetto e dimensioni minime</h3>
+          <p>Lascia intorno al marchio uno spazio pari a <strong>1,5 X</strong>, dove X è l'altezza della N del marchio. Sotto la dimensione minima il simbolo resta leggibile, il lockup completo no.</p>
+          <table class="spec" style="margin-top:var(--s2);">
+            <thead><tr><th>Versione</th><th>Minimo digitale</th><th>Minimo stampa</th></tr></thead>
+            <tbody>
+              <tr><td>Lockup completo</td><td>140 px</td><td>35 mm</td></tr>
+              <tr><td>Senza payoff</td><td>90 px</td><td>22 mm</td></tr>
+              <tr><td>Solo simbolo</td><td>16 px</td><td>5 mm</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="do-dont">
+          <div class="card do"><h4>Da fare</h4><p style="font-size:14px; margin:0;">Usa solo i file ufficiali. Mantieni le proporzioni. Lascia la sfera ambra sempre visibile.</p></div>
+          <div class="card dont"><h4>Da non fare</h4><p style="font-size:14px; margin:0;">Non deformare, non ruotare, non aggiungere ombre o bagliori. Non sostituire il font del logotipo.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLORE -->
+    <section class="section" id="colore">
+      <div class="section-head">
+        <div class="eyebrow">02 · Colore</div>
+        <h2>Una palette con un ruolo per colore.</h2>
+        <p class="lead">Ogni colore ha un compito. Il testo usa solo colori che superano il contrasto AA. Teal e ambra servono a superfici ed elementi grafici, e quando compaiono nel testo usano la loro variante scura.</p>
+      </div>
+
+      <div class="grid-4">
+        <div class="swatch"><div class="swatch-chip" style="background:#0B2559; color:#fff;">#0B2559</div><div class="swatch-body"><h4>Deep Navy</h4><span class="mono">Titoli, struttura</span><p>Su bianco: <span class="ok">14,8:1</span></p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#00B4B4; color:#07193D;">#00B4B4</div><div class="swatch-body"><h4>Augmentation Teal</h4><span class="mono">Superfici, accenti</span><p>Testo: usa <strong>#007272</strong> (<span class="ok">5,75:1</span>)</p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#1B499F; color:#fff;">#1B499F</div><div class="swatch-body"><h4>Cognitive Cobalt</h4><span class="mono">Metodo, interazioni</span><p>Su bianco: <span class="ok">8,4:1</span></p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#521983; color:#fff;">#521983</div><div class="swatch-body"><h4>Synthetic Violet</h4><span class="mono">Automazione</span><p>Su bianco: <span class="ok">11,5:1</span></p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#F59E0B; color:#451A03;">#F59E0B</div><div class="swatch-body"><h4>Human Amber</h4><span class="mono">Presenza umana</span><p>Testo: usa <strong>#92400E</strong>. Su bianco il fondo ambra è <span class="no">2,2:1</span>: solo grafica con etichetta scura.</p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#10B981; color:#064E3B;">#10B981</div><div class="swatch-body"><h4>Ethical Emerald</h4><span class="mono">Valore, verifica</span><p>Testo: usa <strong>#065F46</strong> (<span class="ok">6,8:1</span> su verde chiaro)</p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#E11D48; color:#fff;">#E11D48</div><div class="swatch-body"><h4>Coral Risk</h4><span class="mono">Rischio, blocco</span><p>Testo: usa <strong>#9F1239</strong> (<span class="ok">8,0:1</span> su bianco)</p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#FFFFFF; color:#0F172A; border-bottom:1px solid #E2E8F0;">#FFFFFF</div><div class="swatch-body"><h4>Paper</h4><span class="mono">Fondo di pagina e di slide</span><p>Testo principale: <span class="ok">17,8:1</span></p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#F5F6F8; color:#0F172A; border-bottom:1px solid #E2E8F0;">#F5F6F8</div><div class="swatch-body"><h4>Card</h4><span class="mono">Pannelli, senza bordo</span><p>Testo principale: <span class="ok">16,5:1</span></p></div></div>
+        <div class="swatch"><div class="swatch-chip" style="background:#F8F7F4; color:#0F172A; border-bottom:1px solid #E2E8F0;">#F8F7F4</div><div class="swatch-body"><h4>Warm Alabaster</h4><span class="mono">Superficie calda secondaria</span><p>Testo principale: <span class="ok">16,7:1</span></p></div></div>
+      </div>
+
+      <div class="grid-3" style="margin-top:var(--s4);">
+        <div class="card"><h4>Testo principale</h4><p style="margin:0; font-size:14px;"><span class="mono">#0F172A</span> · su alabaster 16,7:1</p></div>
+        <div class="card"><h4>Testo secondario</h4><p style="margin:0; font-size:14px;"><span class="mono">#475569</span> · su alabaster 7,1:1</p></div>
+        <div class="card"><h4>Testo di supporto</h4><p style="margin:0; font-size:14px;"><span class="mono">#526175</span> · su alabaster 5,9:1<br><span class="muted">Sostituisce il vecchio #64748B, che scendeva a 4,44:1.</span></p></div>
+      </div>
+    </section>
+
+    <!-- TIPOGRAFIA -->
+    <section class="section" id="tipografia">
+      <div class="section-head">
+        <div class="eyebrow">03 · Tipografia</div>
+        <h2>Due famiglie, tre mestieri.</h2>
+        <p class="lead">Inter per titoli, testi e interfaccia: peso 600 con tracking stretto nei titoli, regolare nel corpo. JetBrains Mono per dati, codici e per l'accento di un titolo.</p>
+      </div>
+
+      <div class="card">
+        <div class="type-row">
+          <div class="spec-label">Display<br>Inter 600 · 72/74 · −0,05em</div>
+          <div class="display" style="font-size:clamp(36px,5vw,56px);">Dal lavoro alla decisione.</div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">H1<br>Inter 600 · 56/58 · −0,05em</div>
+          <div class="h1" style="font-size:clamp(30px,4vw,44px);">Mappa dei ruoli, aggiornata.</div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">H2<br>Inter 600 · 40/44 · −0,045em</div>
+          <div class="h2" style="font-size:clamp(26px,3vw,34px); margin:0;">Ogni decisione ha un autore.</div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">Lead<br>Inter 400 · 22/33 · −0,015em</div>
+          <div class="lead" style="font-size:20px;">Il valore umano non è un costo da ridurre, ma una competenza da far crescere.</div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">Accento nel titolo<br>JetBrains Mono 500 · 0,86 del titolo · −0,05em · Teal scuro</div>
+          <div class="h2" style="font-size:clamp(26px,3vw,34px); margin:0;">Prevediamo cosa <em>cambierà</em>.</div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">Corpo<br>Inter 400 · 16/26</div>
+          <div><p style="margin:0;">Ogni risultato dichiara la versione della rubrica, i parametri approvati e le persone che hanno contribuito. Il testo è leggibile su ogni schermo e rispetta le dimensioni minime.</p></div>
+        </div>
+        <div class="type-row">
+          <div class="spec-label">Dato e codice<br>JetBrains Mono 500 · 12/16 · +0,02em</div>
+          <div class="mono" style="font-size:14px; color:var(--navy);">TSK-042 · RUBRICA v3 · PROBABILITÀ 78%</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORMA -->
+    <section class="section" id="forma">
+      <div class="section-head">
+        <div class="eyebrow">04 · Forma e spazio</div>
+        <h2>Una griglia visibile, mai rumorosa.</h2>
+        <p class="lead">La precisione architettonica si vede nei bordi sottili, nei multipli di 8 e in spazi generosi. Il vuoto è parte del messaggio: serve alla concentrazione di chi legge.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card"><h4>Multipli di 8</h4><p style="margin:0;">Ogni distanza è 8, 16, 24, 32, 48, 64 o 96 px. Nessun valore fuori scala.</p></div>
+        <div class="card"><h4>Bordo 1 px</h4><p style="margin:0;">I contorni sono <span class="mono">#E2E8F0</span>, mai ombre pesanti. L'ombra, se c'è, è quasi invisibile.</p></div>
+        <div class="card"><h4>Spazio libero</h4><p style="margin:0;">Almeno un terzo della schermata resta libero nelle pagine di lettura. Nelle dashboard si riduce, ma resta un margine.</p></div>
+      </div>
+      <div class="card" style="margin-top:var(--s3);">
+        <h4>Raggi</h4>
+        <div class="chain-row mono" style="display:flex; gap:24px; flex-wrap:wrap; margin-top:12px;">
+          <div><div style="width:64px;height:40px;border:1.5px solid var(--navy);border-radius:6px;margin-bottom:6px;"></div>6 px · etichette e chip</div>
+          <div><div style="width:64px;height:40px;border:1.5px solid var(--navy);border-radius:10px;margin-bottom:6px;"></div>10 px · bottoni</div>
+          <div><div style="width:64px;height:40px;border:1.5px solid var(--navy);border-radius:12px;margin-bottom:6px;"></div>12 px · card</div>
+          <div><div style="width:64px;height:40px;border:1.5px solid var(--navy);border-radius:16px;margin-bottom:6px;"></div>16 px · pannelli di apertura</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATI -->
+    <section class="section" id="dati">
+      <div class="section-head">
+        <div class="eyebrow">05 · Dati e stati</div>
+        <h2>Ogni dato dichiara quanto è verificato.</h2>
+        <p class="lead">Il colore non basta mai da solo. Ogni stato ha un colore, una forma e una parola, perché deve funzionare anche per chi non distingue il verde dal rosso e per chi stampa in bianco e nero.</p>
+      </div>
+
+      <div class="card">
+        <h4>Stati del dato</h4>
+        <div class="chip-row" style="margin-top:12px;">
+          <span class="state validato">Validato da una persona</span>
+          <span class="state stima">Stima del modello, in attesa</span>
+          <span class="state nuovo">Nuovo, da integrare</span>
+          <span class="state blocco">Bloccato da un rappresentante</span>
+        </div>
+        <p class="mono" style="margin-top:14px;">Un risultato non validato non fonda una decisione definitiva: lo stato è sempre visibile vicino al valore.</p>
+      </div>
+
+      <div class="quad-demo" style="margin-top:var(--s4);" role="img" aria-label="I quattro quadranti con etichetta testuale">
+        <div class="quad-cell q4"><h4><span class="pattern-dot" style="background:#521983; transform:rotate(45deg);"></span>Supporto tecnologico</h4><p>Vincoli tecnici bassi, scelte di valore alte: la persona resta responsabile e gli strumenti digitali la supportano. Forma: rombo.</p></div>
+        <div class="quad-cell q2"><h4><span class="pattern-dot" style="background:#F59E0B; border-radius:50%;"></span>Persona al centro</h4><p>Vincoli tecnici alti, scelte di valore alte: la presenza umana è necessaria e desiderabile. Forma: cerchio.</p></div>
+        <div class="quad-cell q3"><h4><span class="pattern-dot" style="background:#00B4B4; border:0; clip-path:polygon(50% 0%, 0% 100%, 100% 100%);"></span>Automatizzabile</h4><p>Vincoli tecnici bassi, scelte di valore basse: la tecnologia copre già gran parte del compito. Forma: triangolo.</p></div>
+        <div class="quad-cell q1"><h4><span class="pattern-dot" style="background:#0B2559;"></span>Riprogettare e potenziare</h4><p>Vincoli tecnici alti, scelte di valore basse: conviene ripensare il compito con il supporto dell'AI. Forma: quadrato.</p></div>
+      </div>
+      <p class="mono" style="margin-top:12px;">Ogni quadrante ha colore, forma ed etichetta. Nei grafici le forme si ripetono anche quando la legenda è assente.</p>
+    </section>
+
+    <!-- COMPONENTI -->
+    <section class="section" id="componenti">
+      <div class="section-head">
+        <div class="eyebrow">06 · Componenti</div>
+        <h2>Pochi elementi, usati sempre allo stesso modo.</h2>
+      </div>
+
+      <div class="grid-2" style="align-items:start;">
+        <div class="card">
+          <h4>Bottoni</h4>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-primary" type="button">Avvia l'analisi</button>
+            <button class="btn btn-secondary" type="button">Esplora il metodo</button>
+          </div>
+          <p class="mono" style="margin-top:14px;">Primario: navy. Secondario: contorno teal. Il focus è sempre visibile.</p>
+          <div style="margin-top:20px;" class="card-navy">
+            <h4>Su fondo navy</h4>
+            <div class="btn-row" style="margin-top:12px;">
+              <button class="btn btn-teal" type="button">Parliamone</button>
+              <button class="btn btn-ghost-light" type="button">Rileggi</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h4>Campo di input</h4>
+          <div class="field" style="margin-top:14px;">
+            <label for="demo-ruolo">Nome del ruolo</label>
+            <input id="demo-ruolo" type="text" value="Coordinatore amministrativo">
+            <span class="help">Il nome compare così nel registro delle decisioni.</span>
+          </div>
+          <h4 style="margin-top:22px;">Etichette</h4>
+          <div class="chip-row" style="margin-top:10px;">
+            <span class="tag navy">Ruolo</span><span class="tag teal">Metodo</span><span class="tag amber">Decisione umana</span><span class="tag violet">Automazione</span><span class="tag emerald">Verificato</span><span class="tag risk">Rischio</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VOCE -->
+    <section class="section" id="voce">
+      <div class="section-head">
+        <div class="eyebrow">07 · Voce del marchio</div>
+        <h2>Lucido, empatico, pragmatico.</h2>
+        <p class="lead">Parliamo di chiarezza e di persone. Non usiamo superlativi vuoti e non parliamo mai di sostituzione: parliamo di riallocazione del valore e di crescita delle competenze.</p>
+      </div>
+
+      <div class="do-dont">
+        <div class="card do">
+          <h4>Diciamo</h4>
+          <ul style="margin-top:10px; padding-left:18px; color:var(--slate); display:grid; gap:10px; font-size:15px;">
+            <li>«Ogni posizione dichiara quanto è verificata.»</li>
+            <li>«Il lavoro cambia: scegliamo insieme come.»</li>
+            <li>«Ecco come è stato calcolato questo risultato.»</li>
+            <li>«Il sapere operativo resta dell'impresa.»</li>
+            <li>«Nessuno viene lasciato indietro nel percorso di crescita.»</li>
+          </ul>
+        </div>
+        <div class="card dont">
+          <h4>Evitiamo</h4>
+          <ul style="margin-top:10px; padding-left:18px; color:var(--slate); display:grid; gap:10px; font-size:15px;">
+            <li>«Rivoluzionario», «incredibile», «unico al mondo».</li>
+            <li>«Sostituire le persone con l'AI.»</li>
+            <li>Cifre senza fonte o senza data.</li>
+            <li>Linguaggio di controllo o ispezione, come «registro che non si riscrive»: parliamo di trasparenza.</li>
+            <li>Formule che fanno pensare che il sapere dell'impresa venga ceduto o riusato per altri.</li>
+            <li>Medie di funzione presentate come difetto: sono utili a chi guida l'impresa.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOVIMENTO -->
+    <section class="section" id="movimento">
+      <div class="section-head">
+        <div class="eyebrow">08 · Movimento e accessibilità</div>
+        <h2>Transizioni fluide, nessun rimbalzo.</h2>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Curva e durata</h3>
+          <p>Transizioni di 250–400 ms con curva <span class="mono">cubic-bezier(0.22, 1, 0.36, 1)</span>. Nessun effetto elastico: il movimento accompagna, non attira l'attenzione.</p>
+        </div>
+        <div class="card">
+          <h3>Riduzione del movimento</h3>
+          <p>Se il sistema chiede di ridurre le animazioni, tutte le transizioni si disattivano. Nessuna informazione dipende dal solo movimento.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VERSIONE -->
+    <section class="section" id="versione">
+      <div class="section-head">
+        <div class="eyebrow">09 · Versione 3</div>
+        <h2>Che cosa cambia rispetto alla versione 2.</h2>
+        <p class="lead">Ogni modifica è motivata. Dove la versione 2 non rispettava un requisito, la correzione è dichiarata.</p>
+      </div>
+      <ol class="changes">
+        <li><strong>Grigio secondario.</strong> #64748B su alabaster scendeva a 4,44:1. Il testo di supporto diventa #526175 (5,9:1). #64748B resta solo per elementi decorativi.</li>
+        <li><strong>Teal e ambra nel testo.</strong> Vietati nel testo chiaro: si usano le varianti scure #007272, #92400E, #065F46, #9F1239.</li>
+        <li><strong>Stati con forma e parola.</strong> Ogni stato del dato combina colore, forma ed etichetta testuale.</li>
+        <li><strong>Variante navy del logo.</strong> Il modulo centrale usa #4E77C6, colore ufficiale della scala Cobalt, invece di un valore non documentato.</li>
+        <li><strong>Token unici.</strong> Tutti i valori stanno in un solo foglio di stile condiviso tra documenti e prodotto.</li>
+        <li><strong>Movimento e riduzione.</strong> Curva, durata e comportamento con riduzione del movimento sono ora specificati.</li>
+        <li><strong>Luce (3.1).</strong> Ispirata a un portfolio digitale pulito: fondo bianco senza trama, un solo carattere per titoli e interfaccia (Inter 600, tracking −0,05em), accento di titolo in monospazio al posto del corsivo serif, carte grigio chiarissimo con angoli ampi, pulsante a pillola, una macchia di colore morbida per schermata. Newsreader e Plus Jakarta Sans escono dal sistema.</li>
+        <li><strong>Voce del marchio.</strong> Trasparenza al posto del linguaggio di controllo, sapere operativo che resta dell'impresa, crescita di tutte le persone, vista per funzione come strumento di chi guida.</li>
+      </ol>
+    </section>
+
+    <footer>
+      NEARTECH · Guida all'identità visiva v3.1 · Token in <span class="mono">neartech-identita.css</span>. I valori di contrasto sono calcolati secondo WCAG 2.1 sul colore di fondo indicato.
+    </footer>
+
+  </div>
+</body>
+</html>

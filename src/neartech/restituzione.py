@@ -5,7 +5,9 @@ Una lettura per organizzazione e per ruolo dei risultati vigenti (v_risultati_vi
   componenti di D, modelli dei giudizi usati);
 - le ragioni per cui i risultati sono provvisori (avvertenze);
 - la distribuzione per quadrante più probabile, per l'organizzazione e per ruolo;
-- la coda delle occorrenze da rivedere, dalla meno certa, se la soglia di stabilità è approvata.
+- la coda delle occorrenze da rivedere, dalla meno certa, se la soglia di stabilità è approvata;
+- (dalla v2) ogni occorrenza con il suo risultato, per la mappa dei quadranti della piattaforma: il comitato
+  approva esattamente ciò che vede.
 
 La soglia di stabilità non sta nel codice: è il parametro di governance soglia_stabilita_quadrante. Senza un
 valore approvato la coda non si calcola e la restituzione lo dice.
@@ -34,7 +36,7 @@ from neartech.governance import DecisioneGiaPresa, ParametroAssente, parametro_v
 from neartech.permessi import richiedi
 from neartech.registro import registra, spazio
 
-VERSIONE_RESTITUZIONE = "restituzione-v1"
+VERSIONE_RESTITUZIONE = "restituzione-v2"  # v2: elenco delle occorrenze (fase 6)
 PARAMETRO_STABILITA = "soglia_stabilita_quadrante"
 QUADRANTI = ("q1", "q2", "q3", "q4")
 BLOCCO = "risultati:{org}"  # lock condiviso con neartech.calcolo.calcola_organizzazione
@@ -172,9 +174,11 @@ def _chiavi(conn: psycopg.Connection, risultati: list[dict[str, Any]]) -> tuple[
     }, dedotti
 
 
-def _costruisci(conn: psycopg.Connection, org_id: str) -> dict[str, Any]:
-    """Restituzione senza controllo dei permessi: chi chiama li ha già controllati."""
-    conn.execute("SELECT pg_advisory_xact_lock(hashtext(%s))", (BLOCCO.format(org=org_id),))
+def _costruisci(conn: psycopg.Connection, org_id: str, *, esclusivo: bool = False) -> dict[str, Any]:
+    """Restituzione senza controllo dei permessi: chi chiama li ha già controllati. Chi legge prende il lock in
+    modo condiviso (più letture insieme, nessuna durante un calcolo); l'approvazione in modo esclusivo."""
+    blocco = "pg_advisory_xact_lock" if esclusivo else "pg_advisory_xact_lock_shared"
+    conn.execute(f"SELECT {blocco}(hashtext(%s))", (BLOCCO.format(org=org_id),))
     organizzazione = conn.execute("SELECT name, codice FROM organizations WHERE org_id = %s", (org_id,)).fetchone()
     if organizzazione is None:
         raise LookupError(f"organizzazione {org_id} inesistente")
@@ -270,6 +274,7 @@ def _costruisci(conn: psycopg.Connection, org_id: str) -> dict[str, Any]:
         },
         "ruoli": ruoli,
         "da_rivedere": da_rivedere,
+        "occorrenze": elementi,
     }
     restituzione["impronta"] = impronta_restituzione(restituzione)
     restituzione["generato_il"] = datetime.now(timezone.utc).isoformat()
@@ -301,7 +306,7 @@ def approva_restituzione(
         raise ValueError("la restituzione riguarda un'altra organizzazione")
     try:
         with conn.transaction():
-            attuale = _costruisci(conn, org_id)  # prende il lock del calcolo fino alla fine della transazione
+            attuale = _costruisci(conn, org_id, esclusivo=True)  # lock del calcolo fino alla fine della transazione
             if attuale["impronta"] != impronta:
                 raise RestituzioneSuperata("i risultati o la configurazione sono cambiati dopo la lettura")
             if attuale["approvazione"] is not None:

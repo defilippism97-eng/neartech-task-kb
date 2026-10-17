@@ -205,3 +205,21 @@ def chiudi_assegnazione(conn: psycopg.Connection, assegnazione_id: str, *, chius
             raise LookupError(f"assegnazione {assegnazione_id} già chiusa o scaduta")
         registra(conn, autore_id=chiusa_da, tipo_oggetto="assegnazione_ruolo", oggetto_id=str(assegnazione_id),
                  atto="ritiro", motivazione=motivazione, org_id=org_id)
+
+
+def ruoli_utente(conn: psycopg.Connection, utente_id: str) -> list[dict[str, str | None]]:
+    """Ruoli validi dell'utente, con l'organizzazione per i ruoli di organizzazione: servono all'interfaccia per
+    scegliere la home. Non concedono nulla: ogni azione passa comunque da richiedi."""
+    utente = _canonico_o_none(utente_id)
+    if utente is None:
+        return []
+    return [
+        {"ruolo": r[0], "org_id": str(r[1]) if r[1] else None, "codice": r[2], "nome": r[3]}
+        for r in conn.execute(
+            """SELECT a.ruolo, o.org_id, o.codice, o.name
+               FROM assegnazioni_ruolo a LEFT JOIN organizations o ON o.org_id = a.org_id
+               WHERE a.utente_id = %s::uuid AND assegnazione_valida(a)
+               ORDER BY a.ruolo, o.codice""",
+            (utente,),
+        ).fetchall()
+    ]

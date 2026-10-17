@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neartech — Il lavoro cambia. Capirlo insieme.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <noscript><style>.rv { opacity: 1 !important; transform: none !important; } .bar-fill, .seg { width: var(--w) !important; } .dot { opacity: 1 !important; }</style></noscript>
+  <style>
+    /* ==========================================================================
+       NEARTECH · Presentazione per i clienti · identità visiva v3
+       Dati di contesto: WEF Future of Jobs Report 2025, profilo Italia (pp. 156-157)
+       McKinsey (State of AI 2026), IBM IBV (CEO Study 2025), BCG (Applied AI Index 2026);
+       matrice ispirata all'analisi Reunion Alumni Economia Sociale (UniBo).
+       Navigazione: frecce, spazio, Pagina su/giù, rotellina o tocco.
+       ========================================================================== */
+    :root {
+      --navy: #0B2559; --navy-800: #07193D; --cobalt: #1B499F;
+      --teal: #00B4B4; --teal-ink: #007272; --violet: #521983;
+      --amber: #F59E0B; --amber-ink: #92400E;
+      --alabaster: #FFFFFF; --cloud: #FFFFFF; --subtle: #F1EFEA; --card: #F5F6F8;
+      --obsidian: #0F172A; --slate: #475569; --stone-ink: #526175; --border: #E2E8F0;
+      --f-head: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      --f-edit: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      --f-ui: 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      --f-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+      --title-size: clamp(1.9rem, 5.2vw, 4.4rem);
+      --h2-size: clamp(1.4rem, 3.3vw, 2.6rem);
+      --h3-size: clamp(0.95rem, 1.6vw, 1.25rem);
+      --body-size: clamp(0.82rem, 1.3vw, 1.04rem);
+      --small-size: clamp(0.66rem, 0.92vw, 0.8rem);
+      --slide-padding: clamp(1rem, 4.5vw, 4.5rem);
+      --gap: clamp(0.6rem, 1.8vw, 1.6rem);
+    }
+
+    /* ===== VIEWPORT FITTING: base obbligatoria ===== */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* A scorrere deve essere la finestra (non il corpo), così lo snap per slide funziona. */
+    html { height: 100%; overflow-x: hidden; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    body { min-height: 100%; overflow-x: clip; font-family: var(--f-ui); color: var(--obsidian); background: var(--alabaster); line-height: 1.5; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+    .slide {
+      width: 100vw; height: 100vh; height: 100dvh; overflow: hidden;
+      scroll-snap-align: start; display: flex; flex-direction: column; position: relative;
+      background-color: var(--alabaster);
+    }
+    .slide.dark {
+      background-color: var(--navy); color: #fff;
+      background-image:
+        radial-gradient(circle at 88% 16%, rgba(0,180,180,0.2), transparent 42%),
+        radial-gradient(circle at 96% 94%, rgba(82,25,131,0.3), transparent 46%);
+      background-size: auto; /* senza questo la griglia della slide chiara si ripete come trama */
+    }
+    .slide.tint { background-color: #EEF2F9; }
+    .slide-content {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      max-height: 100%; overflow: hidden; padding: var(--slide-padding);
+      width: 100%; max-width: 1180px; margin: 0 auto; gap: var(--gap); position: relative; z-index: 1;
+    }
+
+    /* ===== Tipografia ===== */
+    /* Etichetta di sezione con numero tra parentesi, come in un indice. Il numero è quello della slide. */
+    main { counter-reset: sl; }
+    .slide { counter-increment: sl; }
+    .eyebrow { font-family: var(--f-mono); font-size: var(--small-size); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-ink); display: inline-flex; align-items: baseline; gap: 10px; }
+    .eyebrow::after { content: "(" counter(sl, decimal-leading-zero) ")"; font-weight: 400; color: var(--stone-ink); }
+    .dark .eyebrow::after { color: #94A3B8; }
+    .offer .eyebrow::after { content: none; }
+    .dark .eyebrow { color: #80E6E6; }
+    h1 { font-family: var(--f-head); font-weight: 600; font-size: var(--title-size); line-height: 1.02; letter-spacing: -0.05em; color: var(--navy); max-width: 18ch; }
+    h2 { font-family: var(--f-head); font-weight: 600; font-size: var(--h2-size); line-height: 1.08; letter-spacing: -0.045em; color: var(--navy); max-width: 26ch; }
+    h3 { font-family: var(--f-head); font-weight: 600; font-size: var(--h3-size); line-height: 1.25; letter-spacing: -0.02em; color: var(--navy); }
+    .dark h1, .dark h2, .dark h3 { color: #fff; }
+    /* L'accento di un titolo passa al monospazio: il tono di un'analisi, non di un volantino. */
+    h1 em, h2 em, .ask em { font-family: var(--f-mono); font-style: normal; font-weight: 500; font-size: 0.84em; letter-spacing: -0.06em; color: var(--teal-ink); }
+    .dark h1 em, .dark h2 em, .dark .ask em { color: #80E6E6; }
+    p { font-size: var(--body-size); color: var(--slate); max-width: 56ch; }
+    .dark p { color: #E2E8F0; }
+    .serif { font-family: var(--f-ui); font-weight: 400; font-size: clamp(1rem, 1.7vw, 1.35rem); line-height: 1.45; letter-spacing: -0.015em; color: var(--slate); max-width: 38ch; }
+    .dark .serif { color: #fff; }
+    .mono { font-family: var(--f-mono); font-size: var(--small-size); color: var(--stone-ink); letter-spacing: 0.02em; }
+    .dark .mono { color: #CBD5E1; }
+    .src { font-family: var(--f-mono); font-size: clamp(0.6rem, 0.8vw, 0.72rem); color: var(--stone-ink); letter-spacing: 0.02em; max-width: 90ch; }
+    .dark .src { color: #CBD5E1; }
+
+    .lockup { display: flex; align-items: center; gap: clamp(10px, 1.6vw, 18px); }
+    .lockup svg { width: clamp(38px, 4.4vw, 54px); height: auto; }
+    .lockup.on-light .wordmark { color: var(--navy); }
+    .lockup.on-light .wordmark small { color: var(--stone-ink); }
+    .lockup.on-light svg rect[fill="#FFFFFF"] { fill: var(--navy); }
+    .wordmark { font-family: var(--f-head); font-weight: 700; letter-spacing: -0.04em; color: #fff; font-size: clamp(1.3rem, 2.6vw, 1.9rem); line-height: 1; }
+    .wordmark small { font-weight: 500; font-size: 0.45em; color: #94A3B8; margin-left: 8px; letter-spacing: 0.1em; }
+
+    /* ===== 1 · Copertina: glifo gigante ===== */
+    /* Macchia di colore: una sola, morbida, lontana dal testo lungo. */
+    .blob { position: absolute; width: min(66vw, 92vh); aspect-ratio: 1; border-radius: 50%; z-index: 0; pointer-events: none; filter: blur(34px);
+      background: radial-gradient(circle at 32% 38%, rgba(0,180,180,0.95) 0%, rgba(0,180,180,0) 56%), radial-gradient(circle at 68% 62%, rgba(27,73,159,0.9) 0%, rgba(27,73,159,0) 62%), radial-gradient(circle at 70% 26%, rgba(139,92,246,0.55) 0%, rgba(139,92,246,0) 50%);
+      animation: respiro 14s ease-in-out infinite alternate; }
+    .blob.dx { right: -16vw; top: 50%; margin-top: calc(min(66vw, 92vh) / -2); }
+    @keyframes respiro { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.07) translate(-1.5vw, 1.5vh); } }
+    .cover-q { max-width: 17ch; }
+
+    /* ===== 2 · Numero gigante + confronto ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 4vw, 4rem); align-items: center; }
+    .bignum { font-family: var(--f-head); font-weight: 700; letter-spacing: -0.06em; line-height: 0.85; color: var(--navy); font-size: min(30vw, 40vh); }
+    .bignum .u { color: var(--teal); font-size: 0.5em; letter-spacing: -0.03em; }
+    .dark .bignum { color: #fff; font-size: min(24vw, 30vh); margin: 0.1em 0 0.15em; }
+    .pairs { display: grid; gap: clamp(0.7rem, 1.8vw, 1.4rem); }
+    .pair .lab { font-size: var(--body-size); color: var(--obsidian); font-weight: 500; display: flex; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+    .pair .lab b { font-family: var(--f-mono); font-weight: 600; color: var(--navy); }
+    .track { position: relative; height: clamp(10px, 1.6vw, 16px); background: #E2E8F0; border-radius: 99px; }
+    .bar-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--navy); border-radius: 99px; transition: width 1.1s var(--ease); transition-delay: calc(var(--d, 0) * 120ms + 300ms); }
+    .slide.in .bar-fill { width: var(--w); }
+    .tick { position: absolute; top: -5px; bottom: -5px; width: 3px; background: var(--amber); border-radius: 2px; left: var(--g); transform: translateX(-1px); }
+    .legend { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--f-mono); font-size: var(--small-size); color: var(--stone-ink); }
+    .legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 0; }
+
+    /* ===== 3 · Compiti: ora e 2030 ===== */
+    .stackrow { display: grid; grid-template-columns: clamp(3.2rem, 8vw, 6rem) 1fr; align-items: center; gap: clamp(0.5rem, 1.5vw, 1.2rem); }
+    .stackrow .y { font-family: var(--f-head); font-weight: 700; font-size: clamp(1.1rem, 2.4vw, 1.8rem); color: var(--navy); letter-spacing: -0.02em; }
+    .stack { display: flex; height: clamp(2.6rem, 8vh, 4.4rem); border-radius: 10px; overflow: hidden; gap: 3px; }
+    .seg { width: 0; display: flex; align-items: center; justify-content: center; font-family: var(--f-head); font-weight: 700; font-size: clamp(0.85rem, 1.9vw, 1.4rem); transition: width 1.2s var(--ease); transition-delay: calc(var(--d, 0) * 150ms + 300ms); white-space: nowrap; overflow: hidden; }
+    .slide.in .seg { width: var(--w); }
+    .seg.h { background: var(--navy); color: #fff; }
+    .seg.c { background: #BFEDED; color: #034848; }
+    .seg.t { background: var(--teal); color: #032E2E; }
+    .seg { flex-direction: column; line-height: 1.1; gap: 2px; }
+    .seg small { font-family: var(--f-mono); font-size: 0.62rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.85; }
+    .stack { height: clamp(3.2rem, 11vh, 5.2rem); }
+    .legend.mob { display: none; }
+    .dark .bar-fill.b2 { background: #A9C0F0; }
+    .dark .bar-fill.b3 { background: var(--amber); }
+    .dark .pair .lab b.am { color: #FBBF24; }
+    .bignote { display: grid; align-content: center; gap: 0.3rem; }
+    .bignote .num { font-family: var(--f-head); font-weight: 700; font-size: min(15vw, 26vh); letter-spacing: -0.06em; line-height: 0.9; color: var(--amber); }
+    .bignote p { font-size: clamp(1rem, 1.8vw, 1.4rem); color: #fff; max-width: 20ch; }
+    @media (max-width: 560px), (max-height: 520px) { .legend.mob { display: flex; } .seg small { display: none; } }
+    .dark .legend { color: #E2E8F0; }
+    .delta { display: flex; gap: clamp(1rem, 4vw, 3rem); flex-wrap: wrap; }
+    .delta div { font-family: var(--f-mono); font-size: var(--small-size); color: #E2E8F0; }
+    .delta b { display: block; font-family: var(--f-head); font-size: clamp(1.4rem, 3.4vw, 2.6rem); color: #fff; letter-spacing: -0.03em; line-height: 1.1; }
+
+    /* ===== 4 · Cento lavoratori ===== */
+    .waffle-wrap { display: grid; grid-template-columns: auto 1fr; gap: clamp(1rem, 4vw, 4rem); align-items: center; }
+    .waffle { display: grid; grid-template-columns: repeat(11, 1fr); gap: clamp(3px, 0.6vw, 7px); width: min(40vw, 46vh); aspect-ratio: 11 / 9; }
+    .dot { border-radius: 50%; opacity: 0; transform: scale(0.4); }
+    .slide.in .dot { animation: pop .5s var(--ease) forwards; animation-delay: calc(var(--i) * 9ms + 200ms); }
+    @keyframes pop { to { opacity: 1; transform: none; } }
+    .dot.a { background: #ABBFE5; } .dot.b { background: var(--teal); } .dot.c { background: var(--violet); }
+    .dot.d { background: var(--amber); box-shadow: inset 0 0 0 1.5px rgba(69,26,3,0.5); } .dot.e { background: #E2E8F0; }
+    .keys { display: grid; gap: clamp(0.3rem, 1vh, 0.8rem); }
+    .key { display: grid; grid-template-columns: clamp(3rem, 6vw, 4.6rem) 1fr; gap: 12px; align-items: baseline; border-top: 1px solid var(--border); padding-top: clamp(0.35rem, 1vw, 0.7rem); }
+    .key b { font-family: var(--f-head); font-weight: 700; font-size: clamp(1.5rem, 3.6vw, 2.8rem); letter-spacing: -0.04em; line-height: 1; color: var(--navy); }
+    .key span { font-size: var(--body-size); color: var(--slate); }
+    .key.d b { color: var(--amber-ink); }
+
+    /* ===== 6 · Matrice ===== */
+    .matrix-wrap { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr); gap: clamp(1rem, 4vw, 4rem); align-items: center; }
+    .matrix { width: min(100%, 62vh); margin: 0 auto; }
+    .quads { display: grid; gap: clamp(0.5rem, 1.3vw, 1rem); }
+    .q { display: grid; grid-template-columns: 14px 1fr; gap: 12px; align-items: start; }
+    .q i { width: 14px; height: 14px; border-radius: 4px; margin-top: 5px; }
+    .q b { display: block; color: #fff; font-size: clamp(0.95rem, 1.5vw, 1.2rem); font-weight: 600; }
+    .q span { color: #E2E8F0; font-size: clamp(0.82rem, 1.2vw, 1rem); }
+
+    /* ===== 7 · Percorso ===== */
+    .path { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(0.5rem, 1.6vw, 1.4rem); padding-top: clamp(1.6rem, 5vh, 3rem); }
+    .path::before { content: ""; position: absolute; left: 0; right: 0; top: clamp(1.6rem, 5vh, 3rem); height: 3px; background: linear-gradient(90deg, var(--teal), var(--cobalt) 52%, var(--violet)); border-radius: 2px; transform-origin: left; transform: scaleX(0); transition: transform 1.2s var(--ease) .3s; }
+    .slide.in .path::before { transform: scaleX(1); }
+    .node { position: relative; padding-top: clamp(1rem, 3vh, 1.8rem); }
+    .node::before { content: ""; position: absolute; top: calc(clamp(1.6rem, 5vh, 3rem) * -1 + 0px); left: 0; width: clamp(14px, 1.8vw, 20px); height: clamp(14px, 1.8vw, 20px); margin-top: calc(clamp(1.6rem, 5vh, 3rem) - clamp(14px, 1.8vw, 20px) / 2 + 1px); border-radius: 50%; background: var(--teal); border: 3px solid var(--alabaster); box-shadow: 0 0 0 1.5px var(--navy); }
+    .node.p::before { background: var(--amber); }
+    .node .n { font-family: var(--f-mono); font-size: var(--small-size); color: var(--teal-ink); font-weight: 600; letter-spacing: 0.06em; }
+    .node.p .n { color: var(--amber-ink); }
+    .node h3 { margin: 4px 0 6px; }
+    .node p { font-size: clamp(0.76rem, 1.12vw, 0.95rem); }
+    .keyline { display: flex; gap: 18px; flex-wrap: wrap; font-family: var(--f-mono); font-size: var(--small-size); color: var(--stone-ink); }
+    .keyline i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+
+    /* ===== 8 · Zoom: funzione → compito ===== */
+    .zoom { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.15fr); gap: clamp(0.6rem, 2vw, 1.6rem); align-items: stretch; }
+    .panel { background: var(--card); border: 1px solid transparent; border-radius: 22px; padding: clamp(0.8rem, 1.8vw, 1.5rem); display: flex; flex-direction: column; gap: clamp(0.5rem, 1.2vw, 0.9rem); }
+    .panel.navy { background: var(--navy); }
+    .panel .who { font-family: var(--f-mono); font-size: var(--small-size); letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-ink); font-weight: 600; }
+    .panel.navy .who { color: #80E6E6; }
+    .fn { display: grid; gap: 4px; }
+    .fn .top { display: flex; justify-content: space-between; color: #fff; font-size: var(--body-size); font-weight: 600; }
+    .fn .top span { font-family: var(--f-mono); font-size: var(--small-size); font-weight: 500; color: #94A3B8; }
+    .mini { display: flex; height: clamp(14px, 2.4vh, 22px); border-radius: 6px; overflow: hidden; gap: 2px; }
+    .mini i { display: block; width: 0; transition: width 1s var(--ease); transition-delay: calc(var(--d, 0) * 110ms + 300ms); }
+    .slide.in .mini i { width: var(--w); }
+    .m1 { background: #7E9DD7; } .m2 { background: var(--amber); } .m3 { background: #A77ED7; } .m4 { background: var(--teal); }
+    .arrow { display: grid; place-items: center; font-family: var(--f-mono); font-size: var(--small-size); color: var(--stone-ink); text-align: center; gap: 4px; align-content: center; }
+    .arrow svg { width: clamp(28px, 4vw, 44px); }
+    .tk { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding-top: clamp(0.35rem, 0.9vw, 0.6rem); border-top: 1px solid var(--border); }
+    .tk:first-of-type { border-top: none; padding-top: 0; }
+    .tk b { font-size: var(--body-size); font-weight: 600; color: var(--obsidian); line-height: 1.3; }
+    .chip { font-family: var(--f-mono); font-size: 0.64rem; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+    .chip.c1 { background: #DCE4F4; color: var(--navy); } .chip.c2 { background: #FEF3C7; color: var(--amber-ink); } .chip.c3 { background: #F1E9F9; color: var(--violet); } .chip.c4 { background: #E6FAFA; color: #005151; }
+    .hz { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+    .hz i { font-style: normal; font-family: var(--f-mono); font-size: 0.64rem; text-align: center; padding: 3px 0; border-radius: 4px; background: #E2E8F0; color: var(--stone-ink); }
+    .hz i.on { background: var(--teal); color: #042F2E; font-weight: 600; }
+
+    /* ===== 9 · Impegni ===== */
+    .commit { display: grid; gap: 0; }
+    .cm { display: grid; grid-template-columns: clamp(2.2rem, 4vw, 3.2rem) 1fr; gap: 12px; padding: clamp(0.5rem, 1.5vh, 1rem) 0; border-top: 1px solid rgba(255,255,255,0.25); }
+    .cm:last-child { border-bottom: 1px solid rgba(255,255,255,0.25); }
+    .cm .n { font-family: var(--f-mono); font-size: var(--small-size); color: #80E6E6; font-weight: 600; padding-top: 4px; }
+    .cm h3 { color: #fff; margin-bottom: 2px; }
+    .cm p { font-size: clamp(0.85rem, 1.2vw, 1rem); color: #E2E8F0; }
+
+    /* ===== 10 · Invito ===== */
+    .ask { font-family: var(--f-head); font-weight: 600; font-size: clamp(1.8rem, 5vw, 4.2rem); line-height: 1.02; letter-spacing: -0.05em; color: var(--navy); max-width: 20ch; }
+    .ask em { white-space: nowrap; }
+    .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { font-family: var(--f-ui); font-weight: 600; font-size: var(--body-size); padding: 13px 22px; border-radius: 10px; border: 1.5px solid transparent; text-decoration: none; display: inline-block; transition: background-color .25s var(--ease); }
+    /* Pulsante a pillola: cobalto verso teal scuro, così il testo bianco resta leggibile (5,7:1 al punto più chiaro). */
+    .btn-pill { border-radius: 99px; padding: 14px 28px; color: #fff; background: linear-gradient(90deg, var(--cobalt), var(--teal-ink)); box-shadow: 0 8px 24px rgba(27,73,159,0.28); transition: transform .25s var(--ease), box-shadow .25s var(--ease); }
+    .btn-pill:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(27,73,159,0.34); }
+    .btn-link { color: var(--cobalt); padding-left: 6px; padding-right: 6px; }
+    .btn-link:hover { color: var(--navy); }
+
+    /* ===== 4 · cento lavoratori in positivo ===== */
+    /* Tutte le cifre hanno la stessa misura e lo stesso allineamento; il totale si distingue per filetto e colore. */
+    .key { grid-template-columns: clamp(4.6rem, 8vw, 6.2rem) 1fr; align-items: center; }
+    .key b { font-size: clamp(1.7rem, min(3.4vw, 6vh), 2.6rem); line-height: 1; white-space: nowrap; }
+    .key.total { border-top: 2px solid var(--navy); }
+    .key.total b { color: var(--navy); }
+    .key.total span { font-weight: 600; color: var(--obsidian); }
+
+    /* ===== 5 · ritorno dell'AI ===== */
+    .dark .pair .lab { color: #fff; }
+    .dark .pair .lab b { color: #80E6E6; }
+    .dark .track { background: rgba(255,255,255,0.18); }
+    .dark .bar-fill { background: #2FD4D4; }
+    .facts { display: grid; gap: clamp(0.8rem, 2vw, 1.6rem); align-content: center; }
+    .fact { display: grid; grid-template-columns: clamp(4rem, 8vw, 6rem) 1fr; gap: 14px; align-items: baseline; border-top: 1px solid rgba(255,255,255,0.3); padding-top: clamp(0.5rem, 1.2vw, 0.9rem); }
+    .fact b { font-family: var(--f-head); font-weight: 700; font-size: clamp(2rem, 5vw, 3.8rem); letter-spacing: -0.05em; line-height: 1; color: #fff; }
+    .fact span { font-size: var(--body-size); color: #E2E8F0; }
+
+    /* ===== 6 · chi siamo ===== */
+    .about { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 3rem); align-items: stretch; }
+    .vision { background: var(--navy); border-radius: 24px; padding: clamp(1rem, 3vw, 2.4rem); display: flex; flex-direction: column; gap: clamp(0.6rem, 1.4vw, 1.1rem); justify-content: center; border: 1px solid #14387D; background-image: radial-gradient(circle at 90% 8%, rgba(0,180,180,0.25), transparent 45%); }
+    .vision h2 { color: #fff; max-width: 18ch; }
+    .vision p { color: #E2E8F0; }
+    .vision .serif { color: #fff; }
+    .vision .eyebrow { color: #80E6E6; }
+    .offer { display: flex; flex-direction: column; justify-content: center; gap: 0; }
+    .of { display: grid; grid-template-columns: clamp(2.2rem, 3.6vw, 3rem) 1fr; gap: 10px; padding: clamp(0.6rem, 1.6vh, 1.1rem) 0; border-top: 1px solid var(--border); }
+    .of:last-of-type { border-bottom: 1px solid var(--border); }
+    .of .n { font-family: var(--f-mono); font-size: var(--small-size); color: var(--teal-ink); font-weight: 600; padding-top: 4px; }
+    .of p { font-size: clamp(0.82rem, 1.2vw, 1rem); }
+    .offer .eyebrow { margin-bottom: 0.4rem; }
+    .offer .mono { margin-top: 0.6rem; }
+
+    /* ===== Navigazione ===== */
+    .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: linear-gradient(90deg, #00B4B4, #1B499F 52%, #521983); z-index: 30; transition: width .5s var(--ease); }
+    .counter { position: fixed; right: clamp(0.75rem, 2vw, 1.6rem); bottom: clamp(0.6rem, 1.6vw, 1.2rem); font-family: var(--f-mono); font-size: var(--small-size); letter-spacing: 0.06em; z-index: 30; color: var(--stone-ink); background: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 99px; backdrop-filter: blur(6px); }
+    .nav-dots { position: fixed; right: clamp(0.6rem, 1.4vw, 1.2rem); top: 50%; transform: translateY(-50%); display: grid; gap: 10px; z-index: 30; }
+    .nav-dots button { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--navy); background: transparent; cursor: pointer; padding: 0; transition: background-color .25s var(--ease), transform .25s var(--ease); }
+    .nav-dots button[aria-current="true"] { background: var(--teal); border-color: var(--teal-ink); transform: scale(1.3); }
+    .nav-dots.on-dark button { border-color: #fff; }
+    :focus-visible { outline: 3px solid var(--teal); outline-offset: 3px; border-radius: 4px; }
+
+    .rv { opacity: 0; transform: translateY(14px); transition: opacity .6s var(--ease), transform .6s var(--ease); transition-delay: calc(var(--d, 0) * 90ms); }
+    .slide.in .rv { opacity: 1; transform: none; }
+
+    /* ===== Adattamenti ===== */
+    @media (max-height: 700px) {
+      :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --gap: clamp(0.4rem, 1.2vw, 0.9rem); --title-size: clamp(1.5rem, 4.4vw, 3.1rem); --h2-size: clamp(1.2rem, 3vw, 2rem); }
+    }
+    @media (max-height: 560px) { .nav-dots { display: none; } .eyebrow { display: none; } }
+    @media (max-width: 860px) {
+      .split, .waffle-wrap, .matrix-wrap, .zoom { grid-template-columns: 1fr; }
+      .waffle { width: min(52vw, 28vh); }
+      .waffle-wrap { justify-items: center; }
+      .keys { width: 100%; }
+      .matrix { width: min(78vw, 34vh); }
+      .path { grid-template-columns: 1fr; padding-top: 0; padding-left: 1.4rem; gap: 0.6rem; }
+      .path::before { left: 7px; right: auto; top: 0; bottom: 0; width: 3px; height: auto; transform-origin: top; transform: scaleY(0); background: linear-gradient(180deg, var(--teal), var(--violet)); }
+      .slide.in .path::before { transform: scaleY(1); }
+      .node { padding-top: 0; margin-top: 0 !important; }
+      .node::before { top: 4px; left: -1.4rem; margin-top: 0; }
+      .node p { display: none; }
+      .arrow { display: none; }
+      .nav-dots { display: none; }
+      .quads { grid-template-columns: 1fr 1fr; }
+      .q span { display: none; }
+      .matrix { width: min(62vw, 30vh); }
+      .blob.dx { width: 120vw; right: -60vw; opacity: 0.45; }
+      .bignum { font-size: min(34vw, 26vh); }
+    }
+    @media (max-width: 860px) and (max-height: 760px) {
+      .panel { padding: 0.6rem 0.8rem; gap: 0.35rem; }
+      .tk b { font-size: 0.78rem; }
+      .key span { font-size: 0.78rem; }
+      .pair .lab { font-size: 0.76rem; }
+    }
+    @media (max-height: 520px) {
+      :root { --slide-padding: clamp(0.4rem, 1.8vw, 0.9rem); --gap: 0.4rem; --h2-size: 1.05rem; --title-size: 1.4rem; --body-size: 0.74rem; --h3-size: 0.86rem; }
+      .split { grid-template-columns: 0.8fr 1.2fr; gap: 1rem; }
+      .waffle-wrap { grid-template-columns: auto 1fr; justify-items: start; }
+      .waffle { width: 40vh; }
+      .matrix-wrap { grid-template-columns: 0.9fr 1fr; }
+      .matrix { width: 52vh; }
+      .zoom { grid-template-columns: 1fr 1.2fr; }
+      .path { grid-template-columns: repeat(4, 1fr); padding: 1.2rem 0 0; }
+      .path::before { left: 0; right: 0; top: 1.2rem; bottom: auto; height: 3px; width: auto; transform: scaleX(0); transform-origin: left; background: linear-gradient(90deg, var(--teal), var(--violet)); }
+      .slide.in .path::before { transform: scaleX(1); }
+      .node { padding-top: 0.8rem; }
+      .node::before { top: -1.2rem; left: 0; margin-top: calc(1.2rem - 7px + 1px); }
+      .node p, .opt, .src, .mono.opt { display: none; }
+      .tk:nth-of-type(n+4) { display: none; }
+      .hz { display: none; }
+      .q span { display: none; }
+      .lockup svg { width: 30px; }
+      .wordmark { font-size: 1.05rem; }
+      .blob.dx { width: 80vh; right: -28vh; opacity: 0.7; }
+      .bignum { font-size: min(26vw, 52vh); }
+    }
+    @media (max-width: 860px) {
+      .about { grid-template-columns: 1fr; }
+      .vision .lockup { display: none; }
+      .of p { display: none; }
+    }
+    @media (max-width: 860px) and (max-height: 760px) {
+      .key span, .fact span { font-size: 0.78rem; }
+      .vision { padding: 0.8rem 1rem; }
+      .vision h2 { font-size: 1.2rem; }
+    }
+    @media (max-height: 520px) {
+      .about { grid-template-columns: 1fr 1fr; }
+      .of p, .vision .lockup, .opt { display: none; }
+      .fact { grid-template-columns: 3rem 1fr; }
+      .fact b { font-size: 1.7rem; }
+      .key b { font-size: 1.4rem; }
+      .key span { font-size: 0.7rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+      html { scroll-behavior: auto; }
+      .rv { transform: none; }
+      .dot { opacity: 1; transform: none; }
+    }
+    @media print {
+      html { scroll-snap-type: none; }
+      .progress, .counter, .nav-dots { display: none; }
+      .slide { page-break-after: always; }
+      .rv { opacity: 1; transform: none; }
+      .bar-fill, .seg, .mini i { width: var(--w); }
+      .dot { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <nav class="nav-dots" id="dots" aria-label="Slide"></nav>
+  <div class="counter" id="counter" aria-live="polite">1 / 11</div>
+
+  <main>
+
+    <!-- 1 · COPERTINA -->
+    <section class="slide" aria-label="Copertina">
+      <div class="blob dx" aria-hidden="true"></div>
+      <div class="slide-content">
+        <div class="lockup on-light rv" style="--d:0">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <rect x="6" y="8" width="9" height="32" rx="2" fill="#FFFFFF"/>
+            <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+            <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#4E77C6"/>
+            <rect x="34" y="20" width="9" height="20" rx="2" fill="#FFFFFF"/>
+            <circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+          </svg>
+          <div class="wordmark">Neartech<small>AI &amp; CONSULTING</small></div>
+        </div>
+        <h1 class="cover-q rv" style="--d:1">Sai dire quali compiti del tuo lavoro <em>cambieranno con l'AI</em>?</h1>
+        <p class="serif rv" style="--d:2; max-width: 34ch;">Neartech aiuta le organizzazioni a capirlo, compito per compito, e a far crescere le persone insieme al cambiamento.</p>
+      </div>
+    </section>
+
+    <!-- 2 · L'AI È GIÀ QUI -->
+    <section class="slide" aria-label="L'AI è già nelle organizzazioni">
+      <div class="slide-content">
+        <div class="split">
+          <div>
+            <div class="eyebrow rv" style="--d:0">Il contesto</div>
+            <div class="bignum rv" style="--d:1"><span data-count="96">96</span><span class="u">%</span></div>
+          </div>
+          <div>
+            <h2 class="rv" style="--d:2">delle organizzazioni italiane intervistate ha già programmi di AI in corso.</h2>
+            <div class="pairs" style="margin-top: var(--gap);">
+              <div class="pair rv" style="--d:3"><div class="lab"><span>Programmi di AI in corso</span><b>96%</b></div><div class="track"><div class="bar-fill" style="--w:96%; --d:0"></div><div class="tick" style="--g:88%"></div></div></div>
+              <div class="pair rv" style="--d:4"><div class="lab"><span>AI tra i fattori di trasformazione</span><b>86%</b></div><div class="track"><div class="bar-fill" style="--w:86%; --d:1"></div><div class="tick" style="--g:86%"></div></div></div>
+              <div class="pair rv" style="--d:5"><div class="lab"><span>Robot e sistemi autonomi</span><b>65%</b></div><div class="track"><div class="bar-fill" style="--w:65%; --d:2"></div><div class="tick" style="--g:58%"></div></div></div>
+            </div>
+            <div class="legend rv" style="--d:6; margin-top: 10px;"><span><i style="background:var(--navy)"></i>Italia</span><span><i style="background:var(--amber); width:3px; height:12px"></i>Media mondiale</span></div>
+          </div>
+        </div>
+        <p class="src">Fonte: World Economic Forum, Future of Jobs Report 2025, profilo Italia (pp. 156–157). Quota di organizzazioni intervistate.</p>
+      </div>
+    </section>
+
+    <!-- 3 · COMPITI: ORA E 2030 -->
+    <section class="slide" aria-label="Chi svolgerà i compiti">
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">Il lavoro si sta spostando</div>
+        <h2 class="rv" style="--d:1">Entro il 2030 la tecnologia svolgerà in prevalenza <em>quasi un compito su tre</em>.</h2>
+        <div style="display:grid; gap: clamp(0.6rem, 1.8vw, 1.3rem);">
+          <div class="stackrow rv" style="--d:2"><div class="y">Oggi</div><div class="stack"><div class="seg h" style="--w:46%; --d:0"><small>Persone</small>46%</div><div class="seg c" style="--w:35%; --d:1"><small>Insieme</small>35%</div><div class="seg t" style="--w:18%; --d:2"><small>Tecnologia</small>18%</div></div></div>
+          <div class="stackrow rv" style="--d:3"><div class="y">2030</div><div class="stack"><div class="seg h" style="--w:34%; --d:3">34%</div><div class="seg c" style="--w:35%; --d:4">35%</div><div class="seg t" style="--w:31%; --d:5">31%</div></div></div>
+        </div>
+        <div class="legend mob rv" style="--d:4"><span><i style="background:var(--navy)"></i>Persone</span><span><i style="background:#BFEDED"></i>Insieme</span><span><i style="background:var(--teal)"></i>Tecnologia</span></div>
+        <p class="serif rv" style="--d:4">Cresce il lavoro svolto dalla tecnologia. Quello fatto insieme resta il 35%.</p>
+        <p class="src">Fonte: WEF, Future of Jobs Report 2025, profilo Italia, p. 157. Stime dei datori di lavoro intervistati.</p>
+      </div>
+    </section>
+
+    <!-- 4 · CENTO LAVORATORI -->
+    <section class="slide" aria-label="Cento lavoratori">
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">Le persone</div>
+        <h2 class="rv" style="--d:1">Il 60% dei lavoratori avrà davanti un percorso di crescita entro il 2030.</h2>
+        <div class="waffle-wrap">
+          <div class="waffle" id="waffle" role="img" aria-label="Il 60% dei lavoratori farà un percorso di crescita: 27% nel proprio ruolo, 22% cambiando ruolo, 11% con un percorso pensato apposta. Il 39% continuerà con le competenze di oggi."></div>
+          <div class="keys">
+            <div class="key rv" style="--d:3"><b style="color:var(--teal-ink)">27%</b><span>cresce nel proprio ruolo</span></div>
+            <div class="key rv" style="--d:4"><b style="color:var(--violet)">22%</b><span>cresce e cambia ruolo</span></div>
+            <div class="key d rv" style="--d:5"><b>11%</b><span>ha bisogno di un percorso pensato apposta, perché nessuno resti indietro</span></div>
+            <div class="key rv" style="--d:6"><b>39%</b><span>continuerà con le competenze di oggi</span></div>
+          </div>
+        </div>
+        <p class="src">Fonte: WEF, Future of Jobs Report 2025, profilo Italia, p. 157. Il 60% è la somma di 27%, 22% e 11%.</p>
+      </div>
+    </section>
+
+    <!-- 5 · IL RITORNO DELL'AI -->
+    <section class="slide dark" aria-label="Il ritorno dei programmi di AI">
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">L'altra metà della complessità</div>
+        <h2 class="rv" style="--d:1">Il ritorno dell'AI arriva a chi <em>ripensa il lavoro</em>, non solo la tecnologia.</h2>
+        <div class="split roi">
+          <div class="pairs">
+            <div class="pair rv" style="--d:2"><div class="lab"><span>Usa l'AI regolarmente</span><b>quasi 9 su 10</b></div><div class="track"><div class="bar-fill" style="--w:88%; --d:0"></div></div></div>
+            <div class="pair rv" style="--d:3"><div class="lab"><span>Vede un impatto significativo sull'EBIT</span><b>37%</b></div><div class="track"><div class="bar-fill b2" style="--w:37%; --d:1"></div></div></div>
+            <div class="pair rv" style="--d:4"><div class="lab"><span>Attribuisce all'AI almeno il 5% dell'EBIT</span><b class="am">6%</b></div><div class="track"><div class="bar-fill b3" style="--w:6%; --d:2"></div></div></div>
+          </div>
+          <div class="bignote rv" style="--d:3">
+            <b class="num">25%</b>
+            <p>delle iniziative di AI ha dato il ritorno atteso, secondo 2.000 CEO.</p>
+          </div>
+        </div>
+        <p class="src">Fonti: McKinsey, The State of AI 2026; IBM IBV, CEO Study 2025; BCG, Applied AI Index 2026. Quote di organizzazioni intervistate.</p>
+      </div>
+    </section>
+
+    <!-- 6 · CHI SIAMO -->
+    <section class="slide" aria-label="Chi siamo">
+      <div class="slide-content">
+        <div class="about">
+          <div class="vision rv" style="--d:1">
+            <div class="lockup">
+              <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <rect x="6" y="8" width="9" height="32" rx="2" fill="#FFFFFF"/>
+                <rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+                <rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#4E77C6"/>
+                <rect x="34" y="20" width="9" height="20" rx="2" fill="#FFFFFF"/>
+                <circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+              </svg>
+              <div class="wordmark">Neartech<small>AI &amp; CONSULTING</small></div>
+            </div>
+            <div class="eyebrow">Chi siamo</div>
+            <h2>Aiutiamo le organizzazioni a governare il lavoro che cambia.</h2>
+            <p class="opt">Siamo una società di consulenza con una piattaforma proprietaria e un metodo analitico che mappano processi, ruoli e compiti, in modo trasparente e centrato sulle persone.</p>
+            <p class="serif">La nostra visione: tenere insieme il risultato economico dell'AI e la crescita delle persone.</p>
+          </div>
+          <div class="offer rv" style="--d:3">
+            <div class="eyebrow">La nostra consulenza</div>
+            <div class="of"><span class="n">01</span><div><h3>Mappare il lavoro e prevederne il cambiamento</h3><p>Compito per compito, con la previsione di cosa verrà automatizzato.</p></div></div>
+            <div class="of"><span class="n">02</span><div><h3>Valutare l'impatto organizzativo dell'AI</h3><p>Prima e durante l'implementazione: processi, ruoli e responsabilità cambiano insieme.</p></div></div>
+            <div class="of"><span class="n">03</span><div><h3>Costruire i percorsi di crescita</h3><p>Piani di upskilling su misura e una governance trasparente delle decisioni sull'AI.</p></div></div>
+            <p class="mono">Metodo, piattaforma e consulenti, insieme.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · DUE ASSI -->
+    <section class="slide dark" aria-label="Due assi per ogni compito">
+      <div class="slide-content">
+        <div class="matrix-wrap">
+          <div class="rv" style="--d:1">
+            <svg class="matrix" viewBox="0 0 420 410" role="img" aria-label="Matrice: in verticale la desiderabilità della presenza umana, scelte di valore; in orizzontale la necessità della presenza umana, vincoli tecnici">
+              <rect x="54" y="10" width="166" height="166" rx="10" fill="#3A1368" stroke="#A77ED7" stroke-opacity="0.8" stroke-width="1.5"/>
+              <rect x="224" y="10" width="166" height="166" rx="10" fill="#7A4E0A" stroke="#F59E0B" stroke-opacity="0.7" stroke-width="1.5"/>
+              <rect x="54" y="180" width="166" height="166" rx="10" fill="#0A5C63" stroke="#00B4B4" stroke-opacity="0.8" stroke-width="1.5"/>
+              <rect x="224" y="180" width="166" height="166" rx="10" fill="#15327A" stroke="#7E9DD7" stroke-opacity="0.8" stroke-width="1.5"/>
+              <g font-family="JetBrains Mono" font-size="12.5" font-weight="700" fill="#FFFFFF">
+                <text x="66" y="34">SUPPORTO</text><text x="66" y="50">TECNOLOGICO</text>
+                <text x="236" y="34">PERSONA</text><text x="236" y="50">AL CENTRO</text>
+                <text x="66" y="204">AUTOMATIZ-</text><text x="66" y="220">ZABILE</text>
+                <text x="236" y="204">RIPROGETTARE</text><text x="236" y="220">E POTENZIARE</text>
+              </g>
+              <circle cx="120" cy="115" r="16" fill="#C9A9F0"/><circle cx="180" cy="150" r="8" fill="#C9A9F0"/>
+              <circle cx="290" cy="110" r="14" fill="#F59E0B"/><circle cx="350" cy="140" r="8" fill="#F59E0B"/><circle cx="330" cy="95" r="6" fill="#F59E0B"/>
+              <circle cx="130" cy="285" r="18" fill="#2FD4D4"/><circle cx="185" cy="322" r="8" fill="#2FD4D4"/><circle cx="90" cy="322" r="6" fill="#2FD4D4"/>
+              <circle cx="295" cy="290" r="14" fill="#A9C0F0"/><circle cx="350" cy="320" r="8" fill="#A9C0F0"/>
+              <g font-family="Inter" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">
+                <text x="222" y="372">Necessità della presenza umana</text>
+                <text x="222" y="390" font-weight="500" fill="#CBD5E1">vincoli tecnici →</text>
+                <text x="14" y="178" transform="rotate(-90 14 178)">Desiderabilità della presenza umana</text>
+                <text x="32" y="178" transform="rotate(-90 32 178)" font-weight="500" fill="#CBD5E1">scelte di valore →</text>
+              </g>
+            </svg>
+          </div>
+          <div>
+            <div class="eyebrow rv" style="--d:0">Il metodo</div>
+            <h2 class="rv" style="--d:2">Due assi, per ogni compito.</h2>
+            <p class="rv opt" style="--d:3; margin-bottom: 6px;">Sui vincoli tecnici risponde la nostra base di conoscenza, che segue lo stato dell'arte della tecnologia e lo mappa sulle librerie di compiti standard: globali, europee e italiane. Sulle scelte di valore rispondete voi, con le vostre persone.</p>
+            <p class="serif rv" style="--d:4; font-size: clamp(1rem, 1.6vw, 1.3rem); margin-bottom: 6px;">Così prevediamo cosa verrà automatizzato, non solo cosa lo è già.</p>
+            <div class="quads rv" style="--d:5">
+              <div class="q"><i style="background:#F59E0B"></i><div><b>Persona al centro</b><span>La tecnologia non basta, e il valore della persona è alto.</span></div></div>
+              <div class="q"><i style="background:#C9A9F0"></i><div><b>Supporto tecnologico</b><span>La tecnologia aiuta, la persona resta responsabile.</span></div></div>
+              <div class="q"><i style="background:#A9C0F0"></i><div><b>Riprogettare e potenziare</b><span>Conviene ripensare il compito con il supporto dell'AI.</span></div></div>
+              <div class="q"><i style="background:#2FD4D4"></i><div><b>Automatizzabile</b><span>Gestibile in automatico, sotto supervisione.</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · COME LAVORIAMO -->
+    <section class="slide" aria-label="Come lavoriamo">
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">Come lavoriamo</div>
+        <h2 class="rv" style="--d:1">Quattro passi, fatti insieme.</h2>
+        <div class="path rv" style="--d:2">
+          <div class="node"><span class="n">01</span><h3>Leggiamo il lavoro</h3><p>Le job description diventano compiti singoli, abbinati dove possibile alla nostra base di conoscenza, costruita su standard globali, europei e italiani.</p></div>
+          <div class="node"><span class="n">02</span><h3>Prevediamo cosa cambia</h3><p>Il compito abbinato eredita il punteggio della base, che segue la tecnologia. Il compito nuovo lo deriviamo dai più simili, e arricchisce la base.</p></div>
+          <div class="node p"><span class="n">03</span><h3>Il comitato dà gli indirizzi</h3><p>Con interviste e questionari fissa quanto conta, per voi, la presenza umana. Da lì si aggiorna ogni classificazione.</p></div>
+          <div class="node p"><span class="n">04</span><h3>Verifichiamo e restituiamo</h3><p>I revisori controllano un campione e correggono. Il comitato approva la restituzione: le decisioni restano alle persone.</p></div>
+        </div>
+        <div class="keyline rv" style="--d:3"><span><i style="background:var(--teal)"></i>Lavoro del sistema</span><span><i style="background:var(--amber)"></i>Decisioni delle persone</span></div>
+      </div>
+    </section>
+
+    <!-- 8 · DAL QUADRO AL DETTAGLIO -->
+    <section class="slide" aria-label="Dal quadro d'insieme al dettaglio">
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">Cosa vedrai</div>
+        <h2 class="rv" style="--d:1">Dal quadro d'insieme al singolo compito.</h2>
+        <div class="zoom rv" style="--d:2">
+          <div class="panel navy">
+            <div class="who">Per chi guida l'impresa</div>
+            <div class="fn"><div class="top">Amministrazione <span>46 compiti</span></div><div class="mini"><i class="m1" style="--w:22%; --d:0"></i><i class="m2" style="--w:20%; --d:1"></i><i class="m3" style="--w:34%; --d:2"></i><i class="m4" style="--w:24%; --d:3"></i></div></div>
+            <div class="fn"><div class="top">Relazioni con i clienti <span>41 compiti</span></div><div class="mini"><i class="m1" style="--w:12%; --d:1"></i><i class="m2" style="--w:46%; --d:2"></i><i class="m3" style="--w:24%; --d:3"></i><i class="m4" style="--w:18%; --d:4"></i></div></div>
+            <div class="fn"><div class="top">Operazioni <span>58 compiti</span></div><div class="mini"><i class="m1" style="--w:30%; --d:2"></i><i class="m2" style="--w:14%; --d:3"></i><i class="m3" style="--w:20%; --d:4"></i><i class="m4" style="--w:36%; --d:5"></i></div></div>
+            <p class="mono">Esempio illustrativo</p>
+          </div>
+          <div class="arrow"><svg viewBox="0 0 44 24" fill="none" stroke="#526175" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h38M30 3l10 9-10 9"/></svg><span>zoom</span></div>
+          <div class="panel">
+            <div class="who">Per chi progetta il cambiamento</div>
+            <div class="tk"><b>Preparare la documentazione per una verifica interna</b><span class="chip c3">Supporto tecnologico</span><div class="hz"><i>oggi</i><i class="on">a breve</i><i>più avanti</i></div></div>
+            <div class="tk"><b>Rispondere alle richieste dei clienti</b><span class="chip c2">Persona al centro</span><div class="hz"><i>oggi</i><i>a breve</i><i class="on">più avanti</i></div></div>
+            <div class="tk"><b>Aggiornare l'anagrafica dei fornitori</b><span class="chip c4">Automatizzabile</span><div class="hz"><i class="on">oggi</i><i>a breve</i><i>più avanti</i></div></div>
+            <div class="tk"><b>Coordinare una riunione di progetto</b><span class="chip c1">Riprogettare</span><div class="hz"><i>oggi</i><i class="on">a breve</i><i>più avanti</i></div></div>
+            <p class="mono">Esempio illustrativo: l'orizzonte segue lo stato dell'arte della tecnologia.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 · IMPEGNI -->
+    <section class="slide dark" aria-label="I nostri impegni">
+      <div class="slide-content">
+        <div class="split" style="align-items: center;">
+          <div>
+            <div class="eyebrow rv" style="--d:0">Le organizzazioni lo stanno già pianificando</div>
+            <div class="bignum rv" style="--d:1"><span data-count="83">83</span><span class="u">%</span></div>
+            <p class="rv" style="--d:2">dei datori di lavoro italiani intervistati prevede di riqualificare e far crescere il personale per lavorare con l'AI (77% nel mondo).</p>
+            <p class="src rv" style="--d:3">Fonte: WEF, Future of Jobs Report 2025, profilo Italia, p. 157.</p>
+          </div>
+          <div class="commit rv" style="--d:3">
+            <div class="cm"><span class="n">01</span><div><h3>Riferimenti riconosciuti</h3><p>Le tassonomie del lavoro più diffuse al mondo orientano la mappatura.</p></div></div>
+            <div class="cm"><span class="n">02</span><div><h3>Ogni risultato si spiega</h3><p>Da dove viene, con quali regole, con quale margine di incertezza.</p></div></div>
+            <div class="cm"><span class="n">03</span><div><h3>Il sapere resta vostro</h3><p>I documenti originali restano nello spazio riservato della vostra organizzazione.</p></div></div>
+            <div class="cm"><span class="n">04</span><div><h3>Nessuno resta indietro</h3><p>Il piano di crescita nasce dall'evoluzione dell'impresa.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 · INVITO -->
+    <section class="slide" aria-label="Il passo successivo">
+      <div class="blob dx" aria-hidden="true"></div>
+      <div class="slide-content">
+        <div class="eyebrow rv" style="--d:0">Il passo successivo</div>
+        <div class="ask rv" style="--d:1">Portateci un ruolo e un documento: <em>partiamo da lì</em>.</div>
+        <p class="serif rv" style="--d:2; max-width: 34ch;">Mezz'ora per vedere come il metodo legge il vostro lavoro, e che cosa ne emerge.</p>
+        <div class="btns rv" style="--d:3">
+          <a class="btn btn-pill" href="#contatti">Fissiamo mezz'ora</a>
+          <a class="btn btn-link" href="#contatti">Chiedici di più <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* Controller della presentazione: tastiera, rotellina e tocco (scroll-snap),
+       avanzamento, animazioni di ingresso, conteggio dei numeri e griglia dei cento lavoratori. */
+    class Presentazione {
+      constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.dots = document.getElementById('dots');
+        this.progress = document.getElementById('progress');
+        this.counter = document.getElementById('counter');
+        this.corrente = 0;
+        this.ridotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        this.creaPunti();
+        this.creaGriglia();
+        this.osserva();
+        document.addEventListener('keydown', (e) => this.tasto(e));
+      }
+      creaPunti() {
+        this.slides.forEach((s, i) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.setAttribute('aria-label', 'Vai alla slide ' + (i + 1));
+          b.addEventListener('click', () => this.vai(i));
+          this.dots.appendChild(b);
+        });
+      }
+      creaGriglia() {
+        const w = document.getElementById('waffle');
+        if (!w) return;
+        /* 99 punti, uno per ogni punto percentuale indicato dal WEF: 39 senza bisogno di formazione,
+           27 crescono nel ruolo, 22 crescono e cambiano ruolo, 11 con un percorso pensato apposta. */
+        const gruppi = [['a', 39], ['b', 27], ['c', 22], ['d', 11]];
+        let i = 0;
+        gruppi.forEach(([classe, n]) => {
+          for (let k = 0; k < n; k++) {
+            const d = document.createElement('span');
+            d.className = 'dot ' + classe;
+            d.style.setProperty('--i', i++);
+            w.appendChild(d);
+          }
+        });
+      }
+      osserva() {
+        const io = new IntersectionObserver((voci) => {
+          voci.forEach((v) => {
+            if (v.isIntersecting && v.intersectionRatio >= 0.6) {
+              const prima = v.target.classList.contains('in');
+              v.target.classList.add('in');
+              if (!prima) this.conta(v.target);
+              this.aggiorna(this.slides.indexOf(v.target));
+            }
+          });
+        }, { threshold: [0.6] });
+        this.slides.forEach((s) => io.observe(s));
+      }
+      conta(slide) {
+        slide.querySelectorAll('[data-count]').forEach((el) => {
+          const fine = parseInt(el.dataset.count, 10);
+          const suffisso = el.dataset.suffix || '';
+          if (this.ridotto) { el.textContent = fine + suffisso; return; }
+          const t0 = performance.now();
+          const durata = 1100;
+          const passo = (t) => {
+            const p = Math.min(1, (t - t0) / durata);
+            el.textContent = Math.round(fine * (1 - Math.pow(1 - p, 3))) + suffisso;
+            if (p < 1) requestAnimationFrame(passo);
+          };
+          requestAnimationFrame(passo);
+        });
+      }
+      aggiorna(i) {
+        this.corrente = i;
+        const n = this.slides.length;
+        this.progress.style.width = ((i + 1) / n * 100) + '%';
+        this.counter.textContent = (i + 1) + ' / ' + n;
+        Array.from(this.dots.children).forEach((b, k) => b.setAttribute('aria-current', k === i ? 'true' : 'false'));
+        const scura = this.slides[i].classList.contains('dark');
+        this.dots.classList.toggle('on-dark', scura);
+        this.counter.style.color = scura ? '#fff' : '';
+        this.counter.style.background = scura ? 'rgba(11,37,89,0.6)' : '';
+      }
+      vai(i) {
+        const k = Math.max(0, Math.min(this.slides.length - 1, i));
+        this.slides[k].scrollIntoView({ behavior: 'smooth' });
+      }
+      tasto(e) {
+        const avanti = ['ArrowDown', 'ArrowRight', 'PageDown', ' '];
+        const indietro = ['ArrowUp', 'ArrowLeft', 'PageUp'];
+        if (avanti.includes(e.key)) { e.preventDefault(); this.vai(this.corrente + 1); }
+        else if (indietro.includes(e.key)) { e.preventDefault(); this.vai(this.corrente - 1); }
+        else if (e.key === 'Home') { e.preventDefault(); this.vai(0); }
+        else if (e.key === 'End') { e.preventDefault(); this.vai(this.slides.length - 1); }
+      }
+    }
+    new Presentazione();
+  </script>
+</body>
+</html>

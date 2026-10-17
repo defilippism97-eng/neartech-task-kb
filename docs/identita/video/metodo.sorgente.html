@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="it" style="overflow:hidden; margin:0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Neartech · Il metodo, passo per passo</title>
+    <!--
+      NEARTECH · Video del metodo · composizione HyperFrames (1920×1080, 136,5 s, 21 scene, effetti sonori e musica)
+      Sorgente modificabile: i font sono segnaposto. Il file da importare si genera con
+        python incorpora_font.py metodo.sorgente.html metodo-hyperframes.html
+      Testi: storyboard-video.md, sezione 6 (skill copywriting, workflow della fase 6 in nove passi).
+      Identità v3.1 «Luce»: Inter + JetBrains Mono, fondo Paper, nessun rimbalzo. Stesso sistema del pitch.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hyperframes/core/dist/hyperframe.runtime.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hyperframes/shader-transitions/dist/index.global.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 100 900; font-style: normal; font-display: block;
+        src: url(data:font/woff2;base64,__FONT_INTER__) format("woff2"); }
+      @font-face { font-family: "JetBrains Mono"; font-weight: 500; font-style: normal; font-display: block;
+        src: url(data:font/woff2;base64,__FONT_JBMONO__) format("woff2"); }
+
+      :root {
+        --paper: #FFFFFF; --card: #F5F6F8; --line: #E2E8F0;
+        --navy: #0B2559; --cobalt: #1B499F; --teal: #00B4B4; --teal-ink: #007272; --teal-pale: #BFEDED;
+        --violet: #521983; --amber: #F59E0B; --amber-ink: #92400E; --amber-pale: #FEF3C7;
+        --ink: #0F172A; --slate: #475569; --stone: #526175;
+        --f: "Inter", system-ui, sans-serif;
+        --m: "JetBrains Mono", ui-monospace, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--f); -webkit-font-smoothing: antialiased; }
+
+      /* Scene trasparenti: il bianco è della pagina (la prima scena della transizione resta visibile fin dall'inizio). */
+      .scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+      .scene-content { position: absolute; inset: 0; padding: 120px 180px; display: flex; flex-direction: column; justify-content: center; gap: 34px; z-index: 2; }
+      .scene-content.step { padding-top: 230px; padding-bottom: 110px; flex-direction: row; align-items: center; justify-content: space-between; gap: 60px; }
+      #m11 .blob, #m11 .rail { visibility: hidden; }
+
+      .blob { position: absolute; left: 0; top: 0; width: 900px; height: 900px; z-index: 0; transform-origin: 50% 50%; pointer-events: none; }
+      .orb { position: absolute; left: 0; top: 0; width: 900px; height: 900px; border-radius: 50%; transform-origin: 50% 50%; }
+
+      /* Tipografia */
+      .eyebrow { font-family: var(--m); font-weight: 500; font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal-ink); }
+      .eyebrow.h { color: var(--amber-ink); }
+      .t-xl, .t-l { font-weight: 600; color: var(--navy); line-height: 1.03; }
+      .t-xl { font-size: 124px; letter-spacing: -0.05em; }
+      .t-l { font-size: 80px; letter-spacing: -0.05em; }
+      .sub { font-size: 32px; line-height: 1.35; color: var(--slate); letter-spacing: -0.015em; max-width: 30ch; }
+      em { font-family: var(--m); font-style: normal; font-weight: 500; font-size: 0.84em; letter-spacing: -0.06em; color: var(--teal-ink); }
+      em.h { color: var(--amber-ink); }
+      .ln { display: block; overflow: hidden; padding-bottom: 0.14em; margin-bottom: -0.14em; white-space: nowrap; }
+      .ln > span { display: inline-block; }
+      .ch { display: inline-block; }
+      .col { width: 880px; display: flex; flex-direction: column; gap: 30px; }
+      .viz { position: relative; width: 680px; height: 560px; flex: none; }
+      .esempio { position: absolute; right: 0; bottom: -6px; font-family: var(--m); font-weight: 500; font-size: 18px; color: var(--stone); }
+
+      /* Logo */
+      .lockup { display: flex; align-items: center; gap: 40px; }
+      .lockup svg { overflow: visible; }
+      .wordmark { font-weight: 700; letter-spacing: -0.045em; color: var(--navy); line-height: 1; }
+      .wordmark small { display: block; font-family: var(--m); font-weight: 500; font-size: 0.2em; letter-spacing: 0.24em; color: var(--stone); margin-top: 0.5em; }
+
+      /* Binario delle nove tappe */
+      .rail { position: absolute; left: 0; top: 0; width: 1920px; height: 200px; z-index: 3; }
+      .rail .seg { position: absolute; top: 96px; height: 4px; border-radius: 2px; background: var(--line); }
+      .rail .nd { position: absolute; top: 85px; width: 26px; height: 26px; margin-left: -13px; border-radius: 50%; background: #fff; border: 3px solid #A9B4C4; }
+      .rail .nd.fatto { background: var(--teal-pale); border-color: var(--teal); }
+      .rail .nd.fatto.h { background: var(--amber-pale); border-color: var(--amber); }
+      .rail .nd.on { background: var(--teal); border-color: var(--teal-ink); width: 34px; height: 34px; top: 81px; margin-left: -17px; }
+      .rail .nd.on.h { background: #fff; border-color: var(--amber); }
+      .rail .lab { position: absolute; top: 132px; transform: translateX(-50%); font-family: var(--m); font-weight: 500; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--navy); white-space: nowrap; }
+      .rail .sfera { position: absolute; top: 40px; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; background: var(--amber); }
+      .rail .atto { position: absolute; top: 132px; transform: translateX(-50%); font-family: var(--m); font-weight: 500; font-size: 20px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--stone); white-space: nowrap; }
+
+      /* Scheda task riusabile */
+      .chip { position: absolute; display: flex; align-items: center; gap: 14px; height: 64px; padding: 0 24px; border-radius: 16px; background: #fff; border: 2px solid var(--line); font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--navy); white-space: nowrap; box-shadow: 0 6px 18px rgba(11,37,89,0.06); }
+      .chip i { width: 14px; height: 14px; border-radius: 4px; background: var(--teal); flex: none; }
+      .chip.nuovo { border-style: dashed; border-color: var(--cobalt); }
+      .card { position: absolute; background: var(--card); border-radius: 22px; }
+
+      .doc { left: 0; top: 40px; width: 300px; height: 440px; padding: 34px 28px; display: flex; flex-direction: column; gap: 20px; }
+      .doc b { display: block; height: 14px; border-radius: 7px; background: #CBD5E1; }
+      .doc b.hl { background: var(--teal); }
+      .base { left: 330px; top: 30px; width: 350px; height: 470px; padding: 28px; }
+      .base .tit { font-family: var(--m); font-weight: 500; font-size: 20px; letter-spacing: 0.06em; color: var(--navy); margin-bottom: 20px; }
+      .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+      .griglia i { height: 74px; border-radius: 12px; background: #fff; border: 2px solid var(--line); }
+      .griglia i.ok { border-color: var(--teal); background: #E6FAFA; }
+      .badge { position: absolute; display: inline-flex; align-items: center; gap: 12px; padding: 14px 24px; border-radius: 99px; font-family: var(--m); font-weight: 500; font-size: 22px; white-space: nowrap; }
+      .badge.h { background: var(--amber-pale); color: var(--amber-ink); border: 2px solid var(--amber); }
+      .badge.n { background: #EEF2F9; color: var(--navy); border: 2px solid #7E9DD7; }
+      .box { position: absolute; width: 320px; height: 430px; border-radius: 22px; padding: 30px 26px; display: flex; flex-direction: column; gap: 16px; }
+      .box h5 { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; color: var(--navy); line-height: 1.1; }
+      .box p { font-size: 22px; color: var(--slate); line-height: 1.35; }
+      .box .riga { height: 46px; border-radius: 12px; background: #fff; border: 2px solid var(--line); display: flex; align-items: center; padding: 0 16px; font-family: var(--m); font-weight: 500; font-size: 19px; color: var(--stone); }
+      .fn { position: absolute; left: 0; width: 680px; }
+      .fn .top { display: flex; justify-content: space-between; font-size: 28px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; margin-bottom: 12px; }
+      .fn .top span { font-family: var(--m); font-weight: 500; font-size: 20px; color: var(--stone); }
+      .mini { display: flex; height: 44px; border-radius: 12px; overflow: hidden; gap: 4px; }
+      .mini i { display: block; width: 0; }
+      .q1 { background: #7E9DD7; } .q2 { background: var(--amber); } .q3 { background: #A77ED7; } .q4 { background: var(--teal); }
+      .lente { position: absolute; width: 120px; height: 120px; border-radius: 50%; border: 5px solid var(--navy); background: rgba(255,255,255,0.35); }
+      .cursore { position: absolute; left: 0; width: 680px; }
+      .cursore .nome { font-size: 28px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; margin-bottom: 14px; }
+      .cursore .bin { position: relative; height: 12px; border-radius: 6px; background: var(--line); }
+      .cursore .pieno { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 6px; background: var(--amber); width: 50%; }
+      .cursore .pomo { position: absolute; top: -14px; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: #fff; border: 4px solid var(--amber); left: 0; transform: translateX(340px); }
+      .colonna { position: absolute; bottom: 70px; width: 120px; border-radius: 16px 16px 0 0; }
+      .pav { position: absolute; left: 0; width: 680px; height: 4px; background: var(--navy); }
+      .pav-lab { position: absolute; font-family: var(--m); font-weight: 500; font-size: 20px; color: var(--navy); letter-spacing: 0.04em; }
+      .matrix { width: 680px; height: auto; display: block; }
+      .tel { left: 160px; top: 0; width: 380px; height: 560px; border-radius: 40px; background: #fff; border: 3px solid #CBD5E1; padding: 40px 30px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 20px 40px rgba(11,37,89,0.08); }
+      .tel .t { font-size: 30px; font-weight: 600; color: var(--navy); letter-spacing: -0.03em; line-height: 1.15; }
+      .tel .q { font-size: 22px; color: var(--slate); line-height: 1.35; }
+      .tel .op { height: 50px; border-radius: 99px; border: 2px solid var(--line); display: flex; align-items: center; padding: 0 22px; font-size: 21px; color: var(--navy); }
+      .tel .op.sel { border-color: var(--teal); background: #E6FAFA; }
+      .tel .nota { font-family: var(--m); font-weight: 500; font-size: 17px; color: var(--stone); margin-top: auto; }
+      .camp { position: absolute; left: 0; top: 30px; display: grid; grid-template-columns: repeat(8, 64px); gap: 14px; }
+      .camp i { width: 64px; height: 64px; border-radius: 14px; background: var(--card); border: 2px solid var(--line); }
+      .camp i.inc { border-color: var(--amber); border-style: dashed; }
+      .camp i.vis { background: var(--amber-pale); border-color: var(--amber); border-style: solid; }
+      .occ { position: absolute; left: 0; width: 680px; height: 74px; border-radius: 16px; background: #fff; border: 2px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 25px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; }
+      .occ .qt { font-family: var(--m); font-weight: 500; font-size: 18px; padding: 6px 14px; border-radius: 99px; background: #E6FAFA; color: #005151; }
+      .occ .qt.nuova { background: var(--amber-pale); color: var(--amber-ink); }
+      .traccia { position: absolute; left: 0; width: 680px; display: grid; grid-template-columns: 26px 1fr; gap: 18px; }
+      .traccia .p { width: 22px; height: 22px; border-radius: 50%; margin-top: 6px; }
+      .traccia b { display: block; font-size: 26px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; }
+      .traccia span { font-family: var(--m); font-weight: 500; font-size: 19px; color: var(--stone); }
+      .anello { position: absolute; left: 110px; top: 40px; width: 460px; height: 460px; }
+      .anello::before { content: ""; position: absolute; left: 30px; top: 30px; width: 400px; height: 400px; border-radius: 50%; border: 3px solid var(--line); }
+      .anello i { position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 3px solid var(--teal); background: #fff; }
+      .anello i.h { border-color: var(--amber); }
+      .pill { display: inline-flex; align-items: center; align-self: flex-start; gap: 18px; margin-top: 10px; padding: 30px 60px; border-radius: 99px; color: #fff; font-weight: 600; font-size: 36px; letter-spacing: -0.02em; background: linear-gradient(90deg, #1B499F, #007272); box-shadow: 0 16px 40px rgba(27,73,159,0.28); }
+      .logo-alto { position: absolute; left: 180px; top: 96px; z-index: 2; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="136.5">
+
+      <!-- Audio: effetti sincronizzati con la timeline (suoni_metodo.py) e musica di sottofondo a livello costante,
+           sotto gli effetti (mixa_audio.py). Musica: «Upbeat Inspiring Corporate» di Wavecont, licenza da verificare. -->
+      <audio id="audio" src="suoni/metodo-audio.m4a" data-start="0" data-duration="136.5" data-volume="1"></audio>
+
+      <!-- M1 · logo -->
+      <div class="scene clip" id="m1" data-start="0" data-duration="3.5">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content" style="align-items:center;">
+          <div class="lockup">
+            <svg width="260" height="260" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect id="m1-asta" x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+              <rect id="m1-m1" x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+              <rect id="m1-m2" x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+              <rect id="m1-asta2" x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+              <circle id="m1-ring" cx="38.5" cy="12.5" r="4.5" fill="none" stroke="#F59E0B" stroke-width="0.7" opacity="0"/>
+              <circle id="m1-sfera" cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+            </svg>
+            <div>
+              <div class="wordmark" id="m1-word" style="font-size:150px;">Neartech</div>
+              <div class="eyebrow" id="m1-eb" style="margin-top:22px;">Il metodo, passo per passo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M2 · apertura -->
+      <div class="scene clip" id="m2" data-start="3.5" data-duration="5.5">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="t-xl" id="m2-h" style="font-size:112px;">
+            <span class="ln"><span>L'AI cambierà</span></span>
+            <span class="ln"><span>il vostro lavoro.</span></span>
+            <span class="ln"><span><em id="m2-type">Sapete già dove, e di quanto?</em></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- M3 · promessa -->
+      <div class="scene clip" id="m3" data-start="9" data-duration="6">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="m3-eb">Il metodo Neartech</div>
+          <div class="t-l" id="m3-h" style="font-size:92px;">
+            <span class="ln"><span>Trasformiamo le vostre job description</span></span>
+            <span class="ln"><span>in una mappa del lavoro</span></span>
+            <span class="ln"><span><em>che cambia.</em></span></span>
+          </div>
+          <div class="sub" id="m3-sub" style="max-width:none;">Compito per compito, con le vostre persone.</div>
+        </div>
+      </div>
+
+      <!-- M4 · tre tempi -->
+      <div class="scene clip" id="m4" data-start="15" data-duration="6" data-rail="atti">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content" style="padding-top:300px;">
+          <div class="t-xl" id="m4-h">
+            <span class="ln"><span>Nove passi,</span></span>
+            <span class="ln"><span><em>in tre tempi.</em></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- M5 · 01 scomposizione -->
+      <div class="scene clip" id="m5" data-start="21" data-duration="7" data-step="1">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m5-eb">01 · Scomposizione</div>
+            <div class="t-l" id="m5-h">
+              <span class="ln"><span>Ogni job description</span></span>
+              <span class="ln"><span>diventa una lista</span></span>
+              <span class="ln"><span><em>di task.</em></span></span>
+            </div>
+            <div class="sub" id="m5-sub">Ogni task cita la riga da cui nasce. Niente task inventati.</div>
+          </div>
+          <div class="viz" id="m5-viz">
+            <div class="card doc" id="m5-doc"><b style="width:80%"></b><b style="width:95%"></b><b class="hl" style="width:70%"></b><b style="width:88%"></b><b style="width:60%"></b><b style="width:92%"></b><b style="width:75%"></b><b style="width:84%"></b></div>
+            <svg style="position:absolute;left:0;top:0" width="680" height="560" aria-hidden="true"><path id="m5-filo" d="M230 152 C 300 152, 300 120, 360 120" stroke="#00B4B4" stroke-width="3" fill="none" stroke-dasharray="160" stroke-dashoffset="160"/></svg>
+            <div class="chip" id="m5-c1" style="left:360px; top:88px;"><i></i>Pianificare i turni</div>
+            <div class="chip" id="m5-c2" style="left:360px; top:176px;"><i></i>Ascoltare le famiglie</div>
+            <div class="chip" id="m5-c3" style="left:360px; top:264px;"><i></i>Aggiornare il registro</div>
+            <div class="chip" id="m5-c4" style="left:360px; top:352px;"><i></i>Ordinare i materiali</div>
+            <div class="esempio">esempio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M6 · 02 abbinamento -->
+      <div class="scene clip" id="m6" data-start="28" data-duration="7" data-step="2">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m6-eb">02 · Abbinamento</div>
+            <div class="t-l" id="m6-h">
+              <span class="ln"><span>Ogni task trova</span></span>
+              <span class="ln"><span>il suo riferimento</span></span>
+              <span class="ln"><span><em>nella base NEARTECH.</em></span></span>
+            </div>
+            <div class="sub" id="m6-sub">Standard globali, europei e italiani. Il revisore approva il lotto.</div>
+          </div>
+          <div class="viz" id="m6-viz">
+            <div class="chip" id="m6-c1" style="left:0; top:110px;"><i></i>Pianificare i turni</div>
+            <div class="chip" id="m6-c2" style="left:0; top:200px;"><i></i>Aggiornare il registro</div>
+            <div class="chip" id="m6-c3" style="left:0; top:290px;"><i></i>Ordinare i materiali</div>
+            <div class="card base" id="m6-base">
+              <div class="tit">BASE NEARTECH</div>
+              <div class="griglia"><i></i><i id="m6-g1"></i><i></i><i></i><i></i><i id="m6-g2"></i><i id="m6-g3"></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="badge h" id="m6-ok" style="left:250px; top:520px;">✓ Lotto approvato dal revisore</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M7 · 03 punteggio -->
+      <div class="scene clip" id="m7" data-start="35" data-duration="7.5" data-step="3">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m7-eb">03 · Punteggio</div>
+            <div class="t-l" id="m7-h" style="font-size:76px;">
+              <span class="ln"><span>Task già noto?</span></span>
+              <span class="ln"><span>Eredita il punteggio.</span></span>
+              <span class="ln"><span><em>Task nuovo? Lo deriviamo</em></span></span>
+              <span class="ln"><span><em>dai più simili.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m7-viz">
+            <svg style="position:absolute;left:0;top:0" width="680" height="560" aria-hidden="true">
+              <path id="m7-l1" d="M250 268 L 430 120" stroke="#1B499F" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="240" stroke-dashoffset="240"/>
+              <path id="m7-l2" d="M250 268 L 430 268" stroke="#1B499F" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="190" stroke-dashoffset="190"/>
+              <path id="m7-l3" d="M250 268 L 430 416" stroke="#1B499F" stroke-width="2" fill="none" stroke-linecap="round" stroke-dasharray="240" stroke-dashoffset="240"/>
+            </svg>
+            <div class="chip nuovo" id="m7-n" style="left:0; top:236px;"><i style="background:#1B499F"></i>Task nuovo</div>
+            <div class="chip" id="m7-s1" style="left:430px; top:88px;"><i></i>Simile · 1</div>
+            <div class="chip" id="m7-s2" style="left:430px; top:236px;"><i></i>Simile · 2</div>
+            <div class="chip" id="m7-s3" style="left:430px; top:384px;"><i></i>Simile · 3</div>
+            <div class="badge n" id="m7-lab" style="left:0; top:470px;">derivato per somiglianza</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M8 · dati -->
+      <div class="scene clip" id="m8" data-start="42.5" data-duration="6" data-step="3">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m8-eb">I vostri dati</div>
+            <div class="t-l" id="m8-h">
+              <span class="ln"><span>Nella base condivisa</span></span>
+              <span class="ln"><span>entrano solo</span></span>
+              <span class="ln"><span><em>dati anonimi.</em></span></span>
+            </div>
+            <div class="sub" id="m8-sub">I vostri documenti, log e azioni restano nella vostra sezione.</div>
+          </div>
+          <div class="viz" id="m8-viz">
+            <div class="box card" id="m8-a" style="left:0; top:50px;"><h5>Base NEARTECH</h5><p>Task in forma standard, senza il vostro testo.</p><div class="riga">task · forma standard</div><div class="riga">task · forma standard</div></div>
+            <div class="box card" id="m8-b" style="left:360px; top:50px; background:#EEF2F9;"><h5>La vostra sezione</h5><p>Consultabile per l'audit.</p><div class="riga">documenti originali</div><div class="riga">log e azioni</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M9 · 04 comitato -->
+      <div class="scene clip" id="m9" data-start="48.5" data-duration="6.5" data-step="4">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m9-eb">04 · Comitato guida</div>
+            <div class="t-l" id="m9-h" style="font-size:74px;">
+              <span class="ln"><span>Il vostro comitato</span></span>
+              <span class="ln"><span>vede ogni task.</span></span>
+              <span class="ln"><span><em class="h">La sua leva vera</em></span></span>
+              <span class="ln"><span><em class="h">sono gli indirizzi.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m9-viz">
+            <div class="fn" id="m9-f1" style="top:60px;"><div class="top">Amministrazione <span>46 task</span></div><div class="mini"><i class="q1" style="--w:22%"></i><i class="q2" style="--w:20%"></i><i class="q3" style="--w:34%"></i><i class="q4" style="--w:24%"></i></div></div>
+            <div class="fn" id="m9-f2" style="top:210px;"><div class="top">Relazioni con i clienti <span>41 task</span></div><div class="mini"><i class="q1" style="--w:12%"></i><i class="q2" style="--w:46%"></i><i class="q3" style="--w:24%"></i><i class="q4" style="--w:18%"></i></div></div>
+            <div class="fn" id="m9-f3" style="top:360px;"><div class="top">Operazioni <span>58 task</span></div><div class="mini"><i class="q1" style="--w:30%"></i><i class="q2" style="--w:14%"></i><i class="q3" style="--w:20%"></i><i class="q4" style="--w:36%"></i></div></div>
+            <div class="lente" id="m9-lente" style="left:190px; top:250px;"></div>
+            <div class="esempio">esempio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M10 · 05 indirizzi -->
+      <div class="scene clip" id="m10" data-start="55" data-duration="8" data-step="5">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m10-eb">05 · Indirizzi</div>
+            <div class="t-l" id="m10-h" style="font-size:72px;">
+              <span class="ln"><span>Interviste e questionari</span></span>
+              <span class="ln"><span>traducono la vostra visione</span></span>
+              <span class="ln"><span><em class="h">in pesi.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m10-viz">
+            <div class="cursore" id="m10-c1" style="top:40px;"><div class="nome">Relazione e fiducia</div><div class="bin"><div class="pieno"></div><div class="pomo"></div></div></div>
+            <div class="cursore" id="m10-c2" style="top:165px;"><div class="nome">Responsabilità</div><div class="bin"><div class="pieno"></div><div class="pomo"></div></div></div>
+            <div class="cursore" id="m10-c3" style="top:290px;"><div class="nome">Senso del lavoro</div><div class="bin"><div class="pieno"></div><div class="pomo"></div></div></div>
+            <div class="cursore" id="m10-c4" style="top:415px;"><div class="nome">Valore per chi lo riceve</div><div class="bin"><div class="pieno"></div><div class="pomo"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M11 · 05 garanzie · prima scena della transizione shader -->
+      <div class="scene clip" id="m11" data-start="63" data-duration="7" data-step="5" style="opacity:0;">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m11-eb">05 · Garanzie</div>
+            <div class="t-l" id="m11-h" style="font-size:72px;">
+              <span class="ln"><span>I pesi aggiungono enfasi</span></span>
+              <span class="ln"><span>sopra il pavimento di legge.</span></span>
+              <span class="ln"><span><em class="h">Mai sotto.</em></span></span>
+            </div>
+            <div class="sub" id="m11-sub">Valgono con l'approvazione del comitato e il via libera dell'auditor.</div>
+          </div>
+          <div class="viz" id="m11-viz">
+            <div class="colonna" id="m11-b1" style="left:40px; height:150px; background:#CBD5E1;"></div>
+            <div class="colonna" id="m11-b2" style="left:200px; height:150px; background:#CBD5E1;"></div>
+            <div class="colonna" id="m11-b3" style="left:360px; height:150px; background:#CBD5E1;"></div>
+            <div class="colonna" id="m11-e1" style="left:40px; bottom:220px; height:120px; background:var(--amber);"></div>
+            <div class="colonna" id="m11-e3" style="left:360px; bottom:220px; height:190px; background:var(--amber);"></div>
+            <div class="pav" id="m11-pav" style="top:288px;"></div>
+            <div class="pav-lab" id="m11-pavl" style="left:500px; top:300px;">pavimento<br>di legge</div>
+            <div class="badge h" id="m11-k1" style="left:0; top:0;">✓ Comitato</div>
+            <div class="badge n" id="m11-k2" style="left:230px; top:0;">✓ Auditor</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M12 · 06 classificazione · seconda scena della transizione shader -->
+      <div class="scene clip" id="m12" data-start="70" data-duration="7" data-step="6" style="opacity:0;">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m12-eb">06 · Classificazione</div>
+            <div class="t-l" id="m12-h">
+              <span class="ln"><span>Con i vostri pesi,</span></span>
+              <span class="ln"><span>il calcolo riclassifica</span></span>
+              <span class="ln"><span><em>tutti i task.</em></span></span>
+            </div>
+            <div class="sub" id="m12-sub">Stessi dati, stesse regole, stesso risultato.</div>
+          </div>
+          <div class="viz" id="m12-viz">
+            <svg class="matrix" viewBox="0 0 520 480" aria-hidden="true">
+              <rect x="70" y="10" width="210" height="205" rx="12" fill="#F1E9F9" stroke="#A77ED7" stroke-width="1.5"/>
+              <rect x="290" y="10" width="210" height="205" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+              <rect x="70" y="225" width="210" height="205" rx="12" fill="#E6FAFA" stroke="#00B4B4" stroke-width="1.5"/>
+              <rect x="290" y="225" width="210" height="205" rx="12" fill="#E8EEF9" stroke="#7E9DD7" stroke-width="1.5"/>
+              <g font-family="JetBrains Mono" font-weight="500" font-size="13">
+                <text x="84" y="34" fill="#521983">SUPPORTO</text><text x="84" y="51" fill="#521983">TECNOLOGICO</text>
+                <text x="304" y="34" fill="#92400E">PERSONA</text><text x="304" y="51" fill="#92400E">AL CENTRO</text>
+                <text x="84" y="249" fill="#005151">AUTOMATIZZABILE</text>
+                <text x="304" y="249" fill="#0B2559">RIPROGETTARE</text><text x="304" y="266" fill="#0B2559">E POTENZIARE</text>
+              </g>
+              <g id="m12-dots" fill="#0B2559">
+                <circle cx="180" cy="300" r="9"/><circle cx="230" cy="380" r="9"/><circle cx="130" cy="350" r="9"/>
+                <circle cx="350" cy="320" r="9"/><circle cx="420" cy="370" r="9"/><circle cx="200" cy="160" r="9"/>
+                <circle cx="380" cy="150" r="9"/><circle cx="450" cy="90" r="9"/><circle cx="140" cy="110" r="9"/>
+              </g>
+              <line x1="70" y1="442" x2="500" y2="442" stroke="#526175" stroke-width="1.5"/>
+              <line x1="58" y1="430" x2="58" y2="10" stroke="#526175" stroke-width="1.5"/>
+              <g font-family="Inter" font-size="14" text-anchor="middle">
+                <text x="285" y="462" font-weight="600" fill="#0B2559">Necessità della presenza umana</text>
+                <text x="285" y="478" font-weight="400" fill="#526175">vincoli tecnici →</text>
+                <text x="18" y="220" font-weight="600" fill="#0B2559" transform="rotate(-90 18 220)">Desiderabilità della presenza umana</text>
+                <text x="36" y="220" font-weight="400" fill="#526175" transform="rotate(-90 36 220)">scelte di valore →</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- M13 · questionari -->
+      <div class="scene clip" id="m13" data-start="77" data-duration="7" data-step="6">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow" id="m13-eb">06 · Le vostre persone</div>
+            <div class="t-l" id="m13-h" style="font-size:68px;">
+              <span class="ln"><span>Lavoratori e beneficiari</span></span>
+              <span class="ln"><span>rispondono a un questionario</span></span>
+              <span class="ln"><span><em>anonimo.</em></span></span>
+            </div>
+            <div class="sub" id="m13-sub">Le risposte si leggono solo per gruppi di almeno 5.</div>
+          </div>
+          <div class="viz" id="m13-viz">
+            <div class="card tel" id="m13-tel">
+              <div class="t">Il tuo lavoro, in 12 domande</div>
+              <div class="q">Se questo compito sparisse dal tuo lavoro, il tuo lavoro sarebbe…</div>
+              <div class="op" id="m13-o1">Un po' migliore</div>
+              <div class="op" id="m13-o2">Uguale</div>
+              <div class="op" id="m13-o3">Più povero</div>
+              <div class="nota">anonimo · link monouso</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M14 · 07 revisione -->
+      <div class="scene clip" id="m14" data-start="84" data-duration="6.5" data-step="7">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m14-eb">07 · Revisione</div>
+            <div class="t-l" id="m14-h">
+              <span class="ln"><span>I revisori controllano</span></span>
+              <span class="ln"><span>un campione, partendo</span></span>
+              <span class="ln"><span><em class="h">dai task più incerti.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m14-viz">
+            <div class="camp" id="m14-camp"></div>
+            <div class="badge h" id="m14-lab" style="left:0; top:400px;">campione · prima gli incerti</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M15 · 08 correzioni -->
+      <div class="scene clip" id="m15" data-start="90.5" data-duration="8" data-step="8">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m15-eb">08 · Correzioni</div>
+            <div class="t-l" id="m15-h" style="font-size:76px;">
+              <span class="ln"><span>Una correzione</span></span>
+              <span class="ln"><span>vale per quel task,</span></span>
+              <span class="ln"><span><em class="h">ovunque compaia.</em></span></span>
+            </div>
+            <div class="sub" id="m15-sub">Un errore sistematico va al comitato. Il sistema non corregge da solo.</div>
+          </div>
+          <div class="viz" id="m15-viz">
+            <div class="occ" id="m15-o1" style="top:20px;">Aggiornare il registro <span class="qt">Automatizzabile</span></div>
+            <div class="occ" id="m15-o2" style="top:110px;">Aggiornare il registro <span class="qt">Automatizzabile</span></div>
+            <div class="occ" id="m15-o3" style="top:200px;">Aggiornare il registro <span class="qt">Automatizzabile</span></div>
+            <div class="badge h" id="m15-prop" style="left:0; top:330px;">Proposta al comitato: ricalibrare i pesi?</div>
+            <div class="esempio">esempio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M16 · 09 restituzione -->
+      <div class="scene clip" id="m16" data-start="98.5" data-duration="7.5" data-step="9">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step">
+          <div class="col">
+            <div class="eyebrow h" id="m16-eb">09 · Restituzione</div>
+            <div class="t-l" id="m16-h" style="font-size:74px;">
+              <span class="ln"><span>Il comitato vede il risultato</span></span>
+              <span class="ln"><span>per funzione e approva</span></span>
+              <span class="ln"><span><em class="h">la restituzione.</em></span></span>
+            </div>
+            <div class="sub" id="m16-sub">Nessun risultato riguarda una singola persona.</div>
+          </div>
+          <div class="viz" id="m16-viz">
+            <div class="fn" id="m16-f1" style="top:40px;"><div class="top">Amministrazione <span>per funzione</span></div><div class="mini"><i class="q1" style="--w:22%"></i><i class="q2" style="--w:20%"></i><i class="q3" style="--w:34%"></i><i class="q4" style="--w:24%"></i></div></div>
+            <div class="fn" id="m16-f2" style="top:170px;"><div class="top">Relazioni con i clienti <span>per funzione</span></div><div class="mini"><i class="q1" style="--w:12%"></i><i class="q2" style="--w:46%"></i><i class="q3" style="--w:24%"></i><i class="q4" style="--w:18%"></i></div></div>
+            <div class="fn" id="m16-f3" style="top:300px;"><div class="top">Operazioni <span>per funzione</span></div><div class="mini"><i class="q1" style="--w:30%"></i><i class="q2" style="--w:14%"></i><i class="q3" style="--w:20%"></i><i class="q4" style="--w:36%"></i></div></div>
+            <div class="badge h" id="m16-ok" style="left:0; top:440px;">✓ Approvata dal comitato guida</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M17 · trasparenza -->
+      <div class="scene clip" id="m17" data-start="106" data-duration="6">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step" style="padding-top:120px;">
+          <div class="col">
+            <div class="eyebrow" id="m17-eb">Trasparenza</div>
+            <div class="t-l" id="m17-h">
+              <span class="ln"><span>L'auditor segue</span></span>
+              <span class="ln"><span>ogni passo.</span></span>
+              <span class="ln"><span><em>Ogni decisione ha</em></span></span>
+              <span class="ln"><span><em>un autore e un perché.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m17-viz">
+            <div class="traccia" id="m17-a1" style="top:40px;"><i class="p" style="background:var(--amber)"></i><div><b>Revisore · approva il lotto</b><span>«stesso compito, stesso risultato»</span></div></div>
+            <div class="traccia" id="m17-a2" style="top:160px;"><i class="p" style="background:var(--amber)"></i><div><b>Comitato · adotta il profilo dei pesi</b><span>«priorità alla relazione con le famiglie»</span></div></div>
+            <div class="traccia" id="m17-a3" style="top:280px;"><i class="p" style="background:#7E9DD7"></i><div><b>Auditor · dà il via libera</b><span>«sopra il pavimento di legge»</span></div></div>
+            <div class="traccia" id="m17-a4" style="top:400px;"><i class="p" style="background:var(--amber)"></i><div><b>Revisore · corregge un task</b><span>«responsabilità diretta verso l'utente»</span></div></div>
+            <div class="esempio">esempio</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- M18 · aggiornamento -->
+      <div class="scene clip" id="m18" data-start="112" data-duration="6">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content step" style="padding-top:120px;">
+          <div class="col">
+            <div class="eyebrow" id="m18-eb">Dopo la restituzione</div>
+            <div class="t-l" id="m18-h">
+              <span class="ln"><span>La tecnologia cambia.</span></span>
+              <span class="ln"><span>La base si aggiorna,</span></span>
+              <span class="ln"><span><em>e vi dice</em></span></span>
+              <span class="ln"><span><em>cosa è cambiato.</em></span></span>
+            </div>
+          </div>
+          <div class="viz" id="m18-viz"><div class="anello" id="m18-anello"></div></div>
+        </div>
+      </div>
+
+      <!-- M19 · risultato -->
+      <div class="scene clip" id="m19" data-start="118" data-duration="6">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="m19-eb">Il risultato</div>
+          <div class="t-l" id="m19-h" style="font-size:96px;">
+            <span class="ln"><span>Sapete cosa <span style="color:var(--teal-ink)">automatizzare</span>,</span></span>
+            <span class="ln"><span>cosa <span style="color:var(--cobalt)">potenziare</span></span></span>
+            <span class="ln"><span>e chi <span style="color:var(--amber-ink)">far crescere</span>.</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- M20 · persone -->
+      <div class="scene clip" id="m20" data-start="124" data-duration="4.5">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="t-xl" id="m20-h">
+            <span class="ln"><span>Nessuno</span></span>
+            <span class="ln"><span><em class="h">resta indietro.</em></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- M21 · invito -->
+      <div class="scene clip" id="m21" data-start="128.5" data-duration="8">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="logo-alto">
+          <div class="lockup" style="gap:22px;">
+            <svg width="80" height="80" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect id="m21-asta" x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+              <rect id="m21-m1" x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+              <rect id="m21-m2" x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+              <rect id="m21-asta2" x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+              <circle id="m21-ring" cx="38.5" cy="12.5" r="4.5" fill="none" stroke="#F59E0B" stroke-width="0.7" opacity="0"/>
+              <circle id="m21-sfera" cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+            </svg>
+            <div class="wordmark" id="m21-word" style="font-size:56px;">Neartech<small>AI &amp; CONSULTING</small></div>
+          </div>
+        </div>
+        <div class="scene-content" style="padding-top:220px;">
+          <div class="eyebrow" id="m21-eb">Il passo successivo</div>
+          <div class="t-l" id="m21-h" style="font-size:96px;">
+            <span class="ln"><span>Portateci un ruolo:</span></span>
+            <span class="ln"><span>in mezz'ora vedete il metodo</span></span>
+            <span class="ln"><span><em>sul vostro lavoro.</em></span></span>
+          </div>
+          <!-- CONTATTO: recapito da inserire quando disponibile (sito o email), sotto il pulsante. -->
+          <div class="pill" id="m21-pill">Fissiamo mezz'ora sul vostro lavoro <span aria-hidden="true">→</span></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var tl = gsap.timeline({ paused: true });
+        // Curve senza rimbalzo, come da guida: power3/expo per gli ingressi, sine per il respiro.
+        var IN = "power3.out", DR = "expo.out", SOFT = "power2.out", BR = "sine.inOut";
+        var K = 1.25;
+
+        function q(s) { return document.querySelector(s); }
+        function qa(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+
+        // Scene: [inizio, durata]. Devono coincidere con data-start / data-duration e con SCENE di suoni_metodo.py.
+        var S = [[0, 3.5], [3.5, 5.5], [9, 6], [15, 6], [21, 7], [28, 7], [35, 7.5], [42.5, 6], [48.5, 6.5], [55, 8], [63, 7],
+                 [70, 7], [77, 7], [84, 6.5], [90.5, 8], [98.5, 7.5], [106, 6], [112, 6], [118, 6], [124, 4.5], [128.5, 8]];
+        function at(n, r) { return S[n - 1][0] + r; }
+
+        /* ---------- Costruzione sincrona del DOM ---------- */
+        (function dividi(el) {
+          var t = el.textContent; el.textContent = "";
+          for (var i = 0; i < t.length; i++) {
+            var s = document.createElement("span"); s.className = "ch";
+            if (t[i] === " ") { s.innerHTML = "&nbsp;"; } else { s.textContent = t[i]; }
+            el.appendChild(s);
+          }
+        })(q("#m2-type"));
+
+        // Binario: nove tappe in tre tempi. Teal = lavoro del sistema, ambra = decisione delle persone.
+        var UMANE = [4, 5, 7, 8, 9];
+        var NOMI = ["Scomposizione", "Abbinamento", "Punteggio", "Comitato", "Indirizzi", "Classificazione", "Revisione", "Correzioni", "Restituzione"];
+        var ATTI = ["Leggiamo il lavoro", "La vostra visione nei numeri", "Verifichiamo, e decidete voi"];
+        function xTappa(k) { var a = Math.floor((k - 1) / 3), j = (k - 1) % 3; return 300 + a * 560 + j * 160; }
+        qa(".scene[data-step], .scene[data-rail]").forEach(function (sc) {
+          var passo = parseInt(sc.getAttribute("data-step") || "0", 10);
+          var r = document.createElement("div"); r.className = "rail";
+          for (var a = 0; a < 3; a++) {
+            var sg = document.createElement("i"); sg.className = "seg";
+            sg.style.left = xTappa(a * 3 + 1) + "px"; sg.style.width = (xTappa(a * 3 + 3) - xTappa(a * 3 + 1)) + "px";
+            r.appendChild(sg);
+            if (!passo) { var et = document.createElement("div"); et.className = "atto"; et.textContent = ATTI[a]; et.style.left = xTappa(a * 3 + 2) + "px"; r.appendChild(et); }
+          }
+          for (var k = 1; k <= 9; k++) {
+            var n = document.createElement("i");
+            n.className = "nd" + (UMANE.indexOf(k) >= 0 ? " h" : "") + (k < passo ? " fatto" : "") + (k === passo ? " on" : "");
+            n.style.left = xTappa(k) + "px";
+            r.appendChild(n);
+          }
+          if (passo) {
+            var l = document.createElement("div"); l.className = "lab"; l.textContent = NOMI[passo - 1]; l.style.left = xTappa(passo) + "px"; r.appendChild(l);
+            if (UMANE.indexOf(passo) >= 0) { var sf = document.createElement("i"); sf.className = "sfera"; sf.style.left = xTappa(passo) + "px"; r.appendChild(sf); }
+          }
+          sc.appendChild(r);
+        });
+        // Campione: 32 task, alcuni incerti (tratteggio ambra).
+        var camp = q("#m14-camp"), INCERTI = [2, 5, 9, 14, 19, 22, 27, 30], CAMPIONE = [0, 7, 11, 16, 24, 29];
+        for (var c = 0; c < 32; c++) { var e = document.createElement("i"); if (INCERTI.indexOf(c) >= 0) e.className = "inc"; camp.appendChild(e); }
+        // Anello dell'aggiornamento: nove tappe in cerchio.
+        var anello = q("#m18-anello");
+        for (var k2 = 1; k2 <= 9; k2++) {
+          var a2 = -Math.PI / 2 + (k2 - 1) * 2 * Math.PI / 9, e2 = document.createElement("i");
+          if (UMANE.indexOf(k2) >= 0) e2.className = "h";
+          e2.style.left = (230 + 200 * Math.cos(a2)) + "px"; e2.style.top = (230 + 200 * Math.sin(a2)) + "px";
+          anello.appendChild(e2);
+        }
+
+        /* ---------- Visibilità: solo la prima scena della transizione va mostrata esplicitamente ---------- */
+        tl.set("#m11", { opacity: 1 }, at(11, 0));
+        tl.set(["#m11 .blob", "#m11 .rail"], { autoAlpha: 1 }, at(11, 0));
+
+        /* ---------- Macchia ---------- */
+        var TAPPE = [
+          { sc: 1,  f: 0, x: 1480, y: 820, s: 0.42, c: ["#00B4B4", "#7FE0E0", "#1B499F"] },
+          { sc: 2,  f: 0, x: 1760, y: 180, s: 0.80, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 3,  f: 0, x: 1620, y: 520, s: 0.90, c: ["#1B499F", "#00B4B4", "#8B5CF6"] },
+          { sc: 4,  f: 0, x: 1700, y: 760, s: 0.70, c: ["#00B4B4", "#1B499F", "#F59E0B"] },
+          { sc: 5,  f: 0, x: 1820, y: 980, s: 0.45, c: ["#00B4B4", "#7FE0E0", "#1B499F"] },
+          { sc: 8,  f: 0, x: 1840, y: 960, s: 0.45, c: ["#1B499F", "#00B4B4", "#7FE0E0"] },
+          { sc: 9,  f: 0, x: 1840, y: 980, s: 0.48, c: ["#F59E0B", "#00B4B4", "#1B499F"] },
+          { sc: 12, f: 0, x: 1860, y: 980, s: 0.45, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 14, f: 0, x: 1840, y: 980, s: 0.48, c: ["#F59E0B", "#1B499F", "#8B5CF6"] },
+          { sc: 17, f: 0, x: 1820, y: 960, s: 0.50, c: ["#1B499F", "#8B5CF6", "#00B4B4"] },
+          { sc: 17, f: 0.85, x: 1840, y: 980, s: 0.48, c: ["#1B499F", "#8B5CF6", "#00B4B4"] },
+          { sc: 18, f: 0, x: 1640, y: 560, s: 0.80, c: ["#00B4B4", "#8B5CF6", "#1B499F"] },
+          { sc: 19, f: 0, x: 1560, y: 560, s: 1.00, c: ["#00B4B4", "#1B499F", "#F59E0B"] },
+          { sc: 20, f: 0, x: 1500, y: 560, s: 1.10, c: ["#F59E0B", "#00B4B4", "#1B499F"] },
+          { sc: 21, f: 0, x: 1420, y: 560, s: 1.50, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 21, f: 1, x: 1360, y: 540, s: 1.80, c: ["#00B4B4", "#1B499F", "#8B5CF6"] }
+        ].map(function (k) { k.t = S[k.sc - 1][0] + k.f * S[k.sc - 1][1]; return k; });
+        var ORBITE = [{ w: 0.55, f: 0.0, r: 1.0 }, { w: 0.42, f: 2.1, r: 0.86 }, { w: 0.67, f: 4.2, r: 0.72 }];
+        function morbido(p) { return p * p * (3 - 2 * p); }
+        function rgba(c, a) { var v = gsap.utils.splitColor(c); return "rgba(" + v[0] + "," + v[1] + "," + v[2] + "," + a + ")"; }
+        function statoA(t) {
+          var k = 0;
+          while (k < TAPPE.length - 2 && t >= TAPPE[k + 1].t) k++;
+          var a = TAPPE[k], b = TAPPE[k + 1];
+          var p = morbido(Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t))));
+          return { x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p, s: a.s + (b.s - a.s) * p,
+            c: [0, 1, 2].map(function (j) { return gsap.utils.interpolate(a.c[j], b.c[j], p); }) };
+        }
+        function disegnaMacchia(blob, t) {
+          var st = statoA(t), respiro = 1 + 0.1 * Math.sin(t * 2 * Math.PI / 7);
+          blob.style.transform = "translate(" + (st.x - 450) + "px," + (st.y - 450) + "px) scale(" + (st.s * respiro) + ")";
+          for (var j = 0; j < 3; j++) {
+            var o = ORBITE[j], orb = blob.children[j];
+            orb.style.transform = "translate(" + (120 * Math.sin(t * o.w + o.f)) + "px," + (95 * Math.cos(t * o.w * 0.8 + o.f)) + "px) scale(" + (o.r * (1 + 0.14 * Math.sin(t * o.w * 1.3 + o.f))) + ")";
+            orb.style.background = "radial-gradient(circle at 50% 50%, " + rgba(st.c[j], 0.78) + " 0%, " + rgba(st.c[j], 0.32) + " 36%, " + rgba(st.c[j], 0) + " 68%)";
+          }
+        }
+        qa(".scene").forEach(function (sc, idx) {
+          var b = sc.querySelector(".blob"), t0 = S[idx][0], d = S[idx][1], pr = { t: t0 };
+          disegnaMacchia(b, t0);
+          tl.to(pr, { t: t0 + d, duration: d, ease: "none", onUpdate: function () { disegnaMacchia(b, pr.t); } }, t0);
+        });
+
+        /* ---------- Aiuti ---------- */
+        function righe(sel, t0, passo) { qa(sel + " .ln > span").forEach(function (el, k) { tl.from(el, { yPercent: 118, duration: 0.75 * K, ease: DR }, t0 + k * passo); }); }
+        function sopracciglio(sel, t0) { tl.from(sel, { autoAlpha: 0, x: -24, duration: 0.5 * K, ease: SOFT }, t0); }
+        function compare(sel, t0, d, extra) { var v = { autoAlpha: 0, y: 24, duration: d || 0.8, ease: IN }; for (var k in extra || {}) v[k] = extra[k]; tl.from(sel, v, t0); }
+        function deriva(sel, t0, d) { tl.to(sel, { y: -12, duration: d, ease: BR }, t0); }
+        function logo(p, t0, v) {
+          v = v || 1;
+          tl.from("#" + p + "-asta", { scaleY: 0, transformOrigin: "50% 100%", duration: 0.6 * v, ease: DR }, t0);
+          tl.from("#" + p + "-m1", { x: -10, y: -10, autoAlpha: 0, duration: 0.6 * v, ease: IN }, t0 + 0.18 * v);
+          tl.from("#" + p + "-m2", { x: 10, y: 10, autoAlpha: 0, duration: 0.6 * v, ease: IN }, t0 + 0.3 * v);
+          tl.from("#" + p + "-asta2", { scaleY: 0, transformOrigin: "50% 100%", duration: 0.6 * v, ease: DR }, t0 + 0.42 * v);
+          tl.from("#" + p + "-sfera", { y: -16, scale: 0.4, transformOrigin: "50% 50%", autoAlpha: 0, duration: 0.8 * v, ease: DR }, t0 + 0.62 * v);
+          tl.fromTo("#" + p + "-ring", { scale: 1, opacity: 0.85, transformOrigin: "50% 50%" }, { scale: 2.6, opacity: 0, duration: 1.2, ease: SOFT, immediateRender: false }, t0 + 1.25 * v);
+        }
+        // Ingresso standard di una scena-passo: binario (tappa attiva e sfera), sopracciglio, righe, sottotitolo.
+        function passo(n, nome) {
+          var s = "#" + nome;
+          tl.from(s + " .rail .nd.on", { scale: 0.4, transformOrigin: "50% 50%", duration: 0.6, ease: DR }, at(n, 0.2));
+          tl.from(s + " .rail .lab", { autoAlpha: 0, y: 10, duration: 0.5, ease: SOFT }, at(n, 0.3));
+          if (q(s + " .rail .sfera")) tl.from(s + " .rail .sfera", { y: -60, autoAlpha: 0, duration: 0.9, ease: DR }, at(n, 0.35));
+          sopracciglio(s + "-eb", at(n, 0.3));
+          righe(s + "-h", at(n, 0.4), 0.18);
+          if (q(s + "-sub")) compare(s + "-sub", at(n, 1.3), 0.8);
+          deriva(s + "-h", at(n, 2.8), S[n - 1][1] - 3.0);
+        }
+
+        /* ---------- M1 · logo ---------- */
+        logo("m1", at(1, 0.25), 1.15);
+        tl.from("#m1-word", { autoAlpha: 0, x: -40, duration: 0.9, ease: DR }, at(1, 1.2));
+        sopracciglio("#m1-eb", at(1, 1.6));
+        tl.to("#m1 .lockup", { scale: 1.03, duration: 1.6, ease: BR }, at(1, 1.8));
+
+        /* ---------- M2 · apertura ---------- */
+        righe("#m2-h", at(2, 0.3), 0.22);
+        tl.set("#m2-type .ch", { autoAlpha: 0 }, at(2, 0.25));
+        tl.to("#m2-type .ch", { autoAlpha: 1, duration: 0.01, stagger: { each: 0.04, from: "start" } }, at(2, 1.0));
+        deriva("#m2-h", at(2, 2.4), 2.9);
+
+        /* ---------- M3 · promessa ---------- */
+        sopracciglio("#m3-eb", at(3, 0.25));
+        righe("#m3-h", at(3, 0.35), 0.2);
+        compare("#m3-sub", at(3, 1.4), 0.9);
+        deriva("#m3-h", at(3, 2.6), 3.2);
+
+        /* ---------- M4 · tre tempi ---------- */
+        righe("#m4-h", at(4, 0.3), 0.22);
+        tl.from("#m4 .rail .seg", { scaleX: 0, transformOrigin: "0% 50%", duration: 0.9, ease: DR, stagger: 0.35 }, at(4, 0.8));
+        tl.from("#m4 .rail .nd", { scale: 0, transformOrigin: "50% 50%", duration: 0.45, ease: DR, stagger: { each: 0.12, from: "start" } }, at(4, 0.9));
+        tl.from("#m4 .rail .atto", { autoAlpha: 0, y: 12, duration: 0.6, ease: SOFT, stagger: 0.35 }, at(4, 1.3));
+        deriva("#m4-h", at(4, 2.8), 3.0);
+
+        /* ---------- M5 · 01 scomposizione ---------- */
+        passo(5, "m5");
+        compare("#m5-doc", at(5, 0.8), 0.8, { x: -20, y: 0 });
+        tl.from("#m5-doc b", { scaleX: 0, transformOrigin: "0% 50%", duration: 0.5, ease: SOFT, stagger: 0.06 }, at(5, 1.0));
+        tl.to("#m5-filo", { strokeDashoffset: 0, duration: 0.7, ease: SOFT }, at(5, 1.7));
+        ["#m5-c1", "#m5-c2", "#m5-c3", "#m5-c4"].forEach(function (c, k) { compare(c, at(5, 1.9 + 0.2 * k), 0.7, { x: -40, y: 0 }); });
+
+        /* ---------- M6 · 02 abbinamento ---------- */
+        passo(6, "m6");
+        compare("#m6-base", at(6, 0.8), 0.8, { x: 30, y: 0 });
+        ["#m6-c1", "#m6-c2", "#m6-c3"].forEach(function (c, k) { compare(c, at(6, 1.0 + 0.15 * k), 0.6, { x: -30, y: 0 }); });
+        // Le schede vanno nelle loro celle della base.
+        [["#m6-c1", "#m6-g1"], ["#m6-c2", "#m6-g2"], ["#m6-c3", "#m6-g3"]].forEach(function (p, k) {
+          tl.to(p[0], { x: 300, y: [-20, -40, 20][k], scale: 0.4, autoAlpha: 0, duration: 0.7, ease: "power3.inOut" }, at(6, 2.0 + 0.2 * k));
+          tl.set(p[1], { className: "ok" }, at(6, 2.55 + 0.2 * k));
+        });
+        compare("#m6-ok", at(6, 3.1), 0.7);
+
+        /* ---------- M7 · 03 punteggio ---------- */
+        passo(7, "m7");
+        compare("#m7-n", at(7, 1.0), 0.8, { x: -30, y: 0 });
+        ["#m7-s1", "#m7-s2", "#m7-s3"].forEach(function (c, k) { compare(c, at(7, 1.3 + 0.15 * k), 0.7, { x: 30, y: 0 }); });
+        ["#m7-l1", "#m7-l2", "#m7-l3"].forEach(function (l, k) { tl.to(l, { strokeDashoffset: 0, duration: 0.8, ease: SOFT }, at(7, 1.9 + 0.15 * k)); });
+        compare("#m7-lab", at(7, 2.7), 0.7);
+
+        /* ---------- M8 · dati ---------- */
+        passo(8, "m8");
+        compare("#m8-a", at(8, 0.9), 0.8);
+        compare("#m8-b", at(8, 1.15), 0.8);
+
+        /* ---------- M9 · 04 comitato ---------- */
+        passo(9, "m9");
+        [1, 2, 3].forEach(function (k) {
+          compare("#m9-f" + k, at(9, 0.9 + 0.15 * k), 0.6);
+          qa("#m9-f" + k + " .mini i").forEach(function (el, j) { tl.to(el, { width: el.style.getPropertyValue("--w"), duration: 0.9, ease: DR }, at(9, 1.1 + 0.15 * k + 0.06 * j)); });
+        });
+        compare("#m9-lente", at(9, 2.2), 0.7, { scale: 0.6, y: 0 });
+        tl.to("#m9-lente", { x: 120, y: -6, duration: 1.4, ease: BR }, at(9, 3.0));
+
+        /* ---------- M10 · 05 indirizzi ---------- */
+        passo(10, "m10");
+        var POS = [0.72, 0.64, 0.48, 0.58]; // posizione dei cursori sulla barra da 680 px
+        [1, 2, 3, 4].forEach(function (k) {
+          compare("#m10-c" + k, at(10, 0.9 + 0.15 * k), 0.6);
+          tl.to("#m10-c" + k + " .pomo", { x: POS[k - 1] * 680, duration: 1.2, ease: "power3.inOut" }, at(10, 1.8 + 0.25 * k));
+          tl.to("#m10-c" + k + " .pieno", { width: (POS[k - 1] * 100) + "%", duration: 1.2, ease: "power3.inOut" }, at(10, 1.8 + 0.25 * k));
+        });
+
+        /* ---------- M11 · 05 garanzie (prima scena della transizione: niente uscite) ---------- */
+        passo(11, "m11");
+        ["#m11-b1", "#m11-b2", "#m11-b3"].forEach(function (b, k) { tl.from(b, { scaleY: 0, transformOrigin: "50% 100%", duration: 0.7, ease: DR }, at(11, 0.9 + 0.12 * k)); });
+        tl.from("#m11-pav", { scaleX: 0, transformOrigin: "0% 50%", duration: 0.7, ease: SOFT }, at(11, 1.4));
+        compare("#m11-pavl", at(11, 1.6), 0.6, { x: 20, y: 0 });
+        tl.from(["#m11-e1", "#m11-e3"], { scaleY: 0, transformOrigin: "50% 100%", duration: 0.8, ease: DR, stagger: 0.2 }, at(11, 2.1));
+        compare("#m11-k1", at(11, 2.8), 0.6);
+        compare("#m11-k2", at(11, 3.1), 0.6);
+
+        /* ---------- M12 · 06 classificazione ---------- */
+        passo(12, "m12");
+        compare("#m12-viz", at(12, 0.6), 0.9, { scale: 0.97, y: 0 });
+        var NUOVI = [[160, 330], [250, 400], [120, 380], [380, 300], [430, 390], [360, 120], [400, 170], [460, 110], [170, 90]];
+        qa("#m12-dots circle").forEach(function (c, k) {
+          tl.to(c, { attr: { cx: NUOVI[k][0], cy: NUOVI[k][1] }, fill: k >= 5 ? "#92400E" : "#0B2559", duration: 1.3, ease: "power3.inOut" }, at(12, 2.0 + 0.06 * k));
+        });
+
+        /* ---------- M13 · questionari ---------- */
+        passo(13, "m13");
+        compare("#m13-tel", at(13, 0.9), 0.9);
+        ["#m13-o1", "#m13-o2", "#m13-o3"].forEach(function (o, k) { compare(o, at(13, 1.5 + 0.15 * k), 0.5, { x: 20, y: 0 }); });
+        tl.set("#m13-o3", { className: "op sel" }, at(13, 2.6));
+
+        /* ---------- M14 · 07 revisione ---------- */
+        passo(14, "m14");
+        tl.from("#m14-camp i", { scale: 0.3, autoAlpha: 0, duration: 0.4, ease: IN, stagger: { each: 0.02, from: "start" } }, at(14, 0.9));
+        // Prima gli incerti, poi il resto del campione.
+        INCERTI.concat(CAMPIONE).forEach(function (idx, k) { tl.set("#m14-camp i:nth-child(" + (idx + 1) + ")", { className: "vis" }, at(14, 2.0 + 0.1 * k)); });
+        compare("#m14-lab", at(14, 2.4), 0.6);
+
+        /* ---------- M15 · 08 correzioni ---------- */
+        passo(15, "m15");
+        ["#m15-o1", "#m15-o2", "#m15-o3"].forEach(function (o, k) { compare(o, at(15, 0.9 + 0.15 * k), 0.6, { x: 30, y: 0 }); });
+        // La correzione del revisore si propaga a tutte le occorrenze dello stesso task.
+        ["#m15-o1", "#m15-o2", "#m15-o3"].forEach(function (o, k) {
+          tl.set(o + " .qt", { className: "qt nuova", textContent: "Supporto tecnologico" }, at(15, 2.0 + 0.3 * k));
+          tl.fromTo(o, { borderColor: "#E2E8F0" }, { borderColor: "#F59E0B", duration: 0.3, immediateRender: false }, at(15, 2.0 + 0.3 * k));
+        });
+        compare("#m15-prop", at(15, 3.1), 0.7);
+
+        /* ---------- M16 · 09 restituzione ---------- */
+        passo(16, "m16");
+        [1, 2, 3].forEach(function (k) {
+          compare("#m16-f" + k, at(16, 0.9 + 0.15 * k), 0.6);
+          qa("#m16-f" + k + " .mini i").forEach(function (el, j) { tl.to(el, { width: el.style.getPropertyValue("--w"), duration: 0.9, ease: DR }, at(16, 1.1 + 0.15 * k + 0.06 * j)); });
+        });
+        compare("#m16-ok", at(16, 2.6), 0.7, { scale: 0.9, y: 0 });
+
+        /* ---------- M17 · trasparenza ---------- */
+        sopracciglio("#m17-eb", at(17, 0.25));
+        righe("#m17-h", at(17, 0.3), 0.18);
+        [1, 2, 3, 4].forEach(function (k) { compare("#m17-a" + k, at(17, 1.0 + 0.3 * k), 0.6, { x: 30, y: 0 }); });
+        deriva("#m17-h", at(17, 2.8), 3.0);
+
+        /* ---------- M18 · aggiornamento ---------- */
+        sopracciglio("#m18-eb", at(18, 0.25));
+        righe("#m18-h", at(18, 0.3), 0.2);
+        tl.from("#m18-anello i", { scale: 0, autoAlpha: 0, transformOrigin: "50% 50%", duration: 0.5, ease: DR, stagger: { each: 0.1, from: "start" } }, at(18, 0.9));
+        tl.to("#m18-anello", { rotation: 40, duration: 4.8, ease: BR }, at(18, 1.0));
+
+        /* ---------- M19 · risultato ---------- */
+        sopracciglio("#m19-eb", at(19, 0.25));
+        righe("#m19-h", at(19, 0.35), 0.35);
+        deriva("#m19-h", at(19, 2.4), 3.4);
+
+        /* ---------- M20 · persone ---------- */
+        righe("#m20-h", at(20, 0.3), 0.3);
+        deriva("#m20-h", at(20, 1.6), 2.7);
+
+        /* ---------- M21 · invito ---------- */
+        logo("m21", at(21, 0.35), 1.0);
+        tl.from("#m21-word", { autoAlpha: 0, x: -20, duration: 0.7, ease: DR }, at(21, 0.75));
+        sopracciglio("#m21-eb", at(21, 0.5));
+        righe("#m21-h", at(21, 0.55), 0.22);
+        tl.from("#m21-pill", { autoAlpha: 0, y: 30, scale: 0.96, duration: 0.9, ease: DR }, at(21, 1.8));
+        tl.to("#m21-pill", { boxShadow: "0 22px 56px rgba(0,114,114,0.34)", duration: 1.8, ease: BR, yoyo: true, repeat: 1 }, at(21, 3.0));
+
+        /* ---------- Una sola transizione shader: verso la matrice dei due assi ---------- */
+        if (window.HyperShader) {
+          window.HyperShader.init({
+            bgColor: "#FFFFFF",
+            scenes: ["m11", "m12"],
+            timeline: tl,
+            transitions: [{ time: at(12, 0) - 0.25, shader: "cross-warp-morph", duration: 0.5 }]
+          });
+        }
+
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>

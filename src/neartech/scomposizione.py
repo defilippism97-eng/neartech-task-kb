@@ -15,6 +15,7 @@ Il dedup semantico tra formulazioni diverse (Canonicalizer) non è qui: si basa 
 """
 
 import hashlib
+import io
 import json
 import re
 import zipfile
@@ -37,6 +38,7 @@ MAX_ATTEMPTS = 2
 MAX_TOKENS = 16000  # le job più lunghe producono risposte oltre 8.000 token
 SOURCE_KIND = "org_document"
 SOURCE_LICENSE = "documento interno dell'organizzazione"
+MASSIMO_XML = 20_000_000  # byte del testo decompresso di un .docx: limite tecnico, non di policy
 
 _W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
@@ -82,8 +84,17 @@ def _normalizza(s: str) -> str:
 
 
 def leggi_docx(path: Path) -> str:
-    with zipfile.ZipFile(path) as z:
-        root = ET.fromstring(z.read("word/document.xml"))
+    return testo_docx(path.read_bytes())
+
+
+def testo_docx(dati: bytes) -> str:
+    """Testo dei paragrafi di un .docx. Il file può venire da un caricamento: il contenuto decompresso è limitato
+    (archivi costruiti per esplodere) e ElementTree non risolve entità esterne."""
+    with zipfile.ZipFile(io.BytesIO(dati)) as z:
+        info = z.getinfo("word/document.xml")
+        if info.file_size > MASSIMO_XML:
+            raise ValueError("documento troppo grande")
+        root = ET.fromstring(z.read(info))
     righe = []
     for p in root.iter(_W + "p"):
         testo = "".join(t.text or "" for t in p.iter(_W + "t")).strip()

@@ -1,0 +1,4 @@
+# Intermedi audio rigenerabili in modo identico con suoni_pitch.py, suoni_metodo.py e mixa_audio.py.
+# Si versionano solo i mix finali usati dalle composizioni: suoni/*-audio.m4a.
+suoni/*.wav
+suoni/*-effetti.m4a

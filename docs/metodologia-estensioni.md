@@ -230,3 +230,30 @@ Con i risultati della versione 2 (sezione 23) la coda di Società Dolce ha 41 oc
 Approvate dal responsabile del progetto: `istruzioni-abbinamento-v1`, così come scritte (`docs/revisione/istruzioni-abbinamento-v1.md`). Revisione cieca delle coppie candidato–task proposto; esiti `corretto`, `parziale` (conta come errore, parametro `regola_parziali`) ed `errato`; stessa definizione delle fusioni.
 
 Deciso con le istruzioni il punto aperto 2 della fase 3: la misura di precisione sul campione accompagna la decisione in blocco ma non la impedisce. Una misura sotto la soglia `soglia_precisione_abbinamento` si registra nell'atto della decisione, e chi decide ne risponde; il software resta com'è.
+
+## 27. Il flusso della piattaforma per le aziende pilota (2026-10-17)
+
+Decisioni del responsabile del progetto per la fase 6 (`docs/piani/fase-6-piattaforma.md`).
+
+- **Validazione dentro il prodotto.** Le aziende pilota sanno di essere in sperimentazione. I giudizi dei revisori, gli indirizzi del comitato e i questionari raccolti nella piattaforma sostituiscono le stime del modello; gli avvisi "provvisorio" si mostrano come avanzamento della sperimentazione e invito all'azione, non come blocco.
+- **Task non abbinati.** Un task che non trova corrispondenza nel database NEARTECH prende la media dei task più simili, pesata per somiglianza, con l'origine dichiarata ("derivato per somiglianza"); entra poi nel database come task nuovo.
+- **Indirizzi del comitato e pesi di D.** Gli indirizzi sono la leva principale del comitato guida. Si raccolgono con interviste e questionari strutturati sulla visione dell'innovazione dell'impresa e producono il profilo di pesi di D dell'organizzazione (w_d1–w_d4, ed enfasi per classi di task se serve). Il profilo diventa vigente con l'approvazione del comitato **e l'ok dell'auditor**. Gli indirizzi danno enfasi solo sopra il pavimento legale, mai sotto. Precisa la sezione 5 di `stato-e-decisioni.md` e l'ADR 0002: la variazione dell'organizzazione passa dal profilo di pesi derivato dagli indirizzi.
+- **Feedback dei revisori.** Dopo il ricalcolo i revisori controllano le classificazioni a campione. La correzione di un revisore vale per quel task in tutte le sue occorrenze; uno scostamento sistematico nel campione diventa una proposta di ricalibrare i pesi, segnalata al comitato. Il sistema non corregge da solo gli altri task.
+- **Revisore ed esperto sono lo stesso ruolo.** Il revisore dà anche i giudizi sulla rubrica; nessun ruolo nuovo.
+- **Questionari d3/d4.** Generati nella piattaforma dai task di una famiglia professionale, inviati per email con link monouso a lavoratori (d3) e beneficiari o chi li rappresenta (d4); risposte anonime, lette solo aggregate con il minimo di rispondenti; il giudizio del gruppo ricalibra d3 e d4.
+- **Rappresentante dei lavoratori.** Facoltativo: vista "bonus" che l'amministratore tecnico attiva per l'organizzazione, altrimenti invisibile. Se attiva, il comitato nomina chi la usa, anche fra i propri membri. Riguarda le riduzioni di D dovute agli indirizzi, che può sospendere e riportare al comitato.
+- **Auditor e amministratore.** L'auditor segue ogni fase e dà l'ok al profilo di pesi; l'amministratore tecnico segue il processo e può intervenire.
+- **Dati.** Nel database NEARTECH restano solo dati anonimi; log e azioni restano disponibili per l'audit nella sezione dell'impresa.
+
+**Da definire:** le domande del questionario del comitato e la regola che traduce le risposte in pesi (con il comitato del primo pilota); l'aggregazione del gruppo nei questionari d3/d4 (proposta: mediana) e `minimo_rispondenti_gruppo` (il piano indica 5).
+
+## 28. Dagli indirizzi del comitato ai pesi di D (2026-10-17)
+
+Costruito nella fetta 3 della fase 6 (`neartech.indirizzi_pesi`, migrazione 0037). Il meccanismo è deciso (sezione 27); il contenuto del questionario e la regola sono **approvati dal responsabile del progetto il 2026-10-17** (versione `bozza-1`): `docs/governance/questionario-indirizzi-bozza-1.json`.
+- **Questionario:** otto domande, due per componente di D (una che spinge verso la presenza umana, una verso l'automazione), risposte da "Per niente" a "Del tutto".
+- **Regola:** per ogni componente, la media delle risposte riportate in [−1, 1] (con il verso della domanda) sposta il peso di partenza di al massimo ±50% (intensità 0,5); poi ogni peso resta fra 0,10 e 0,45 e i pesi si riportano a somma uno. Pesi di N, λ e soglie dei quadranti restano quelli di partenza.
+- **Atti:** proposta (risposte nel registro, nota nello spazio), approvazione del comitato, verifica dell'auditor; il profilo si attiva solo con entrambi gli atti, e il database lo impone.
+- **Pavimento legale:** oggi nessun pavimento è registrato; la verifica lo dichiara.
+Finché il parametro non è approvato, in produzione la schermata dice che il questionario non è disponibile e la mappa usa i pesi di default.
+
+**Da rivedere (indicazione del responsabile, 2026-10-17):** il questionario `bozza-1` è una base provvisoria. La fase di ascolto degli indirizzi strategici va riprogettata come mappatura del pensiero direzionale dell'impresa: raccolta di materiali documentali (per esempio una policy sull'IA già esistente), interviste aperte e di visione (come l'IA può trasformare i processi), e soprattutto **scenari di automazione simulati a partire dai task e dal perimetro organizzativo dell'impresa**, perché le domande dirette producono risposte ovvie e uguali per tutti. Gli indirizzi devono emergere dall'orientamento che il comitato assume negli scenari (preferenze rivelate, non dichiarate). Il meccanismo di approvazione e verifica della fetta 3 resta valido.
