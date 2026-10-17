@@ -23,16 +23,29 @@ import psycopg
 from neartech.permessi import richiedi
 from neartech.registro import registra
 
-METODO_RISERVA = "riserva-v1"
+METODO_RISERVA = "riserva-v1"  # intervallo dal solo disaccordo fra le evidenze
+
+
+def metodo_riserva(banda: float) -> str:
+    """riserva-v1 senza banda; riserva-v2 con l'intervallo allargato di ±banda livelli (metodo, sezione 20)."""
+    return METODO_RISERVA if banda == 0 else f"riserva-v2-banda-{banda:g}"
 DIMENSIONI = ("k1", "k2", "k3")
 
 
 def proponi_snapshot_riserva(
-    conn: psycopg.Connection, utente_id: str, *, as_of: str | date, emivita_giorni: int, motivazione: str
+    conn: psycopg.Connection, utente_id: str, *, as_of: str | date, emivita_giorni: int, motivazione: str,
+    banda: float = 0.0,
 ) -> str:
-    """Calcola la copertura di riserva di ogni task con evidenze e la salva in uno snapshot proposto."""
+    """Calcola la copertura di riserva di ogni task con evidenze e la salva in uno snapshot proposto.
+
+    banda: livelli aggiunti sotto e sopra l'intervallo delle evidenze (limitato a 0–4), perché una sola opinione
+    non è una certezza (registro di metodo, sezione 20: 0,5, metà della distanza fra due livelli della scala).
+    Il valore è dichiarato nel metodo dello snapshot e nell'atto."""
     if emivita_giorni < 1:
         raise ValueError("l'emivita delle evidenze deve essere di almeno un giorno")
+    if not 0 <= banda <= 2:
+        raise ValueError("la banda deve stare fra 0 e 2 livelli")
+    metodo = metodo_riserva(banda)
     data = as_of if isinstance(as_of, date) else date.fromisoformat(as_of)
     with conn.transaction():
         richiedi(conn, utente_id, "gestire_parametri_tecnici", risorsa="snapshot_capacita")
@@ -70,7 +83,7 @@ def proponi_snapshot_riserva(
             """INSERT INTO capability_snapshots (snapshot_id, as_of, method_version, half_life_days, status,
                                                  tipo_capacita)
                VALUES (%s, %s, %s, %s, 'proposed', 'riserva')""",
-            (snapshot_id, data, METODO_RISERVA, emivita_giorni),
+            (snapshot_id, data, metodo, emivita_giorni),
         )
         scritte = 0
         for (task_id, dimensione), evidenze in sorted(per_chiave.items()):
@@ -82,14 +95,16 @@ def proponi_snapshot_riserva(
             conn.execute(
                 """INSERT INTO task_capability (snapshot_id, task_id, dimension, c_mean, c_low, c_high, n_evidence)
                    VALUES (%s, %s, %s, %s, %s, %s, %s)""",
-                (snapshot_id, task_id, dimensione, round(media, 2), min(punteggi), max(punteggi), len(contano)),
+                (snapshot_id, task_id, dimensione, round(media, 2), max(0.0, min(punteggi) - banda),
+                 min(4.0, max(punteggi) + banda), len(contano)),
             )
             scritte += 1
         if not scritte:
             raise ValueError("nessuna evidenza con peso alla data dello snapshot")
         registra(conn, autore_id=utente_id, tipo_oggetto="snapshot_capacita", oggetto_id=snapshot_id,
                  atto="proposta", motivazione=motivazione,
-                 dettagli={"metodo": METODO_RISERVA, "tipo_capacita": "riserva", "emivita_giorni": emivita_giorni,
+                 dettagli={"metodo": metodo, "banda": banda, "tipo_capacita": "riserva",
+                           "emivita_giorni": emivita_giorni,
                            "task_dimensioni": scritte})
         return snapshot_id
 

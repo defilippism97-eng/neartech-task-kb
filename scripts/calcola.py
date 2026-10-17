@@ -1,7 +1,8 @@
 """Fase 4: snapshot di capacità di riserva e calcolo deterministico di N e D (metodo, sezione 17).
 
 Uso (DATABASE_URL dall'ambiente; l'utente è indicato dal soggetto SSO). Nessuna chiamata all'API.
-  python scripts/calcola.py snapshot-riserva --utente-sso S --data 2026-10-17 --emivita 180 --motivazione "..."
+  python scripts/calcola.py snapshot-riserva --utente-sso S --data 2026-10-17 --emivita 180 --banda 0.5 \
+      --motivazione "..."
   python scripts/calcola.py pubblica-snapshot --utente-sso S --snapshot ID --nota "..."
   python scripts/calcola.py calcola --utente-sso S --org CODICE --seme 20261017 [--estrazioni 2000]
 
@@ -30,6 +31,8 @@ def parser() -> argparse.ArgumentParser:
     s = comandi.add_parser("snapshot-riserva")
     s.add_argument("--data", required=True)
     s.add_argument("--emivita", type=int, required=True, help="giorni in cui il peso di un'evidenza si dimezza")
+    s.add_argument("--banda", type=float, required=True,
+                   help="livelli aggiunti sotto e sopra l'intervallo delle evidenze (metodo, sezione 20: 0.5)")
     s.add_argument("--motivazione", required=True)
     p = comandi.add_parser("pubblica-snapshot")
     p.add_argument("--snapshot", required=True)
@@ -57,7 +60,7 @@ def main() -> None:
             utente = str(riga[0])
             if args.comando == "snapshot-riserva":
                 snapshot = proponi_snapshot_riserva(conn, utente, as_of=args.data, emivita_giorni=args.emivita,
-                                                    motivazione=args.motivazione)
+                                                    motivazione=args.motivazione, banda=args.banda)
                 print(f"snapshot proposto: {snapshot}")
             elif args.comando == "pubblica-snapshot":
                 atto = pubblica_snapshot(conn, utente, args.snapshot, nota=args.nota)
