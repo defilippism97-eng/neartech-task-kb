@@ -74,3 +74,18 @@ def test_l_importazione_lascia_un_atto(conn, mondo):
     _importa(conn, mondo)
     assert conn.execute("SELECT count(*) FROM registro_decisioni WHERE tipo_oggetto = 'importazione_giudizi'"
                         ).fetchone()[0] == 1
+
+
+def test_giudizi_identici_di_task_diversi_restano_due_record(conn, mondo):
+    """Due task del dataset, uno fuso nell'altro, con lo stesso giudizio: due giudizi, non uno."""
+    righe = [{"titolo": "Comporre i turni", "valori": {"d1": 2}, "motivazione": "fiducia: media"},
+             {"titolo": "Redigere i turni", "valori": {"d1": 2}, "motivazione": "fiducia: media"}]
+    assert _importa(conn, mondo, righe)["giudizi"] == 2
+    assert _importa(conn, mondo, righe)["giudizi"] == 0  # il rilancio completa, non duplica
+
+
+def test_il_rilancio_completa_i_giudizi_mancanti(conn, mondo):
+    righe = [{"titolo": "Comporre i turni", "valori": {"d1": 2}, "motivazione": "fiducia: media"}]
+    _importa(conn, mondo, righe)
+    doppie = righe + [{"titolo": "Redigere i turni", "valori": {"d1": 2}, "motivazione": "fiducia: media"}]
+    assert _importa(conn, mondo, doppie)["giudizi"] == 1

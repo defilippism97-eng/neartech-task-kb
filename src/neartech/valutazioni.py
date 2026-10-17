@@ -55,27 +55,33 @@ def importa_giudizi_modello(
                      (rubrica,))
         esito = {"giudizi": 0, "task": 0, "su_superstite": 0, "ritirati": 0, "sconosciuti": 0}
         chiavi = {"task": "task", "su_superstite": "su_superstite", "ritirato": "ritirati", "sconosciuto": "sconosciuti"}
+        # Quanti giudizi identici spettano a ogni task: due task del dataset fusi nello stesso superstite con lo
+        # stesso giudizio danno due record. Un rilancio aggiunge solo quelli che mancano.
+        attesi: dict[tuple[str, str, int, str | None], int] = {}
         for riga in righe:
             task_id, come = _task_valido(conn, riga["titolo"])
             esito[chiavi[come]] += 1
             if task_id is None:
                 continue
             for voce, valore in sorted(riga["valori"].items()):
-                # Lo stesso giudizio della stessa campagna non si ripete: un rilancio non duplica.
-                esito["giudizi"] += conn.execute(
+                chiave = (task_id, voce, valore, riga.get("motivazione"))
+                attesi[chiave] = attesi.get(chiave, 0) + 1
+        for (task_id, voce, valore, nota), quanti in sorted(attesi.items(), key=str):
+            presenti = conn.execute(
+                """SELECT count(*) FROM assessment_runs
+                   WHERE target_kind = 'task' AND target_id = %s AND item = %s AND campaign_id = %s
+                     AND rubric_version = %s AND prompt_hash = %s AND rater_ref = %s AND value = %s
+                     AND rationale IS NOT DISTINCT FROM %s""",
+                (task_id, voce, campagna, rubrica, prompt, modello, valore, nota),
+            ).fetchone()[0]
+            for _ in range(max(0, quanti - presenti)):
+                conn.execute(
                     """INSERT INTO assessment_runs (target_kind, target_id, item, value, rater_kind, rater_ref,
                                                     rubric_version, prompt_hash, rationale, campaign_id)
-                       SELECT 'task', %(task)s, %(voce)s, %(valore)s, 'llm', %(modello)s, %(rubrica)s, %(prompt)s,
-                              %(motivazione)s, %(campagna)s
-                       WHERE NOT EXISTS (SELECT 1 FROM assessment_runs a
-                                         WHERE a.target_kind = 'task' AND a.target_id = %(task)s
-                                           AND a.item = %(voce)s AND a.campaign_id = %(campagna)s
-                                           AND a.rubric_version = %(rubrica)s AND a.prompt_hash = %(prompt)s
-                                           AND a.rater_ref = %(modello)s AND a.value = %(valore)s
-                                           AND a.rationale IS NOT DISTINCT FROM %(motivazione)s)""",
-                    {"task": task_id, "voce": voce, "valore": valore, "modello": modello, "rubrica": rubrica,
-                     "prompt": prompt, "motivazione": riga.get("motivazione"), "campagna": campagna},
-                ).rowcount
+                       VALUES ('task', %s, %s, %s, 'llm', %s, %s, %s, %s, %s)""",
+                    (task_id, voce, valore, modello, rubrica, prompt, nota, campagna),
+                )
+                esito["giudizi"] += 1
         # 'proposta': sono giudizi di modello, non una decisione di persone su di essi.
         registra(conn, autore_id=utente_id, tipo_oggetto="importazione_giudizi", oggetto_id=campagna,
                  atto="proposta", motivazione=motivazione,
