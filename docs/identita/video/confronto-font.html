@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confronto font video</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@500&family=Inter:wght@400;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    /* Confronto di due coppie di font sullo stesso fotogramma del pitch (scena 2), a 1920×1080 ridotto.
+       Solo per la scelta: nella composizione finale i font saranno incorporati in base64. */
+    :root {
+      --navy: #0B2559; --cobalt: #1B499F; --teal: #00B4B4; --teal-ink: #007272;
+      --amber: #F59E0B; --slate: #475569; --stone-ink: #526175;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #E9ECF1; font-family: 'Inter', system-ui, sans-serif; color: #0F172A; padding: 24px 16px 48px; }
+    .wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 28px; }
+    .intro h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+    .intro p { font-size: 14px; color: var(--slate); margin-top: 4px; }
+    .caption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; font-size: 14px; }
+    .caption b { font-size: 16px; }
+    .caption span { color: var(--stone-ink); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* Il fotogramma: 1920×1080 ridotto con container query, così le misure restano proporzionali. */
+    .frame { container-type: inline-size; width: 100%; aspect-ratio: 16 / 9; background: #fff; border-radius: 10px; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(11,37,89,0.12); }
+    .frame .blob { position: absolute; width: 62cqw; aspect-ratio: 1; right: -16cqw; top: 50%; transform: translateY(-50%); border-radius: 50%; filter: blur(2cqw);
+      background: radial-gradient(circle at 32% 38%, rgba(0,180,180,0.95) 0%, rgba(0,180,180,0) 56%), radial-gradient(circle at 68% 62%, rgba(27,73,159,0.9) 0%, rgba(27,73,159,0) 62%), radial-gradient(circle at 70% 26%, rgba(139,92,246,0.55) 0%, rgba(139,92,246,0) 50%); }
+    .frame .content { position: absolute; inset: 0; padding: 7cqw 8cqw; display: flex; flex-direction: column; justify-content: center; gap: 2.2cqw; z-index: 1; }
+    .lockup { position: absolute; top: 4.2cqw; left: 8cqw; display: flex; align-items: center; gap: 0.9cqw; z-index: 1; }
+    .lockup svg { width: 3cqw; height: auto; }
+    .wordmark { font-weight: 700; font-size: 1.7cqw; letter-spacing: -0.04em; color: var(--navy); line-height: 1; }
+    .wordmark small { font-weight: 500; font-size: 0.42em; letter-spacing: 0.1em; color: var(--stone-ink); margin-left: 0.6em; }
+    .eyebrow { font-weight: 600; font-size: 0.95cqw; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-ink); }
+    .eyebrow i { font-style: normal; font-weight: 400; color: var(--stone-ink); margin-left: 0.6em; }
+    .h { font-weight: 600; font-size: 5.6cqw; line-height: 1.02; letter-spacing: -0.05em; color: var(--navy); max-width: 15ch; }
+    .h em { font-style: normal; font-weight: 500; font-size: 0.84em; letter-spacing: -0.06em; color: var(--teal-ink); }
+    .nums { display: flex; align-items: baseline; gap: 3cqw; margin-top: 0.6cqw; }
+    .big { font-weight: 600; font-size: 6.4cqw; letter-spacing: -0.06em; line-height: 0.9; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .big sup { font-size: 0.5em; color: var(--teal); vertical-align: 0.55em; letter-spacing: -0.03em; }
+    .data { font-weight: 500; font-size: 1.15cqw; color: var(--slate); letter-spacing: 0; line-height: 1.6; }
+    .data b { font-weight: 500; color: var(--navy); }
+
+    /* Le due coppie */
+    .inter .wordmark, .inter .h, .inter .big { font-family: 'Inter', sans-serif; }
+    .inter .eyebrow, .inter .h em, .inter .data { font-family: 'JetBrains Mono', monospace; }
+    .geist .wordmark, .geist .h, .geist .big { font-family: 'Geist', sans-serif; }
+    .geist .eyebrow, .geist .h em, .geist .data { font-family: 'Geist Mono', monospace; }
+
+    .alphabet { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 22px; letter-spacing: -0.03em; color: var(--navy); }
+    .alphabet div { background: #fff; border-radius: 10px; padding: 12px 14px; }
+    .alphabet .m { font-size: 16px; letter-spacing: 0; color: var(--teal-ink); margin-top: 4px; }
+    .inter-t { font-family: 'Inter', sans-serif; font-weight: 600; } .inter-m { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .geist-t { font-family: 'Geist', sans-serif; font-weight: 600; } .geist-m { font-family: 'Geist Mono', monospace; font-weight: 500; }
+    @media (max-width: 560px) { .alphabet { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="intro">
+      <h1>Stesso fotogramma, due coppie di font</h1>
+      <p>Scena 2 del pitch, 1920×1080 ridotto. La macchia qui è ferma; nel video respira e cambia colore.</p>
+    </div>
+
+    <section>
+      <div class="caption"><b>A · Inter + JetBrains Mono</b><span>identità attuale</span></div>
+      <div class="frame inter">
+        <div class="blob" aria-hidden="true"></div>
+        <div class="lockup">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/><rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/><rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/><rect x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/><circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/></svg>
+          <div class="wordmark">Neartech<small>AI &amp; CONSULTING</small></div>
+        </div>
+        <div class="content">
+          <div class="eyebrow">Il lavoro cambia<i>(02)</i></div>
+          <div class="h">Sai dire quali compiti del tuo lavoro <em>cambieranno con l'AI</em>?</div>
+          <div class="nums"><div class="big">96<sup>%</sup></div><div class="data"><b>Oggi 46 · 35 · 18</b><br>2030 34 · 35 · 31<br>WEF 2025 · Italia</div></div>
+        </div>
+      </div>
+      <div class="alphabet">
+        <div><div class="inter-t">Aa Gg Rr 0123456789 % →</div><div class="m inter-m">Aa Gg Rr 0123456789 l'AI</div></div>
+        <div style="font-size:14px; letter-spacing:0; color:#475569;">Più compatto e neutro. Molto diffuso nelle interfacce, quindi meno riconoscibile.</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="caption"><b>B · Geist + Geist Mono</b><span>proposta</span></div>
+      <div class="frame geist">
+        <div class="blob" aria-hidden="true"></div>
+        <div class="lockup">
+          <svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/><rect x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/><rect x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/><rect x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/><circle cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/></svg>
+          <div class="wordmark">Neartech<small>AI &amp; CONSULTING</small></div>
+        </div>
+        <div class="content">
+          <div class="eyebrow">Il lavoro cambia<i>(02)</i></div>
+          <div class="h">Sai dire quali compiti del tuo lavoro <em>cambieranno con l'AI</em>?</div>
+          <div class="nums"><div class="big">96<sup>%</sup></div><div class="data"><b>Oggi 46 · 35 · 18</b><br>2030 34 · 35 · 31<br>WEF 2025 · Italia</div></div>
+        </div>
+      </div>
+      <div class="alphabet">
+        <div><div class="geist-t">Aa Gg Rr 0123456789 % →</div><div class="m geist-m">Aa Gg Rr 0123456789 l'AI</div></div>
+        <div style="font-size:14px; letter-spacing:0; color:#475569;">Più geometrico e tecnico, con un monospazio della stessa famiglia. È il font predefinito di v0 di Vercel.</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

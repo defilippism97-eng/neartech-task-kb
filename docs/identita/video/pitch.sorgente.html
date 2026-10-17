@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="it" style="overflow:hidden; margin:0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Neartech · Elevator pitch</title>
+    <!--
+      NEARTECH · Elevator pitch in video · composizione HyperFrames (1920×1080, 79 s, 12 scene, effetti sonori e musica)
+      Sorgente modificabile: i font sono segnaposto. Il file da importare si genera con
+        python incorpora_font.py pitch.sorgente.html pitch-hyperframes.html
+      Identità v3.1 «Luce» (guida-identita.html): Inter + JetBrains Mono, fondo Paper, nessun rimbalzo.
+      Contenuti e fonti: elevator-pitch.html; scene: storyboard-video.md, sezione 5.
+    -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hyperframes/core/dist/hyperframe.runtime.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@hyperframes/shader-transitions/dist/index.global.js"></script>
+    <style>
+      /* Font del marchio, incorporati: Inter variabile (400–700) e JetBrains Mono 500. Sottoinsieme latino. */
+      @font-face { font-family: "Inter"; font-weight: 100 900; font-style: normal; font-display: block;
+        src: url(data:font/woff2;base64,__FONT_INTER__) format("woff2"); }
+      @font-face { font-family: "JetBrains Mono"; font-weight: 500; font-style: normal; font-display: block;
+        src: url(data:font/woff2;base64,__FONT_JBMONO__) format("woff2"); }
+
+      :root {
+        --paper: #FFFFFF; --card: #F5F6F8; --line: #E2E8F0;
+        --navy: #0B2559; --cobalt: #1B499F; --teal: #00B4B4; --teal-ink: #007272; --teal-pale: #BFEDED;
+        --violet: #521983; --amber: #F59E0B; --amber-ink: #92400E;
+        --ink: #0F172A; --slate: #475569; --stone: #526175;
+        --f: "Inter", system-ui, sans-serif;
+        --m: "JetBrains Mono", ui-monospace, monospace;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--f); -webkit-font-smoothing: antialiased; }
+
+      /* Scene trasparenti: il bianco è della pagina. La prima scena della transizione resta visibile fin dall'inizio
+         (la gestisce HyperShader), quindi non deve coprire le precedenti. */
+      .scene { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+      #s11 .blob { visibility: hidden; }
+      .scene-content { position: absolute; inset: 0; padding: 120px 180px; display: flex; flex-direction: column; justify-content: center; gap: 36px; z-index: 2; }
+
+      /* Macchia: tre sfere a gradiente morbido mosse dalla timeline (niente filtri: restano fedeli anche nella transizione shader). */
+      .blob { position: absolute; left: 0; top: 0; width: 900px; height: 900px; z-index: 0; transform-origin: 50% 50%; pointer-events: none; }
+      .orb { position: absolute; left: 0; top: 0; width: 900px; height: 900px; border-radius: 50%; transform-origin: 50% 50%; }
+
+      /* Tipografia */
+      .eyebrow { font-family: var(--m); font-weight: 500; font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal-ink); }
+      .eyebrow i { font-style: normal; color: var(--stone); margin-left: 14px; }
+      .t-xl, .t-l { font-weight: 600; color: var(--navy); letter-spacing: -0.05em; line-height: 1.02; }
+      .t-xl { font-size: 128px; }
+      .t-l { font-size: 96px; }
+      .t-m { font-weight: 600; font-size: 56px; line-height: 1.12; letter-spacing: -0.04em; color: var(--navy); }
+      em, .mono-em { font-family: var(--m); font-style: normal; font-weight: 500; font-size: 0.84em; letter-spacing: -0.06em; color: var(--teal-ink); }
+      .ln { display: block; overflow: hidden; padding-bottom: 0.14em; margin-bottom: -0.14em; white-space: nowrap; }
+      .ln > span { display: inline-block; }
+      .ch { display: inline-block; }
+      .src { position: absolute; left: 180px; bottom: 72px; z-index: 2; font-family: var(--m); font-weight: 500; font-size: 20px; color: var(--stone); letter-spacing: 0.01em; }
+      .big { font-weight: 600; font-size: 340px; line-height: 0.86; letter-spacing: -0.065em; color: var(--navy); font-variant-numeric: tabular-nums; }
+      .big .u { font-size: 0.5em; color: var(--teal); letter-spacing: -0.03em; }
+
+      /* Logo Task Matrix */
+      .lockup { display: flex; align-items: center; gap: 44px; }
+      .lockup svg { overflow: visible; }
+      .wordmark { font-weight: 700; letter-spacing: -0.045em; color: var(--navy); line-height: 1; }
+      .wordmark small { display: block; font-family: var(--m); font-weight: 500; font-size: 0.2em; letter-spacing: 0.24em; color: var(--stone); margin-top: 0.5em; }
+
+      /* Scena 3 */
+      .s3-grid { display: grid; grid-template-columns: 760px 1fr; align-items: center; gap: 40px; }
+      .track { position: relative; height: 28px; background: var(--line); border-radius: 99px; }
+      .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: var(--navy); }
+      .tick { position: absolute; top: -14px; bottom: -14px; width: 6px; border-radius: 3px; background: var(--amber); left: 88%; }
+      .barlabels { display: flex; justify-content: space-between; margin-top: 26px; font-family: var(--m); font-weight: 500; font-size: 24px; color: var(--navy); }
+      .barlabels span:last-child { color: var(--amber-ink); }
+
+      /* Scena 4 */
+      .bar4 { display: grid; grid-template-columns: 200px 1fr; align-items: center; gap: 0; margin-top: 12px; }
+      .yr { position: relative; height: 80px; overflow: hidden; font-weight: 600; font-size: 64px; letter-spacing: -0.04em; color: var(--navy); }
+      .yr span { position: absolute; left: 0; top: 0; }
+      .stack { display: flex; gap: 6px; height: 170px; }
+      .seg { width: 0; border-radius: 18px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; padding-left: 28px; white-space: nowrap; }
+      .seg small { font-family: var(--m); font-weight: 500; font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .seg b { font-weight: 600; font-size: 60px; letter-spacing: -0.04em; line-height: 1.05; font-variant-numeric: tabular-nums; }
+      .seg.sh { background: var(--navy); color: #fff; }
+      .seg.sc { background: var(--teal-pale); color: #034848; }
+      .seg.st { background: var(--teal); color: #032E2E; }
+
+      /* Scena 5 */
+      .s5-row { display: grid; grid-template-columns: 496px 1fr; gap: 110px; align-items: center; }
+      .waffle { display: grid; grid-template-columns: repeat(11, 36px); gap: 10px; }
+      .dot { width: 36px; height: 36px; border-radius: 50%; background: var(--line); }
+      .keys { display: grid; gap: 22px; }
+      .key { display: grid; grid-template-columns: 170px 1fr; align-items: baseline; border-top: 1px solid var(--line); padding-top: 18px; }
+      .key b { font-weight: 600; font-size: 64px; letter-spacing: -0.045em; line-height: 1; font-variant-numeric: tabular-nums; }
+      .key span { font-size: 30px; color: var(--slate); letter-spacing: -0.01em; }
+
+      /* Scena 6 */
+      .swap { position: relative; height: 210px; }
+      .swap .t-l { position: absolute; left: 0; top: 0; }
+      .track6 { position: relative; height: 40px; background: var(--line); border-radius: 99px; margin-top: 30px; }
+      .fill6 { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 99px; background: var(--teal); }
+      .val6 { font-family: var(--m); font-weight: 500; font-size: 32px; color: var(--navy); text-align: right; margin-top: 18px; font-variant-numeric: tabular-nums; }
+
+      /* Scena 7 */
+      .s7-grid { display: grid; grid-template-columns: 720px 1fr; gap: 60px; align-items: center; }
+      .tiles { display: grid; grid-template-columns: repeat(5, 56px); gap: 12px; margin-top: 40px; }
+      .tile { width: 56px; height: 56px; border-radius: 12px; background: var(--line); }
+      .tile.on { background: var(--navy); }
+      .tiles-cap { font-family: var(--m); font-weight: 500; font-size: 24px; color: var(--stone); margin-top: 18px; }
+
+      /* Scena 8 */
+      .hl { background: linear-gradient(rgba(0,180,180,0.22), rgba(0,180,180,0.22)) no-repeat 0 88% / 0% 34%; }
+
+      /* Scena 10: matrice */
+      .s10-grid { display: grid; grid-template-columns: 720px 1fr; gap: 60px; align-items: center; }
+      .quads { display: grid; gap: 18px; margin-top: 44px; }
+      .qd { display: flex; align-items: center; gap: 18px; font-size: 30px; font-weight: 600; color: var(--navy); letter-spacing: -0.02em; }
+      .qd i { width: 22px; height: 22px; border-radius: 6px; flex: none; }
+      .matrix { width: 820px; height: auto; display: block; }
+
+      /* Scena 11 */
+      .s11-grid { display: grid; grid-template-columns: 1fr 560px; gap: 40px; align-items: center; }
+      .viz { position: relative; width: 560px; height: 420px; }
+      .sd { position: absolute; width: 40px; height: 40px; border-radius: 50%; background: var(--teal); top: 300px; }
+      .sphere { position: absolute; width: 76px; height: 76px; border-radius: 50%; background: var(--amber); left: 242px; top: 180px; }
+      .ring { position: absolute; width: 76px; height: 76px; border-radius: 50%; border: 3px solid var(--amber); left: 242px; top: 180px; opacity: 0; }
+      /* La legenda sta sopra la macchia: fondo bianco pieno, così il contrasto resta sopra 4,5:1. */
+      .vizkey { display: flex; gap: 36px; justify-content: center; font-family: var(--m); font-weight: 500; font-size: 22px; color: var(--stone); margin: 8px auto 0; white-space: nowrap; background: #fff; border-radius: 99px; padding: 12px 26px; width: max-content; }
+      .vizkey i { display: inline-block; width: 16px; height: 16px; border-radius: 50%; margin-right: 10px; vertical-align: -1px; }
+
+      /* Scena 12 */
+      .pill { display: inline-flex; align-items: center; align-self: flex-start; gap: 18px; margin-top: 18px; padding: 30px 60px; border-radius: 99px; color: #fff; font-weight: 600; font-size: 36px; letter-spacing: -0.02em; background: linear-gradient(90deg, #1B499F, #007272); box-shadow: 0 16px 40px rgba(27,73,159,0.28); }
+      .s12-logo { position: absolute; left: 180px; top: 96px; z-index: 2; }
+    </style>
+  </head>
+  <body>
+    <div id="main" data-composition-id="main" data-width="1920" data-height="1080" data-start="0" data-duration="79">
+
+      <!-- Audio: effetti sincronizzati con la timeline (suoni_pitch.py) e musica di sottofondo a livello costante,
+           sotto gli effetti (mixa_audio.py). Musica: «Security» di MokkaMusic, licenza da verificare. -->
+      <audio id="audio" src="suoni/pitch-audio.m4a" data-start="0" data-duration="79" data-volume="1"></audio>
+
+      <!-- S1 (0–4) · Il logo si costruisce -->
+      <div class="scene clip" id="s1" data-start="0" data-duration="4" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content" style="align-items:center;">
+          <div class="lockup">
+            <svg width="300" height="300" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect id="s1-asta" x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+              <rect id="s1-m1" x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+              <rect id="s1-m2" x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+              <rect id="s1-asta2" x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+              <circle id="s1-ring" cx="38.5" cy="12.5" r="4.5" fill="none" stroke="#F59E0B" stroke-width="0.7" opacity="0"/>
+              <circle id="s1-sfera" cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+            </svg>
+            <div class="wordmark" style="font-size:168px;"><span id="s1-word">Neartech</span><small id="s1-sub">AI &amp; CONSULTING</small></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2 (4–9,5) · La domanda -->
+      <div class="scene clip" id="s2" data-start="4" data-duration="5.5" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="s2-eb">Il contesto<i>(01)</i></div>
+          <div class="t-xl" id="s2-h">
+            <span class="ln"><span>Sai dire quali compiti</span></span>
+            <span class="ln"><span>del tuo lavoro</span></span>
+            <span class="ln"><span><em id="s2-type">cambieranno con l'AI</em><span id="s2-q">?</span></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- S3 (9,5–16) · 96% -->
+      <div class="scene clip" id="s3" data-start="9.5" data-duration="6.5" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="s3-eb">Il contesto<i>(01)</i></div>
+          <div class="s3-grid">
+            <div class="big" id="s3-big"><span id="s3-n">0</span><span class="u">%</span></div>
+            <div>
+              <div class="t-m" id="s3-txt">delle organizzazioni italiane intervistate ha già programmi di AI in corso.</div>
+              <div style="margin-top:56px;" id="s3-bar">
+                <div class="track"><div class="fill" id="s3-fill"></div><div class="tick" id="s3-tick"></div></div>
+                <div class="barlabels"><span>Italia 96%</span><span id="s3-world">Media mondiale 88%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="src" id="s3-src">Fonte: World Economic Forum, Future of Jobs Report 2025, profilo Italia (pp. 156–157). Quota di organizzazioni intervistate.</div>
+      </div>
+
+      <!-- S4 (16–24) · Chi svolgerà i compiti -->
+      <div class="scene clip" id="s4" data-start="16" data-duration="8" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content" style="gap:30px;">
+          <div class="eyebrow" id="s4-eb">Il contesto<i>(01)</i></div>
+          <div class="t-l" id="s4-h">
+            <span class="ln"><span>Entro il 2030 la tecnologia</span></span>
+            <span class="ln"><span>svolgerà in prevalenza</span></span>
+            <span class="ln"><span><em>quasi un compito su tre.</em></span></span>
+          </div>
+          <div class="bar4" id="s4-bar">
+            <div class="yr"><span id="s4-y1">Oggi</span><span id="s4-y2" style="opacity:0;">2030</span></div>
+            <div class="stack">
+              <div class="seg sh" id="s4-h1"><small>Persone</small><b id="s4-hv">46%</b></div>
+              <div class="seg sc" id="s4-c1"><small>Insieme</small><b id="s4-cv">35%</b></div>
+              <div class="seg st" id="s4-t1"><small>Tecnologia</small><b id="s4-tv">18%</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="src" id="s4-src">Fonte: WEF, Future of Jobs Report 2025, profilo Italia, p. 157. Stime dei datori di lavoro intervistati.</div>
+      </div>
+
+      <!-- S5 (24–32) · Le persone -->
+      <div class="scene clip" id="s5" data-start="24" data-duration="8" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content" style="gap:34px;">
+          <div class="eyebrow" id="s5-eb">Le persone<i>(02)</i></div>
+          <div class="t-l" id="s5-h" style="font-size:84px;">
+            <span class="ln"><span>Entro il 2030, il 60% dei lavoratori</span></span>
+            <span class="ln"><span>avrà davanti <em>un percorso di crescita.</em></span></span>
+          </div>
+          <div class="s5-row">
+            <div class="waffle" id="waffle"></div>
+            <div class="keys">
+              <div class="key" id="s5-k1"><b style="color:var(--teal-ink)">27%</b><span>cresce nel proprio ruolo</span></div>
+              <div class="key" id="s5-k2"><b style="color:var(--violet)">22%</b><span>cresce e cambia ruolo</span></div>
+              <div class="key" id="s5-k3"><b style="color:var(--amber-ink)">11%</b><span>un percorso pensato apposta</span></div>
+              <div class="key" id="s5-k4"><b style="color:var(--navy)">39%</b><span>continua con le competenze di oggi</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="src" id="s5-src">Fonte: WEF, Future of Jobs Report 2025, profilo Italia, p. 157. Il 60% è la somma di 27%, 22% e 11%.</div>
+      </div>
+
+      <!-- S6 (32–41) · Uso e ritorno -->
+      <div class="scene clip" id="s6" data-start="32" data-duration="9" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="s6-eb">Il ritorno dell'AI<i>(03)</i></div>
+          <div class="swap">
+            <div class="t-l" id="s6-a">
+              <span class="ln"><span>Quasi 9 organizzazioni su 10</span></span>
+              <span class="ln"><span>usano l'AI regolarmente.</span></span>
+            </div>
+            <div class="t-l" id="s6-b">
+              <span class="ln"><span>Solo il 6% le attribuisce</span></span>
+              <span class="ln"><span><em>almeno il 5% dell'EBIT.</em></span></span>
+            </div>
+          </div>
+          <div id="s6-bar">
+            <div class="track6"><div class="fill6" id="s6-fill"></div></div>
+            <div class="val6"><span id="s6-v">0</span>%</div>
+          </div>
+        </div>
+        <div class="src" id="s6-src">Fonte: McKinsey, The State of AI 2026. Quote di organizzazioni intervistate.</div>
+      </div>
+
+      <!-- S7 (41–47) · 25% -->
+      <div class="scene clip" id="s7" data-start="41" data-duration="6" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="s7-eb">Il ritorno dell'AI<i>(03)</i></div>
+          <div class="s7-grid">
+            <div class="big" id="s7-big"><span id="s7-n">0</span><span class="u">%</span></div>
+            <div>
+              <div class="t-m" id="s7-txt">delle iniziative di AI ha dato il ritorno atteso, secondo 2.000 CEO.</div>
+              <div class="tiles" id="tiles"></div>
+              <div class="tiles-cap" id="s7-cap">1 iniziativa su 4</div>
+            </div>
+          </div>
+        </div>
+        <div class="src" id="s7-src">Fonte: IBM Institute for Business Value, CEO Study 2025.</div>
+      </div>
+
+      <!-- S8 (47–52,5) · Il punto -->
+      <div class="scene clip" id="s8" data-start="47" data-duration="5.5" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="eyebrow" id="s8-eb">Il ritorno dell'AI<i>(03)</i></div>
+          <div class="t-xl" id="s8-h">
+            <span class="ln"><span>Il ritorno arriva a chi</span></span>
+            <span class="ln"><span><em class="hl" id="s8-hl">ripensa il lavoro,</em></span></span>
+            <span class="ln"><span>non solo la tecnologia.</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- S9 (52,5–58) · Chi siamo -->
+      <div class="scene clip" id="s9" data-start="52.5" data-duration="5.5" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="lockup" style="gap:26px;">
+            <svg width="96" height="96" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect id="s9-asta" x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+              <rect id="s9-m1" x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+              <rect id="s9-m2" x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+              <rect id="s9-asta2" x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+              <circle id="s9-ring" cx="38.5" cy="12.5" r="4.5" fill="none" stroke="#F59E0B" stroke-width="0.7" opacity="0"/>
+              <circle id="s9-sfera" cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+            </svg>
+            <div class="wordmark" id="s9-word" style="font-size:64px;">Neartech</div>
+          </div>
+          <div class="t-l" id="s9-h">
+            <span class="ln"><span>Aiutiamo le organizzazioni</span></span>
+            <span class="ln"><span>a governare</span></span>
+            <span class="ln"><span><em>il lavoro che cambia.</em></span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- S10 (58–66) · Due assi -->
+      <div class="scene clip" id="s10" data-start="58" data-duration="8" data-track-index="0">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="s10-grid">
+            <div>
+              <div class="eyebrow" id="s10-eb">Il metodo<i>(04)</i></div>
+              <div class="t-l" id="s10-h" style="font-size:88px; margin-top:36px;">
+                <span class="ln"><span>Due assi,</span></span>
+                <span class="ln"><span>per ogni compito.</span></span>
+              </div>
+              <div class="quads" id="s10-q">
+                <div class="qd"><i style="background:#F59E0B"></i>Persona al centro</div>
+                <div class="qd"><i style="background:#A77ED7"></i>Supporto tecnologico</div>
+                <div class="qd"><i style="background:#7E9DD7"></i>Riprogettare e potenziare</div>
+                <div class="qd"><i style="background:#00B4B4"></i>Automatizzabile</div>
+              </div>
+            </div>
+            <svg class="matrix" viewBox="0 0 520 480" aria-hidden="true">
+              <g id="s10-quads">
+                <rect id="q1" x="70" y="10" width="210" height="205" rx="12" fill="#F1E9F9" stroke="#A77ED7" stroke-width="1.5"/>
+                <rect id="q2" x="290" y="10" width="210" height="205" rx="12" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+                <rect id="q3" x="70" y="225" width="210" height="205" rx="12" fill="#E6FAFA" stroke="#00B4B4" stroke-width="1.5"/>
+                <rect id="q4" x="290" y="225" width="210" height="205" rx="12" fill="#E8EEF9" stroke="#7E9DD7" stroke-width="1.5"/>
+              </g>
+              <g font-family="JetBrains Mono" font-weight="500" font-size="13">
+                <text id="qt1" x="84" y="34" fill="#521983">SUPPORTO</text><text id="qt1b" x="84" y="51" fill="#521983">TECNOLOGICO</text>
+                <text id="qt2" x="304" y="34" fill="#92400E">PERSONA</text><text id="qt2b" x="304" y="51" fill="#92400E">AL CENTRO</text>
+                <text id="qt3" x="84" y="249" fill="#005151">AUTOMATIZZABILE</text>
+                <text id="qt4" x="304" y="249" fill="#0B2559">RIPROGETTARE</text><text id="qt4b" x="304" y="266" fill="#0B2559">E POTENZIARE</text>
+              </g>
+              <g id="s10-dots">
+                <circle cx="140" cy="140" r="13" fill="#A77ED7"/><circle cx="210" cy="175" r="7" fill="#A77ED7"/>
+                <circle cx="360" cy="130" r="12" fill="#F59E0B"/><circle cx="440" cy="165" r="7" fill="#F59E0B"/><circle cx="420" cy="100" r="5" fill="#F59E0B"/>
+                <circle cx="150" cy="340" r="15" fill="#00B4B4"/><circle cx="220" cy="385" r="7" fill="#00B4B4"/><circle cx="105" cy="390" r="5" fill="#00B4B4"/>
+                <circle cx="370" cy="345" r="12" fill="#7E9DD7"/><circle cx="440" cy="385" r="7" fill="#7E9DD7"/>
+              </g>
+              <line id="s10-ax" x1="70" y1="442" x2="500" y2="442" stroke="#526175" stroke-width="1.5" stroke-dasharray="430" stroke-dashoffset="430"/>
+              <line id="s10-ay" x1="58" y1="430" x2="58" y2="10" stroke="#526175" stroke-width="1.5" stroke-dasharray="420" stroke-dashoffset="420"/>
+              <g font-family="Inter" font-size="14" text-anchor="middle" id="s10-axl">
+                <text x="285" y="462" font-weight="600" fill="#0B2559">Necessità della presenza umana</text>
+                <text x="285" y="478" font-weight="400" fill="#526175">vincoli tecnici →</text>
+                <text x="18" y="220" font-weight="600" fill="#0B2559" transform="rotate(-90 18 220)">Desiderabilità della presenza umana</text>
+                <text x="36" y="220" font-weight="400" fill="#526175" transform="rotate(-90 36 220)">scelte di valore →</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- S11 (66–72) · Prevediamo, le persone decidono · prima scena della transizione shader -->
+      <div class="scene clip" id="s11" data-start="66" data-duration="6" data-track-index="0" style="opacity:0;">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="scene-content">
+          <div class="s11-grid">
+            <div>
+              <div class="eyebrow" id="s11-eb">Il metodo<i>(04)</i></div>
+              <div class="t-l" id="s11-h" style="margin-top:36px;">
+                <span class="ln"><span>Prevediamo cosa</span></span>
+                <span class="ln"><span><em>verrà automatizzato.</em></span></span>
+              </div>
+              <div class="t-m" id="s11-dec" style="margin-top:40px;">Le decisioni restano alle persone.</div>
+            </div>
+            <div>
+              <div class="viz" id="s11-viz">
+                <i class="sd" style="left:20px"></i><i class="sd" style="left:100px"></i><i class="sd" style="left:180px"></i><i class="sd" style="left:260px"></i><i class="sd" style="left:340px"></i><i class="sd" style="left:420px"></i><i class="sd" style="left:500px"></i>
+                <i class="ring" id="s11-ring"></i>
+                <i class="sphere" id="s11-sphere"></i>
+              </div>
+              <div class="vizkey" id="s11-key"><span><i style="background:var(--teal)"></i>il sistema propone</span><span><i style="background:var(--amber)"></i>le persone decidono</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S12 (72–79) · Invito · seconda scena della transizione shader -->
+      <div class="scene clip" id="s12" data-start="72" data-duration="7" data-track-index="0" style="opacity:0;">
+        <div class="blob"><i class="orb"></i><i class="orb"></i><i class="orb"></i></div>
+        <div class="s12-logo">
+          <div class="lockup" style="gap:22px;">
+            <svg width="80" height="80" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <rect id="s12-asta" x="6" y="8" width="9" height="32" rx="2" fill="#0B2559"/>
+              <rect id="s12-m1" x="17.5" y="16" width="8" height="8" rx="1.5" fill="#00B4B4"/>
+              <rect id="s12-m2" x="24.5" y="24" width="8" height="8" rx="1.5" fill="#1B499F"/>
+              <rect id="s12-asta2" x="34" y="20" width="9" height="20" rx="2" fill="#0B2559"/>
+              <circle id="s12-ring" cx="38.5" cy="12.5" r="4.5" fill="none" stroke="#F59E0B" stroke-width="0.7" opacity="0"/>
+              <circle id="s12-sfera" cx="38.5" cy="12.5" r="4.5" fill="#F59E0B"/>
+            </svg>
+            <div class="wordmark" id="s12-word" style="font-size:56px;">Neartech<small>AI &amp; CONSULTING</small></div>
+          </div>
+        </div>
+        <div class="scene-content" style="padding-top:200px;">
+          <div class="eyebrow" id="s12-eb">Il passo successivo<i>(05)</i></div>
+          <div class="t-xl" id="s12-h">
+            <span class="ln"><span>Portateci un ruolo</span></span>
+            <span class="ln"><span>e un documento:</span></span>
+            <span class="ln"><span><em>partiamo da lì.</em></span></span>
+          </div>
+          <!-- CONTATTO: recapito da inserire quando disponibile (sito o email), sotto il pulsante. -->
+          <div class="pill" id="s12-pill">Fissiamo mezz'ora <span aria-hidden="true">→</span></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+        var tl = gsap.timeline({ paused: true });
+        // Curve senza rimbalzo, come da guida: power3/expo per gli ingressi, sine per il respiro.
+        var IN = "power3.out", DR = "expo.out", SOFT = "power2.out", BR = "sine.inOut";
+        // Ritmo: ingressi un po' più calmi (K) e almeno 2,5 s di sola lettura a fine scena.
+        var K = 1.25;
+
+        function q(s) { return document.querySelector(s); }
+        function qa(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+
+        // Scene: [inizio, durata] in secondi. Devono coincidere con data-start / data-duration
+        // e con la tabella SCENE di suoni_pitch.py (colonna sonora degli effetti).
+        var S = [[0, 4], [4, 5.5], [9.5, 6.5], [16, 8], [24, 8], [32, 9], [41, 6], [47, 5.5], [52.5, 5.5], [58, 8], [66, 6], [72, 7]];
+        function at(n, r) { return S[n - 1][0] + r; } // tempo assoluto dato il numero di scena e l'istante relativo
+
+        /* ---------- Costruzione sincrona del DOM ---------- */
+        // Lettere singole per la scrittura progressiva dell'accento in monospazio.
+        (function dividi(el) {
+          var t = el.textContent; el.textContent = "";
+          for (var i = 0; i < t.length; i++) {
+            var s = document.createElement("span"); s.className = "ch";
+            if (t[i] === " ") { s.innerHTML = "&nbsp;"; } else { s.textContent = t[i]; }
+            el.appendChild(s);
+          }
+        })(q("#s2-type"));
+        // Griglia dei 99 lavoratori (un punto per punto percentuale WEF): prima i tre gruppi che crescono, poi chi continua.
+        var GRUPPI = [["#00B4B4", 27], ["#521983", 22], ["#F59E0B", 11], ["#ABBFE5", 39]];
+        var waffle = q("#waffle"), punti = [];
+        GRUPPI.forEach(function (g, gi) {
+          for (var k = 0; k < g[1]; k++) { var d = document.createElement("i"); d.className = "dot g" + gi; waffle.appendChild(d); punti.push(d); }
+        });
+        // Venti tessere: una su quattro piena.
+        var tiles = q("#tiles");
+        for (var t = 0; t < 20; t++) { var e = document.createElement("i"); e.className = "tile" + (t < 5 ? " on" : ""); tiles.appendChild(e); }
+
+        /* ---------- Visibilità delle scene ---------- */
+        // La visibilità delle scene (clip) la gestisce il framework da data-start e data-duration:
+        // niente autoAlpha sui contenitori. Resta solo l'opacità della prima scena della transizione.
+        tl.set("#s11", { opacity: 1 }, at(11, 0));
+        tl.set("#s11 .blob", { autoAlpha: 1 }, at(11, 0)); // la sua macchia compare solo al suo turno
+
+        /* ---------- Macchia: respira, si sposta, cambia colore ---------- */
+        // Tappe del racconto per scena (sc) e frazione della scena (f): centro, scala, tre colori.
+        // Teal = contesto, cobalto = dati, viola = divario, ambra = decisione delle persone.
+        var TAPPE = [
+          { sc: 1,  f: 0,    x: 1480, y: 820, s: 0.42, c: ["#00B4B4", "#7FE0E0", "#1B499F"] },
+          { sc: 2,  f: 0,    x: 1560, y: 560, s: 1.00, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 3,  f: 0,    x: 1660, y: 300, s: 0.70, c: ["#1B499F", "#00B4B4", "#8B5CF6"] },
+          { sc: 4,  f: 0,    x: 1760, y: 180, s: 0.55, c: ["#1B499F", "#7E9DD7", "#00B4B4"] },
+          { sc: 5,  f: 0,    x: 1800, y: 160, s: 0.50, c: ["#00B4B4", "#1B499F", "#7FE0E0"] },
+          { sc: 6,  f: 0,    x: 1700, y: 860, s: 0.65, c: ["#8B5CF6", "#1B499F", "#00B4B4"] },
+          { sc: 7,  f: 0,    x: 1500, y: 560, s: 0.95, c: ["#8B5CF6", "#521983", "#1B499F"] },
+          { sc: 8,  f: 0.15, x: 1520, y: 560, s: 0.45, c: ["#8B5CF6", "#1B499F", "#00B4B4"] },
+          { sc: 8,  f: 0.6,  x: 1480, y: 540, s: 1.25, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 9,  f: 0,    x: 1600, y: 580, s: 0.95, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 10, f: 0,    x: 1860, y: 960, s: 0.45, c: ["#00B4B4", "#7FE0E0", "#1B499F"] },
+          { sc: 11, f: 0,    x: 1480, y: 560, s: 0.90, c: ["#F59E0B", "#00B4B4", "#1B499F"] },
+          { sc: 12, f: 0,    x: 1420, y: 560, s: 1.55, c: ["#00B4B4", "#1B499F", "#8B5CF6"] },
+          { sc: 12, f: 1,    x: 1360, y: 540, s: 1.80, c: ["#00B4B4", "#1B499F", "#8B5CF6"] }
+        ].map(function (k) { k.t = S[k.sc - 1][0] + k.f * S[k.sc - 1][1]; return k; });
+        var ORBITE = [{ w: 0.55, f: 0.0, r: 1.0 }, { w: 0.42, f: 2.1, r: 0.86 }, { w: 0.67, f: 4.2, r: 0.72 }];
+        function morbido(p) { return p * p * (3 - 2 * p); }
+        function rgba(c, a) { var v = gsap.utils.splitColor(c); return "rgba(" + v[0] + "," + v[1] + "," + v[2] + "," + a + ")"; }
+        function statoA(t) {
+          var k = 0;
+          while (k < TAPPE.length - 2 && t >= TAPPE[k + 1].t) k++;
+          var a = TAPPE[k], b = TAPPE[k + 1];
+          var p = morbido(Math.max(0, Math.min(1, (t - a.t) / (b.t - a.t))));
+          return {
+            x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p, s: a.s + (b.s - a.s) * p,
+            c: [0, 1, 2].map(function (j) { return gsap.utils.interpolate(a.c[j], b.c[j], p); })
+          };
+        }
+        function disegnaMacchia(blob, t) {
+          var st = statoA(t);
+          var respiro = 1 + 0.1 * Math.sin(t * 2 * Math.PI / 7); // si espande e si contrae ogni 7 s
+          blob.style.transform = "translate(" + (st.x - 450) + "px," + (st.y - 450) + "px) scale(" + (st.s * respiro) + ")";
+          for (var j = 0; j < 3; j++) {
+            var o = ORBITE[j], orb = blob.children[j];
+            var dx = 120 * Math.sin(t * o.w + o.f), dy = 95 * Math.cos(t * o.w * 0.8 + o.f);
+            var sc = o.r * (1 + 0.14 * Math.sin(t * o.w * 1.3 + o.f));
+            orb.style.transform = "translate(" + dx + "px," + dy + "px) scale(" + sc + ")";
+            orb.style.background = "radial-gradient(circle at 50% 50%, " + rgba(st.c[j], 0.78) + " 0%, " + rgba(st.c[j], 0.32) + " 36%, " + rgba(st.c[j], 0) + " 68%)";
+          }
+        }
+        qa(".scene").forEach(function (sc, idx) {
+          var b = sc.querySelector(".blob"), t0 = S[idx][0], d = S[idx][1], pr = { t: t0 };
+          disegnaMacchia(b, t0);
+          tl.to(pr, { t: t0 + d, duration: d, ease: "none", onUpdate: function () { disegnaMacchia(b, pr.t); } }, t0);
+        });
+
+        /* ---------- Aiuti ---------- */
+        function righe(sel, t0, passo) {
+          qa(sel + " .ln > span").forEach(function (el, k) { tl.from(el, { yPercent: 118, duration: 0.75 * K, ease: DR }, t0 + k * passo); });
+        }
+        function sopracciglio(sel, t0) { tl.from(sel, { autoAlpha: 0, x: -24, duration: 0.5 * K, ease: SOFT }, t0); }
+        function deriva(sel, t0, d) { tl.to(sel, { y: -14, duration: d, ease: BR }, t0); }
+        function conta(sel, da, a, t0, d, fmt) {
+          var o = { v: da }, el = q(sel);
+          tl.to(o, { v: a, duration: d, ease: SOFT, onUpdate: function () { el.textContent = fmt ? fmt(o.v) : Math.round(o.v); } }, t0);
+        }
+        // Il logo si costruisce: asta, moduli in diagonale, sfera che si posa e "guarda".
+        function logo(p, t0, v) {
+          v = v || 1;
+          tl.from("#" + p + "-asta", { scaleY: 0, transformOrigin: "50% 100%", duration: 0.6 * v, ease: DR }, t0);
+          tl.from("#" + p + "-m1", { x: -10, y: -10, autoAlpha: 0, duration: 0.6 * v, ease: IN }, t0 + 0.18 * v);
+          tl.from("#" + p + "-m2", { x: 10, y: 10, autoAlpha: 0, duration: 0.6 * v, ease: IN }, t0 + 0.3 * v);
+          tl.from("#" + p + "-asta2", { scaleY: 0, transformOrigin: "50% 100%", duration: 0.6 * v, ease: DR }, t0 + 0.42 * v);
+          tl.from("#" + p + "-sfera", { y: -16, scale: 0.4, transformOrigin: "50% 50%", autoAlpha: 0, duration: 0.8 * v, ease: DR }, t0 + 0.62 * v);
+          tl.fromTo("#" + p + "-ring", { scale: 1, opacity: 0.85, transformOrigin: "50% 50%" }, { scale: 2.6, opacity: 0, duration: 1.2, ease: SOFT, immediateRender: false }, t0 + 1.25 * v);
+        }
+
+        /* ---------- S1 · logo (0–4) ---------- */
+        logo("s1", at(1, 0.3), 1.25);
+        tl.from("#s1-word", { autoAlpha: 0, x: -40, duration: 0.9, ease: DR }, at(1, 1.35));
+        tl.from("#s1-sub", { autoAlpha: 0, y: 16, duration: 0.7, ease: SOFT }, at(1, 1.75));
+        tl.to("#s1 .lockup", { scale: 1.03, duration: 2.0, ease: BR }, at(1, 1.9));
+
+        /* ---------- S2 · domanda (4–9,5) ---------- */
+        sopracciglio("#s2-eb", at(2, 0.25));
+        righe("#s2-h", at(2, 0.35), 0.2);
+        tl.set("#s2-type .ch", { autoAlpha: 0 }, at(2, 0.3));
+        tl.to("#s2-type .ch", { autoAlpha: 1, duration: 0.01, stagger: { each: 0.045, from: "start" } }, at(2, 1.0));
+        tl.from("#s2-q", { autoAlpha: 0, duration: 0.25 }, at(2, 1.95));
+        deriva("#s2-h", at(2, 2.1), 3.2);
+
+        /* ---------- S3 · 96% (9,5–16) ---------- */
+        sopracciglio("#s3-eb", at(3, 0.25));
+        tl.from("#s3-big", { yPercent: 40, autoAlpha: 0, duration: 1.0, ease: DR }, at(3, 0.25));
+        conta("#s3-n", 0, 96, at(3, 0.3), 1.5);
+        tl.from("#s3-txt", { autoAlpha: 0, y: 30, duration: 0.9, ease: IN }, at(3, 0.6));
+        tl.from("#s3-bar", { autoAlpha: 0, duration: 0.5, ease: SOFT }, at(3, 1.1));
+        tl.to("#s3-fill", { width: "96%", duration: 1.5, ease: DR }, at(3, 1.2));
+        tl.from("#s3-tick", { scaleY: 0, transformOrigin: "50% 50%", duration: 0.6, ease: IN }, at(3, 2.3));
+        tl.from("#s3-world", { autoAlpha: 0, x: 20, duration: 0.6, ease: SOFT }, at(3, 2.45));
+        tl.from("#s3-src", { autoAlpha: 0, duration: 0.6 }, at(3, 2.2));
+        deriva("#s3-big", at(3, 2.6), 3.7);
+
+        /* ---------- S4 · compiti oggi e 2030 (16–24) ---------- */
+        sopracciglio("#s4-eb", at(4, 0.25));
+        righe("#s4-h", at(4, 0.3), 0.18);
+        tl.from("#s4-bar", { autoAlpha: 0, duration: 0.5 }, at(4, 1.0));
+        tl.to("#s4-h1", { width: (46 / 99 * 100) + "%", duration: 1.1, ease: DR }, at(4, 1.1));
+        tl.to("#s4-c1", { width: (35 / 99 * 100) + "%", duration: 1.1, ease: DR }, at(4, 1.25));
+        tl.to("#s4-t1", { width: (18 / 99 * 100) + "%", duration: 1.1, ease: DR }, at(4, 1.4));
+        tl.from("#s4-src", { autoAlpha: 0, duration: 0.6 }, at(4, 1.6));
+        // Il cambio d'anno: i segmenti scorrono verso le quote del 2030.
+        tl.to("#s4-y1", { yPercent: -100, autoAlpha: 0, duration: 0.6, ease: IN }, at(4, 4.2));
+        tl.fromTo("#s4-y2", { yPercent: 100, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: IN, immediateRender: false }, at(4, 4.25));
+        tl.to("#s4-h1", { width: (34 / 99 * 100) + "%", duration: 1.4, ease: "power3.inOut" }, at(4, 4.3));
+        tl.to("#s4-t1", { width: (31 / 99 * 100) + "%", duration: 1.4, ease: "power3.inOut" }, at(4, 4.3));
+        conta("#s4-hv", 46, 34, at(4, 4.3), 1.4, function (v) { return Math.round(v) + "%"; });
+        conta("#s4-tv", 18, 31, at(4, 4.3), 1.4, function (v) { return Math.round(v) + "%"; });
+        deriva("#s4-h", at(4, 4.6), 3.2);
+
+        /* ---------- S5 · cento lavoratori (24–32) ---------- */
+        sopracciglio("#s5-eb", at(5, 0.25));
+        righe("#s5-h", at(5, 0.3), 0.2);
+        tl.from(punti, { scale: 0, autoAlpha: 0, duration: 0.4, ease: IN, stagger: { each: 0.006, from: "start" } }, at(5, 0.8));
+        [0, 1, 2, 3].forEach(function (gi) {
+          var t0 = at(5, 1.7 + gi * 0.75);
+          tl.to(qa("#waffle .g" + gi), { backgroundColor: GRUPPI[gi][0], duration: 0.35, ease: SOFT, stagger: { each: 0.01, from: "start" } }, t0);
+          tl.from("#s5-k" + (gi + 1), { autoAlpha: 0, x: 30, duration: 0.6, ease: IN }, t0);
+        });
+        tl.from("#s5-src", { autoAlpha: 0, duration: 0.6 }, at(5, 3.0));
+        tl.to("#waffle", { y: -10, duration: 3.2, ease: BR }, at(5, 4.6));
+
+        /* ---------- S6 · uso e ritorno (32–41) ---------- */
+        sopracciglio("#s6-eb", at(6, 0.25));
+        righe("#s6-a", at(6, 0.3), 0.2);
+        tl.set(qa("#s6-b .ln > span"), { yPercent: 118 }, at(6, 0));
+        tl.from("#s6-bar", { autoAlpha: 0, duration: 0.5 }, at(6, 0.9));
+        tl.to("#s6-fill", { width: "88%", duration: 1.5, ease: DR }, at(6, 1.0));
+        conta("#s6-v", 0, 88, at(6, 1.0), 1.5);
+        tl.from("#s6-src", { autoAlpha: 0, duration: 0.6 }, at(6, 1.4));
+        // Dal quasi tutti al 6%: il divario tra uso e ritorno.
+        tl.to(qa("#s6-a .ln > span"), { yPercent: -118, duration: 0.6, ease: "power3.in", stagger: 0.08 }, at(6, 4.2));
+        tl.to(qa("#s6-b .ln > span"), { yPercent: 0, duration: 0.95, ease: DR, stagger: 0.18 }, at(6, 4.6));
+        tl.to("#s6-fill", { width: "6%", backgroundColor: "#F59E0B", duration: 1.5, ease: "power3.inOut" }, at(6, 4.7));
+        conta("#s6-v", 88, 6, at(6, 4.7), 1.5);
+
+        /* ---------- S7 · 25% (41–47) ---------- */
+        sopracciglio("#s7-eb", at(7, 0.25));
+        tl.from("#s7-big", { yPercent: 40, autoAlpha: 0, duration: 1.0, ease: DR }, at(7, 0.25));
+        conta("#s7-n", 0, 25, at(7, 0.3), 1.3);
+        tl.from("#s7-txt", { autoAlpha: 0, y: 30, duration: 0.9, ease: IN }, at(7, 0.6));
+        tl.from("#tiles .tile", { scale: 0.3, autoAlpha: 0, duration: 0.5, ease: IN, stagger: { each: 0.04, from: "start" } }, at(7, 1.2));
+        tl.from("#s7-cap", { autoAlpha: 0, duration: 0.5 }, at(7, 2.2));
+        tl.from("#s7-src", { autoAlpha: 0, duration: 0.6 }, at(7, 2.0));
+        tl.to("#tiles .tile.on", { scale: 1.08, duration: 0.8, ease: BR, yoyo: true, repeat: 1, stagger: 0.06 }, at(7, 2.6));
+        deriva("#s7-big", at(7, 2.4), 3.4);
+
+        /* ---------- S8 · il punto (47–52,5) ---------- */
+        sopracciglio("#s8-eb", at(8, 0.25));
+        righe("#s8-h", at(8, 0.3), 0.22);
+        tl.to("#s8-hl", { backgroundSize: "100% 34%", duration: 1.0, ease: SOFT }, at(8, 1.5));
+        deriva("#s8-h", at(8, 2.2), 3.1);
+
+        /* ---------- S9 · chi siamo (52,5–58) ---------- */
+        logo("s9", at(9, 0.2), 0.9);
+        tl.from("#s9-word", { autoAlpha: 0, x: -24, duration: 0.7, ease: DR }, at(9, 0.6));
+        righe("#s9-h", at(9, 0.7), 0.2);
+        deriva("#s9-h", at(9, 2.4), 2.9);
+
+        /* ---------- S10 · due assi (58–66) ---------- */
+        sopracciglio("#s10-eb", at(10, 0.25));
+        righe("#s10-h", at(10, 0.3), 0.2);
+        tl.to("#s10-ax", { strokeDashoffset: 0, duration: 1.0, ease: SOFT }, at(10, 0.5));
+        tl.to("#s10-ay", { strokeDashoffset: 0, duration: 1.0, ease: SOFT }, at(10, 0.65));
+        tl.from("#s10-axl text", { autoAlpha: 0, duration: 0.6, ease: SOFT, stagger: 0.1 }, at(10, 1.1));
+        tl.from(["#q2", "#q1", "#q4", "#q3"], { autoAlpha: 0, scale: 0.94, transformOrigin: "50% 50%", duration: 0.6, ease: IN, stagger: 0.18 }, at(10, 1.0));
+        tl.from(["#qt2", "#qt2b", "#qt1", "#qt1b", "#qt4", "#qt4b", "#qt3"], { autoAlpha: 0, duration: 0.5, stagger: 0.07 }, at(10, 1.6));
+        tl.from("#s10-dots circle", { attr: { cx: 285, cy: 220 }, autoAlpha: 0, duration: 1.0, ease: DR, stagger: { each: 0.07, from: "start" } }, at(10, 2.2));
+        tl.from("#s10-q .qd", { autoAlpha: 0, x: -20, duration: 0.55, ease: IN, stagger: 0.15 }, at(10, 2.4));
+        tl.to("#s10-dots circle", { y: -4, duration: 1.4, ease: BR, yoyo: true, repeat: 1, stagger: { each: 0.06, from: "start" } }, at(10, 3.8));
+
+        /* ---------- S11 · le persone decidono (66–72; scena della transizione: niente uscite) ---------- */
+        sopracciglio("#s11-eb", at(11, 0.25));
+        righe("#s11-h", at(11, 0.3), 0.2);
+        var sparsi = [[-30, -150], [40, -90], [-60, -210], [20, -40], [70, -180], [-40, -120], [30, -230]];
+        qa("#s11-viz .sd").forEach(function (el, k) {
+          tl.from(el, { x: sparsi[k][0], y: sparsi[k][1], autoAlpha: 0, duration: 1.1, ease: DR }, at(11, 0.5 + k * 0.07));
+        });
+        tl.from("#s11-dec", { autoAlpha: 0, y: 24, duration: 0.8, ease: IN }, at(11, 1.4));
+        tl.from("#s11-sphere", { y: -220, autoAlpha: 0, duration: 1.1, ease: DR }, at(11, 1.6));
+        tl.fromTo("#s11-ring", { scale: 1, opacity: 0.9 }, { scale: 2.4, opacity: 0, duration: 1.2, ease: SOFT, immediateRender: false }, at(11, 2.6));
+        tl.from("#s11-key", { autoAlpha: 0, duration: 0.6 }, at(11, 2.2));
+        tl.to("#s11-viz .sd", { y: -6, duration: 0.9, ease: BR, yoyo: true, repeat: 1, stagger: 0.06 }, at(11, 3.0));
+
+        /* ---------- S12 · invito (72–79) ---------- */
+        logo("s12", at(12, 0.35), 1.0);
+        tl.from("#s12-word", { autoAlpha: 0, x: -20, duration: 0.7, ease: DR }, at(12, 0.75));
+        sopracciglio("#s12-eb", at(12, 0.5));
+        righe("#s12-h", at(12, 0.55), 0.22);
+        tl.from("#s12-pill", { autoAlpha: 0, y: 30, scale: 0.96, duration: 0.9, ease: DR }, at(12, 1.6));
+        tl.to("#s12-pill", { boxShadow: "0 22px 56px rgba(0,114,114,0.34)", duration: 1.6, ease: BR, yoyo: true, repeat: 1 }, at(12, 2.8));
+
+        /* ---------- Una sola transizione shader: dalla promessa all'invito ---------- */
+        if (window.HyperShader) {
+          window.HyperShader.init({
+            bgColor: "#FFFFFF",
+            scenes: ["s11", "s12"],
+            timeline: tl,
+            transitions: [{ time: at(12, 0) - 0.25, shader: "cross-warp-morph", duration: 0.5 }]
+          });
+        }
+
+        window.__timelines["main"] = tl;
+      })();
+    </script>
+  </body>
+</html>
