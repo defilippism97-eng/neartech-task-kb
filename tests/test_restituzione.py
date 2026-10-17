@@ -47,15 +47,23 @@ def _soglia(conn, mondo, valore):
     return p
 
 
-def _calcola(conn, mondo, seme=7):
-    calcola_organizzazione(conn, mondo["admin"], mondo["org"], seme=seme, estrazioni=200)
+def _calcola(conn, mondo, seme=7, estrazioni=200):
+    calcola_organizzazione(conn, mondo["admin"], mondo["org"], seme=seme, estrazioni=estrazioni)
+
+
+# Il seme di ogni occorrenza deriva dal suo identificativo (uuid casuale a ogni sessione di test) e l'ordine dei
+# giudizi del modello dal loro: la sequenza delle estrazioni cambia a ogni esecuzione. Un valore campionato con
+# poche estrazioni oscilla attorno al suo valore vero, e il test lo confronta con una soglia: con 200 estrazioni
+# (scarto 0,03) il valore vero 0,75 usciva da (0,6; 0,8) nel 6% delle esecuzioni. Con 5000 lo scarto è 0,006: la
+# soglia dista 8 scarti e la verifica non dipende più dal seme.
+ESTRAZIONI_STABILI = 5000
 
 
 def _incerto(conn, mondo):
-    # Due giudizi di modello diversi su k1 e k2: N oscilla fra Q1 (circa un quarto delle estrazioni) e Q3.
+    # Due giudizi di modello diversi su k1 e k2: N oscilla fra Q1 e Q3, con probabilità vere 0,25 e 0,75.
     _giudizio(conn, mondo["task"], "k1", 0)
     _giudizio(conn, mondo["task"], "k2", 0)
-    _calcola(conn, mondo)
+    _calcola(conn, mondo, estrazioni=ESTRAZIONI_STABILI)
 
 
 def test_restituzione_con_chiavi_avvertenze_e_ruoli(conn, mondo, comitato):  # noqa: F811
