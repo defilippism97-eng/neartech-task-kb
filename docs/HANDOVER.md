@@ -152,7 +152,7 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Stima delle chiamate API in attesa di approvazione (2026-10-17, solo lettura):** set di controllo del prompt v2 del Canonicalizer sulle 61 fusioni giudicate (59 chiamate, ~30.000 token in ingresso, ~18.000 in uscita) e crosswalk delle 11 task separate (32 chiamate, ~19.000 in ingresso, ~14.000 in uscita); totale ~49.000 + ~32.000 token con `claude-haiku-5-5`, il doppio nel caso peggiore con i tentativi ripetuti.
 
-**Seguiti delle revisioni corretti (2026-10-17, sezione 14 del registro di metodo):** sul branch `governance-e-pulizia`, migrazioni 0026–0030 e org 0007, **da applicare in produzione** (serve l'approvazione), nello stesso giro di `scripts/migra.py --applica` con il proprietario e l'applicazione ferma, dopo 0025 e org 0006.
+**Seguiti delle revisioni corretti (2026-10-17, sezione 15 del registro di metodo):** sul branch `governance-e-pulizia`, migrazioni 0026–0030 e org 0007, **da applicare in produzione** (serve l'approvazione), nello stesso giro di `scripts/migra.py --applica` con il proprietario e l'applicazione ferma (0025 e org 0006 sono già in produzione dal 2026-10-17, branch `stato-produzione`).
 - 0026: ogni assegnazione di ruolo nuova richiede il suo atto nel registro, firmato da chi aveva `gestire_utenti`; la credenziale applicativa resta il confine di fiducia (un atto falso resta visibile nel registro).
 - `scripts/scomponi_job.py`: `--org` e `--utente-sso` obbligatori (salvo `--dry-run` per l'utente), permesso `gestire_dataset_centrale` verificato prima del modello, un atto `caricamento_documento` per documento; solo connessione diretta, non HTTPS.
 - 0027: i giudizi del crosswalk del task fuso restano (append-only, niente DELETE per `neartech_app`), marcati dalla vista `v_crosswalk_giudizi`.
@@ -163,7 +163,7 @@ Test: 173 passati su Postgres locale temporaneo (1 saltato: richiede la chiave A
 
 **Seguiti ancora aperti:** convalida di `giudizi_nota_nello_spazio` dopo l'applicazione; `revisioni_crosswalk.nota` (tabella storica in `public`, testo libero del revisore) non è ancora nello spazio; la fusione sposta e cancella ancora le relazioni `task_mappings` del task fuso; un atto di assegnazione falso scritto con la credenziale applicativa non si distingue nel database da uno vero.
 
-**Restano:** applicazione di 0025–0030 e org 0006–0007; crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
+**Restano:** applicazione di 0026–0030 e org 0007; crosswalk delle 11 task separate e set di controllo del prompt v2 (chiamate API, con stima dei costi); revisione del campione casuale delle "diversa".
 
 Passi originari, in ordine:
 1. `scripts/migra.py --inizializza 0002_... 0006_...` (crea il registro e segna le migrazioni già applicate a mano).

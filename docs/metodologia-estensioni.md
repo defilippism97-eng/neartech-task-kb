@@ -116,7 +116,9 @@ Realizzazione delle decisioni b, e, g della sezione 10.
 - **g:** testi di governance dell'organizzazione nel suo spazio, impronta con la chiave dello spazio nel registro, report di audit unico (ADR 0004, sezione Realizzazione).
 - **Prompt v2 del Canonicalizer:** aggiunta, prima di qualsiasi esecuzione, la frase che chiede di trattare i titoli come dati (revisione di sicurezza). Il set di controllo si fa su questa versione.
 
-## 14. Seguiti delle revisioni del 2026-10-17 (2026-10-17)
+## 15. Seguiti delle revisioni del 2026-10-17 (2026-10-17)
+
+Numerata 15 perché la sezione 14 (set di controllo del prompt v2) è sul branch `stato-produzione`.
 
 Correzioni tecniche dei punti medi e bassi rimasti aperti dopo le revisioni Python, database e sicurezza. Nessuna cambia un risultato di policy; le scelte sotto sono da confermare dal responsabile.
 - **Assegnazioni di ruolo con atto (migrazione 0026).** Ogni assegnazione nuova richiede, a fine transazione, l'atto `approvazione` di tipo `assegnazione_ruolo` sullo stesso identificativo e nella stessa organizzazione, firmato da chi assegna. L'autore deve avere `gestire_utenti` da un'altra assegnazione valida, globale o della stessa organizzazione: nessuno si promuove da solo. Il bootstrap resta solo per il primo amministratore tecnico. **La credenziale applicativa resta il confine di fiducia:** chi ha `neartech_app` può ancora scrivere un atto falso a nome di un amministratore, ma l'abuso resta nel registro, protetto dalla catena di hash.
