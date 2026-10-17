@@ -3,6 +3,7 @@
 1. Le attività estratte da un documento sono candidati nello spazio dell'organizzazione (salva_candidati).
 2. Un lotto propone per ogni candidato il task attivo più vicino per embedding (proponi_abbinamenti):
    distanza, margine sul secondo e vicini restano registrati. Nessuna soglia di distanza.
+   Il revisore sceglie il livello di revisione del lotto con un atto (imposta_livello; metodo, sezione 17).
 3. La coda di revisione ordina per ambiguità (coda_revisione); il campione del lotto ha la dimensione
    data dalla quota approvata (crea_campione_del_lotto) e si misura con la metrica della fase 2.
 4. Il revisore decide il lotto in blocco (decidi_lotto); l'applicazione è deterministica (applica_lotto):
@@ -76,10 +77,14 @@ def dimensione_campione(quota: str | float | Decimal, popolazione: int) -> int:
     return max(1, math.ceil(Decimal(str(quota)) * popolazione))
 
 
-def _lotto(conn: psycopg.Connection, schema: sql.Identifier, lotto_id: str) -> tuple[str, str | None, str, int]:
+def _lotto(
+    conn: psycopg.Connection, schema: sql.Identifier, lotto_id: str
+) -> tuple[str | None, str | None, str, int]:
+    """Livello scelto dal revisore (vuoto se non ancora scelto), quota, modello di embedding e vicini."""
     riga = conn.execute(
-        sql.SQL("SELECT livello_revisione, parametro_quota_id, modello_embedding, vicini "
-                "FROM {}.lotti_abbinamento WHERE lotto_id = %s").format(schema), (lotto_id,),
+        sql.SQL("""SELECT v.livello_revisione, v.parametro_quota_id, l.modello_embedding, l.vicini
+                   FROM {0}.lotti_abbinamento l LEFT JOIN {0}.livelli_lotto v USING (lotto_id)
+                   WHERE l.lotto_id = %s""").format(schema), (lotto_id,),
     ).fetchone()
     if riga is None:
         raise LookupError(f"lotto {lotto_id} inesistente")
@@ -126,12 +131,11 @@ def _quota(conn: psycopg.Connection, org_id: str) -> tuple[str, float]:
 
 
 def proponi_abbinamenti(
-    conn: psycopg.Connection, utente_id: str, org_id: str, *, livello_revisione: str, incorpora: Incorpora,
+    conn: psycopg.Connection, utente_id: str, org_id: str, *, incorpora: Incorpora,
     motivazione: str, vicini: int = VICINI, modello_embedding: str = MODELLO_EMBEDDING,
 ) -> str:
-    """Un lotto con una proposta per ogni candidato non ancora proposto. Ritorna l'identificativo del lotto."""
-    if livello_revisione not in LIVELLI:
-        raise ValueError(f"livello di revisione sconosciuto: {livello_revisione!r}")
+    """Un lotto con una proposta per ogni candidato non ancora proposto. Ritorna l'identificativo del lotto.
+    Il livello di revisione lo sceglie poi il revisore (imposta_livello)."""
     if vicini < 1:
         raise ValueError("servono almeno un vicino")
     org_id = _uuid(org_id)
@@ -147,18 +151,16 @@ def proponi_abbinamenti(
         ).fetchall()
         if not candidati:
             raise ValueError("nessun candidato da proporre")
-        quota_id = _quota(conn, org_id)[0] if livello_revisione == "campione" else None
         vettori = _vettori(incorpora, [r[1] for r in candidati], modello_embedding)
         lotto_id = str(uuid.uuid4())
         atto = registra(conn, autore_id=utente_id, tipo_oggetto="lotto_abbinamento", oggetto_id=lotto_id,
                         atto="proposta", motivazione=motivazione, org_id=org_id,
-                        dettagli={"candidati": len(candidati), "livello_revisione": livello_revisione,
-                                  "vicini": vicini})
+                        dettagli={"candidati": len(candidati), "vicini": vicini})
         conn.execute(
             sql.SQL("""INSERT INTO {}.lotti_abbinamento
-                         (lotto_id, decisione_id, modello_embedding, vicini, livello_revisione, parametro_quota_id)
-                       VALUES (%s, %s, %s, %s, %s, %s)""").format(schema),
-            (lotto_id, atto, modello_embedding, vicini, livello_revisione, quota_id),
+                         (lotto_id, decisione_id, modello_embedding, vicini)
+                       VALUES (%s, %s, %s, %s)""").format(schema),
+            (lotto_id, atto, modello_embedding, vicini),
         )
         for (candidato_id, _), vettore in zip(candidati, vettori):
             vicini_trovati = conn.execute(
@@ -179,6 +181,33 @@ def proponi_abbinamenti(
                  Jsonb([{"task_id": str(t), "distanza": float(d)} for t, d in vicini_trovati])),
             )
         return lotto_id
+
+
+def imposta_livello(
+    conn: psycopg.Connection, utente_id: str, org_id: str, lotto_id: str, *, livello_revisione: str,
+    motivazione: str,
+) -> int:
+    """Il revisore sceglie il livello di revisione del lotto, una volta. Con 'campione' si registra la quota
+    vigente in quel momento. Ritorna l'atto nel registro."""
+    if livello_revisione not in LIVELLI:
+        raise ValueError(f"livello di revisione sconosciuto: {livello_revisione!r}")
+    org_id, lotto_id = _uuid(org_id), _uuid(lotto_id)
+    with conn.transaction():
+        richiedi(conn, utente_id, "approvare_abbinamenti", org_id, risorsa=f"lotto_abbinamento:{lotto_id}")
+        schema = spazio_organizzazione(conn, org_id)
+        _blocca(conn, f"lotto_abbinamento:{lotto_id}")
+        if _lotto(conn, schema, lotto_id)[0] is not None:
+            raise DecisioneGiaPresa(f"lotto {lotto_id}: livello di revisione già scelto")
+        quota_id = _quota(conn, org_id)[0] if livello_revisione == "campione" else None
+        atto = registra(conn, autore_id=utente_id, tipo_oggetto="livello_lotto_abbinamento", oggetto_id=lotto_id,
+                        atto="approvazione", motivazione=motivazione, org_id=org_id,
+                        dettagli={"livello_revisione": livello_revisione})
+        conn.execute(
+            sql.SQL("""INSERT INTO {}.livelli_lotto (lotto_id, livello_revisione, parametro_quota_id, decisione_id)
+                       VALUES (%s, %s, %s, %s)""").format(schema),
+            (lotto_id, livello_revisione, quota_id, atto),
+        )
+        return atto
 
 
 def coda_revisione(conn: psycopg.Connection, utente_id: str, org_id: str, lotto_id: str) -> list[dict[str, Any]]:
@@ -215,6 +244,8 @@ def crea_campione_del_lotto(
     schema = spazio_organizzazione(conn, org_id)
     livello, quota_id, _, _ = _lotto(conn, schema, lotto_id)
     filtro = {"lotto": lotto_id}
+    if livello is None:
+        raise ValueError("il revisore non ha ancora scelto il livello di revisione del lotto")
     if livello == "nulla":
         raise ValueError("il lotto ha livello di revisione 'nulla': nessun campione")
     if livello == "completa":
@@ -265,6 +296,8 @@ def decidi_lotto(
         schema = spazio_organizzazione(conn, org_id)
         _blocca(conn, f"lotto_abbinamento:{lotto_id}")
         livello, quota_id, _, _ = _lotto(conn, schema, lotto_id)
+        if livello is None:
+            raise ValueError("il revisore non ha ancora scelto il livello di revisione del lotto")
         proposte = conn.execute(
             sql.SQL("""SELECT p.proposta_id, p.task_id, d.proposta_id IS NOT NULL
                        FROM {0}.proposte_abbinamento p
