@@ -1,5 +1,6 @@
 """API della piattaforma (fase 6, ADR 0007): accesso, protezioni, panoramica e approvazione del comitato."""
 
+import base64
 import time
 
 import pytest
@@ -10,6 +11,7 @@ from neartech.api.config import Impostazioni, Oidc
 from neartech.calcolo import calcola_organizzazione
 from neartech.permessi import assegna_ruolo, crea_utente
 from test_calcolo import mondo  # noqa: F401
+from test_pipeline import RIGHE, docx
 
 SCRIVE = {INTESTAZIONE_RICHIESTA: "1"}
 OIDC = Oidc("entra", "https://login.example/.well-known/openid-configuration", "id", "segreto")
@@ -262,3 +264,35 @@ def test_il_log_si_riapre_dopo_una_connessione_persa():
     log = LogResiliente(lambda: connessioni.pop(0))
     log.execute("INSERT ...")
     assert connessioni == [] and log._conn.eseguite == 1 and log._conn.autocommit is True
+
+
+# --- pipeline dei documenti e lotti (fetta 5) -------------------------------------------
+
+def test_caricamento_di_un_mansionario_dall_api(client):
+    _entra(client, "sso|admin")
+    contenuto = base64.b64encode(docx(RIGHE)).decode()
+    r = client.post("/api/organizzazioni/sintetica/documenti", json={"nome_file": "m.docx", "contenuto": contenuto},
+                    headers=SCRIVE)
+    assert r.status_code == 200, r.text
+    assert r.json()["nuovo"] and r.json()["ruolo"] == "Impiegato amministrativo"
+    stato = client.get("/api/organizzazioni/sintetica/documenti").json()
+    assert [d["stato"] for d in stato["documenti"]] == ["da_avviare"] and stato["prezzi"] is None
+    # Senza parametro dei prezzi la scomposizione non parte: nessun job.
+    r = client.post("/api/organizzazioni/sintetica/documenti/scomposizione",
+                    json={"caricamenti": [r.json()["caricamento_id"]], "motivazione": "avvio"}, headers=SCRIVE)
+    assert r.status_code == 422
+
+
+def test_caricamento_non_valido(client):
+    _entra(client, "sso|admin")
+    r = client.post("/api/organizzazioni/sintetica/documenti", json={"nome_file": "m.docx", "contenuto": "%%%"},
+                    headers=SCRIVE)
+    assert r.status_code == 422 and r.json()["detail"] == "dati non validi"
+
+
+def test_documenti_e_lotti_secondo_il_ruolo(client):
+    _entra(client)  # comitato: legge i lotti, non la pipeline dei documenti
+    assert client.get("/api/organizzazioni/sintetica/documenti").status_code == 403
+    assert client.get("/api/organizzazioni/sintetica/lotti").json() == []
+    assert client.post("/api/organizzazioni/sintetica/abbinamenti/proposta", json={"motivazione": "lotto"},
+                       headers=SCRIVE).status_code == 403

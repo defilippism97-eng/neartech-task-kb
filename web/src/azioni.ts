@@ -1,4 +1,4 @@
-import type { Fase, Percorso } from './api'
+import type { Fase, Percorso, StatoDocumento, StatoLotto } from './api'
 
 // "Tocca a te": l'azione di ogni ruolo in ogni fase del percorso (registro di metodo, sezione 27).
 // `pronta` dice se la schermata dell'azione esiste già: la piattaforma cresce a fette (docs/piani/fase-6-piattaforma.md).
@@ -10,7 +10,7 @@ export interface Azione {
   testo: string
   pronta: boolean
   attesa?: boolean  // nessuna azione richiesta ora
-  rotta?: 'indirizzi' | 'revisione'
+  rotta?: 'indirizzi' | 'revisione' | 'documenti' | 'lotti'
   comando?: 'ricalcolo'
 }
 
@@ -34,6 +34,16 @@ export const SOTTOTITOLI_FASI: Record<Fase, string> = {
   indirizzi: 'La visione del comitato calibra i pesi',
   verifica: 'Ricalcolo e controllo a campione',
   esito: 'Restituzione approvata',
+}
+
+export const STATI_DOCUMENTO: Record<StatoDocumento, string> = {
+  da_avviare: 'da avviare', in_coda: 'in coda', in_corso: 'in lavorazione', fatto: 'scomposto', fallito: 'non riuscito',
+}
+
+export const STATI_LOTTO: Record<StatoLotto, string> = {
+  da_impostare: 'livello da scegliere', da_campionare: 'campione da estrarre', da_giudicare: 'campione da giudicare',
+  da_misurare: 'precisione da calcolare', da_decidere: 'da decidere', deciso: 'deciso, da applicare',
+  in_applicazione: 'in applicazione', applicato: 'applicato',
 }
 
 const ATTESA_RICALCOLO: Azione = { titolo: 'In attesa del ricalcolo', pronta: true, attesa: true,
@@ -63,7 +73,7 @@ export function azione(ruolo: string, p: Percorso): Azione {
       return { titolo: 'Approvate la restituzione', pronta: true,
         testo: 'La mappa è pronta: leggetela e approvatela come atto del comitato.' }
     case 'revisore':
-      if (fase === 'avvio' && avvio.fatti.in_attesa_di_abbinamento > 0) return { titolo: 'Decidi i lotti di abbinamento', pronta: false,
+      if (fase === 'avvio' && avvio.fatti.in_attesa_di_abbinamento > 0) return { titolo: 'Decidi i lotti di abbinamento', pronta: true, rotta: 'lotti',
         testo: `${avvio.fatti.in_attesa_di_abbinamento} attività aspettano la tua decisione, dalla più ambigua.` }
       if (senzaRisultati) return ATTESA_RICALCOLO
       if (fase === 'verifica') return { titolo: 'Controlla le classificazioni a campione', pronta: true, rotta: 'revisione',
@@ -78,7 +88,7 @@ export function azione(ruolo: string, p: Percorso): Azione {
       return { titolo: 'Segui il processo', pronta: true, attesa: true,
         testo: 'Ogni atto è nel registro, in catena. Quando il comitato approva un profilo di pesi, tocca a te verificarlo.' }
     case 'amministratore_tecnico':
-      if (fase === 'avvio') return { titolo: 'Carica i mansionari e avvia l\'abbinamento', pronta: false,
+      if (fase === 'avvio') return { titolo: 'Carica i mansionari e avvia l\'abbinamento', pronta: true, rotta: 'documenti',
         testo: 'Scomposizione e abbinamento usano chiamate a pagamento: la stima dei costi viene prima della conferma.' }
       if (senzaRisultati) return { titolo: 'Avvia il ricalcolo', pronta: true, comando: 'ricalcolo',
         testo: 'Il comitato e l\'auditor hanno attivato un nuovo profilo di pesi: ricalcola la mappa.' }

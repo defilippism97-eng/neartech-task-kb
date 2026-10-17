@@ -152,6 +152,62 @@ export interface Revisione {
   }[]
 }
 
+export interface Stima {
+  token_ingresso: number
+  token_uscita: number
+  costo: number
+  costo_massimo: number
+}
+
+export type StatoDocumento = 'da_avviare' | 'in_coda' | 'in_corso' | 'fatto' | 'fallito'
+export type StatoLotto = 'da_impostare' | 'da_campionare' | 'da_giudicare' | 'da_misurare' | 'da_decidere' | 'deciso'
+  | 'in_applicazione' | 'applicato'
+
+export interface Lotto {
+  lotto_id: string
+  creato_il: string
+  proposte: number
+  con_task: number
+  livello: 'campione' | 'completa' | 'nulla' | null
+  stato: StatoLotto
+  campione_id: string | null
+  dimensione_campione: number | null
+  giudicati: number
+  esito_misura: string | null
+}
+
+export interface Pipeline {
+  prezzi: { parametro_id: string; versione: number; modello: string; ingresso_eur_mtok: number; uscita_eur_mtok: number } | null
+  documenti: {
+    caricamento_id: string
+    nome_file: string
+    ruolo: string
+    caratteri: number
+    caricato_il: string
+    stato: StatoDocumento
+    errore: string | null
+    candidati: number
+    stima: Stima | null
+  }[]
+  stima_da_avviare: Stima | null
+  candidati_da_proporre: number
+  proposta_in_coda: boolean
+  lotti: Lotto[]
+  lavori: { job_id: string; tipo: string; stato: StatoDocumento; tentativi: number; errore: string | null; creato_il: string }[]
+}
+
+export type EsitoCampione = 'corretto' | 'parziale' | 'errato'
+
+export interface DettaglioLotto {
+  lotto: Lotto
+  campione: {
+    istruzioni: string
+    elementi: { posizione: number; candidato: string; task: string; proposta: string; mio_esito: EsitoCampione | null }[]
+    misura: { n_elementi: number; n_corretti: number; n_parziali: number; n_errati: number; precisione: number; esito: string } | null
+  } | null
+  proposte: { proposta_id: string; candidato: string; task_id: string | null; task_proposto: string | null; distanza: number | null; margine: number | null }[] | null
+}
+
 export interface Organizzazione {
   codice: string
   nome: string
@@ -190,6 +246,8 @@ async function richiesta<T>(percorso: string, opzioni: RequestInit = {}): Promis
   return risposta.json() as Promise<T>
 }
 
+const org = (codice: string) => `/api/organizzazioni/${encodeURIComponent(codice)}`
+
 export const api = {
   ambiente: () => richiesta<Ambiente>('/api/ambiente'),
   io: () => richiesta<Io>('/api/io'),
@@ -212,6 +270,22 @@ export const api = {
   giudica: (codice: string, task_id: string, voce: string, valore: number, nota: string) =>
     richiesta<{ atto: number }>(`/api/organizzazioni/${encodeURIComponent(codice)}/revisione/giudizi`,
       { method: 'POST', body: JSON.stringify({ task_id, voce, valore, nota }) }),
+  documenti: (codice: string) => richiesta<Pipeline>(`${org(codice)}/documenti`),
+  caricaDocumento: (codice: string, nome_file: string, contenuto: string) =>
+    richiesta<{ caricamento_id: string; nuovo: boolean; ruolo: string }>(`${org(codice)}/documenti`,
+      { method: 'POST', body: JSON.stringify({ nome_file, contenuto }) }),
+  avviaScomposizione: (codice: string, caricamenti: string[], motivazione: string) =>
+    richiesta<{ atto: number } & Stima>(`${org(codice)}/documenti/scomposizione`,
+      { method: 'POST', body: JSON.stringify({ caricamenti, motivazione }) }),
+  proponiLotto: (codice: string, motivazione: string) =>
+    richiesta<{ atto: number }>(`${org(codice)}/abbinamenti/proposta`, { method: 'POST', body: JSON.stringify({ motivazione }) }),
+  applicaLotto: (codice: string, lotto: string, motivazione: string) =>
+    richiesta<{ atto: number }>(`${org(codice)}/lotti/${encodeURIComponent(lotto)}/applicazione`,
+      { method: 'POST', body: JSON.stringify({ motivazione }) }),
+  lotti: (codice: string) => richiesta<Lotto[]>(`${org(codice)}/lotti`),
+  lotto: (codice: string, lotto: string) => richiesta<DettaglioLotto>(`${org(codice)}/lotti/${encodeURIComponent(lotto)}`),
+  azioneLotto: (codice: string, lotto: string, azione: 'livello' | 'campione' | 'giudizi' | 'misura' | 'decisione', corpo: object = {}) =>
+    richiesta<unknown>(`${org(codice)}/lotti/${encodeURIComponent(lotto)}/${azione}`, { method: 'POST', body: JSON.stringify(corpo) }),
   ricalcola: (codice: string) =>
     richiesta<{ nuove: number }>(`/api/organizzazioni/${encodeURIComponent(codice)}/calcolo`, { method: 'POST' }),
   esci: () => richiesta<{ uscito: boolean }>('/accesso/esci', { method: 'POST' }),

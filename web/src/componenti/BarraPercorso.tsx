@@ -42,6 +42,12 @@ export function BarraPercorso({ percorso, ruolo, codice }: { percorso: Percorso;
         {tocca.rotta === 'revisione' && !tocca.attesa && (
           <Link to="/org/$codice/revisione" params={{ codice }} className="btn btn-pill">Apri la coda</Link>
         )}
+        {tocca.rotta === 'documenti' && !tocca.attesa && (
+          <Link to="/org/$codice/documenti" params={{ codice }} className="btn btn-pill">Apri i documenti</Link>
+        )}
+        {tocca.rotta === 'lotti' && !tocca.attesa && (
+          <Link to="/org/$codice/lotti" params={{ codice }} className="btn btn-pill">Apri i lotti</Link>
+        )}
         {tocca.comando === 'ricalcolo' && (
           <button type="button" className="btn btn-pill" disabled={ricalcolo.isPending} onClick={() => ricalcolo.mutate()}>
             {ricalcolo.isPending ? 'Ricalcolo la mappa…' : 'Ricalcola la mappa'}

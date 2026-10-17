@@ -32,7 +32,8 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from neartech.api.config import Impostazioni
 from neartech.db import connect
-from neartech.governance import DecisioneGiaPresa
+from neartech.governance import DecisioneGiaPresa, ParametroAssente
+from neartech.metrica import CampioneIncompleto, DisaccordoRevisori
 from neartech.permessi import PermessoNegato, configura_log
 from neartech.restituzione import RestituzioneSuperata
 
@@ -46,6 +47,9 @@ ERRORI: list[tuple[type[Exception], int, str]] = [
     (PermessoNegato, 403, "operazione non consentita"),
     (RestituzioneSuperata, 409, "i risultati sono cambiati dopo la lettura"),
     (DecisioneGiaPresa, 409, "decisione già presa"),
+    (CampioneIncompleto, 409, "il campione non è ancora tutto giudicato"),
+    (DisaccordoRevisori, 409, "i revisori non concordano su alcuni elementi"),
+    (ParametroAssente, 409, "manca un parametro approvato"),
     (LookupError, 404, "non trovato"),
     (ValueError, 422, "dati non validi"),
 ]

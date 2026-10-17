@@ -206,6 +206,55 @@ dialog textarea { width: 100%; min-height: 110px; margin: 12px 0; padding: 12px;
 .livello:disabled { cursor: progress; }
 .stima-modello { font-size: 11px; color: var(--stone-ink); margin-top: 6px; }
 
+/* Documenti e lotti: stati, stima, caricamento, coppie del campione */
+.chip { font-family: var(--f-mono); font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 99px; white-space: nowrap;
+  display: inline-block; background: #EEF2F9; color: var(--navy); }
+.chip-in_coda, .chip-in_corso, .chip-lotto-in_applicazione { background: #E6FAFA; color: var(--teal-ink); }
+.chip-fatto, .chip-lotto-applicato { background: #D1FAE5; color: var(--emerald-ink); }
+.chip-fallito { background: #FFE4E6; color: var(--risk-ink); }
+.chip-da_avviare, .chip-lotto-deciso { background: #FEF3C7; color: var(--amber-ink); }
+.grid > .card { min-width: 0; }  /* le tabelle scorrono dentro la card, la card non si allarga */
+.tabella-scorre { overflow-x: auto; margin-top: 12px; }
+.tabella td { vertical-align: top; }
+.tabella .decisione { margin-top: 10px; padding-top: 10px; }
+.riga-titolo { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.caricamento { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; max-width: 420px; }
+.caricamento label.btn { cursor: pointer; }
+.caricamento label.btn:focus-within { outline: 2px solid var(--teal); outline-offset: 2px; }
+.nascosto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.esiti { list-style: none; font-size: 12px; color: var(--slate); text-align: right; }
+.vuoto-breve { font-size: 14px; color: var(--slate); margin-top: 14px; }
+.avviso { background: #FEF3C7; color: var(--amber-ink); border-radius: 12px; padding: 12px 14px; font-size: 14px; margin-top: 8px; }
+.stima { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 6px 0 4px; }
+.stima div { background: var(--card); border-radius: 12px; padding: 12px 14px; }
+.stima dt { font-size: 12px; color: var(--stone-ink); }
+.stima dd { font-size: 22px; font-weight: 600; letter-spacing: -.03em; color: var(--navy); margin-top: 2px; }
+.nota-stima { font-size: 11px; color: var(--stone-ink); margin-top: 8px; }
+.errore-breve { font-size: 11px; color: var(--risk-ink); margin-top: 4px; font-family: var(--f-mono); }
+.lavori { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.lavori li { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.lavori .mono { font-size: 11px; color: var(--stone-ink); }
+.scelte-livello { border: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.scelte-livello legend { font-weight: 600; color: var(--navy); font-size: 14px; margin-bottom: 8px; }
+.scelte-livello label { display: flex; flex-direction: column; gap: 4px; border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 12px; cursor: pointer; font-size: 13px; color: var(--slate); }
+.scelte-livello label b { color: var(--navy); font-size: 14px; }
+.scelte-livello input { accent-color: var(--teal-ink); align-self: flex-start; margin: 0 0 2px; }
+.scelte-livello .scelta-attiva { border-color: var(--teal); background: #E6FAFA; }
+.coppie { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.coppia { border: 1px solid var(--border); border-radius: 12px; padding: 12px; display: grid;
+  grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.coppia-testi { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; font-size: 14px; }
+.coppia-testi small { display: block; font-size: 11px; color: var(--stone-ink); }
+.coppia-testi b { font-weight: 600; color: var(--obsidian); }
+.esiti-coppia { display: flex; gap: 6px; }
+.esiti-coppia .livello { flex-direction: row; min-height: 40px; align-items: center; white-space: nowrap; }
+.proposte { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.proposte li { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.proposte label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.proposte input { accent-color: var(--risk); margin-top: 3px; }
+.proposte .mono { font-size: 11px; color: var(--stone-ink); }
+
 @media (max-width: 1100px) {
   .app { grid-template-columns: 1fr; }
   .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 14px 16px; gap: 12px; }
@@ -224,4 +273,11 @@ dialog textarea { width: 100%; min-height: 110px; margin: 12px 0; padding: 12px;
   .revisione { grid-template-columns: 1fr; }
   .coda { position: static; max-height: 220px; }
   .livelli { grid-template-columns: 1fr; }
+  .stima { grid-template-columns: 1fr 1fr; }
+  .scelte-livello { grid-template-columns: 1fr; }
+  .coppia { grid-template-columns: 1fr; }
+  .coppia-testi { grid-template-columns: auto minmax(0, 1fr); }
+  .coppia-testi > div:last-child { grid-column: 2; }
+  .caricamento { align-items: flex-start; }
+  .esiti { text-align: left; }
 }

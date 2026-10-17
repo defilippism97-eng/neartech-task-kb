@@ -21,6 +21,13 @@ Poi `http://localhost:8000`, accesso di sviluppo con `prova|comitato`. Per lavor
 a caldo: lo script sopra in un terminale, `npm run dev` in `web/` in un altro (il server di Vite inoltra `/api` e
 `/accesso` alla porta 8000). Test del frontend: `npm test`; tipi e controlli: `npx tsc -b`, `npx oxlint src`.
 
+Nell'ambiente di prova la pipeline dei documenti gira con un lavoratore interno, un modello finto e vettori finti:
+nessuna chiamata a pagamento. Lo script stampa la cartella con due mansionari di prova da caricare come
+`prova|admin` nella schermata "Documenti"; i lotti si decidono come `prova|revisore` nella schermata "Lotti".
+Fuori dalla prova il lavoro lo fa `scripts/worker.py`: la scomposizione con `NEARTECH_ANTHROPIC_API_KEY` (chiamate a
+pagamento, già confermate da un atto con la stima), proposta e applicazione dei lotti con `--embedding` e
+`.venv-embedding` (sezione seguente).
+
 ### Ambiente per l'embedding (bge-m3)
 
 L'abbinamento al dataset (`scripts/abbina.py proponi`), il crosswalk (`scripts/esegui_crosswalk.py`) e gli embedding

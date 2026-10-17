@@ -13,10 +13,21 @@ Soggetti di prova: prova|comitato (comitato guida), prova|auditor, prova|revisor
 """
 
 import argparse
+import hashlib
+import io
 import json
+import math
 import random
+import re
 import sys
+import tempfile
+import threading
+import time
+import zipfile
+from datetime import timedelta
 from pathlib import Path
+from types import SimpleNamespace
+from xml.sax.saxutils import escape
 
 RADICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RADICE / "src"))
@@ -26,7 +37,11 @@ import psycopg  # noqa: E402
 import uvicorn  # noqa: E402
 from pg_locale import cartella_binari, postgres_temporaneo  # noqa: E402
 
+from neartech.abbinamento import MODELLO_EMBEDDING  # noqa: E402
 from neartech.api.app import crea_app  # noqa: E402
+from neartech.coda import completa, fallisci, prendi  # noqa: E402
+from neartech.pipeline import PARAMETRO_PREZZI, gestori  # noqa: E402
+from neartech.scomposizione import MODEL_ID  # noqa: E402
 from neartech.api.config import Impostazioni  # noqa: E402
 from neartech.calcolo import calcola_organizzazione  # noqa: E402
 from neartech.capacita import pubblica_snapshot  # noqa: E402
@@ -69,6 +84,78 @@ RUOLI = {
         ("Redazione dei contenuti per il sito", "operativo"), ("Analisi dei risultati delle campagne", "analisi"),
         ("Organizzazione di eventi con i clienti", "presenza"), ("Gestione dei rapporti con l'agenzia", "relazione")],
 }
+
+
+MANSIONARI = {
+    "mansionario-tesoreria.docx": ["TITOLO DELLA POSIZIONE", "Addetto tesoreria", "PRINCIPALI ATTIVITÀ",
+                                   "Riconciliazioni bancarie giornaliere", "Gestione dei solleciti ai clienti",
+                                   "Previsione dei flussi di cassa settimanali"],
+    "mansionario-ufficio-gare.docx": ["TITOLO DELLA POSIZIONE", "Specialista gare e appalti", "PRINCIPALI ATTIVITÀ",
+                                      "Qualifica dei nuovi fornitori", "Preparazione della documentazione di gara",
+                                      "Negoziazione con i fornitori"],
+}
+
+
+def docx(righe: list[str]) -> bytes:
+    """Un .docx minimo: un paragrafo per riga."""
+    corpo = "".join(f"<w:p><w:r><w:t>{escape(r)}</w:t></w:r></w:p>" for r in righe)
+    xml = ('<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/'
+           f'wordprocessingml/2006/main"><w:body>{corpo}</w:body></w:document>')
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as z:
+        z.writestr("word/document.xml", xml)
+    return buffer.getvalue()
+
+
+def incorpora_prova(titoli: list[str]) -> list[list[float]]:
+    """Vettori di prova al posto di bge-m3: parole in comune, titoli vicini. Solo nel database temporaneo."""
+    vettori = []
+    for titolo in titoli:
+        v = [0.0] * 1024
+        for parola in re.findall(r"\w{4,}", titolo.lower()):
+            v[int(hashlib.sha256(parola[:6].encode()).hexdigest(), 16) % 1024] += 1.0
+        norma = math.sqrt(sum(x * x for x in v)) or 1.0
+        vettori.append([x / norma for x in v])
+    return vettori
+
+
+incorpora_prova.modello = MODELLO_EMBEDDING
+
+
+class ModelloProva:
+    """Al posto del modello a pagamento: ogni riga dopo «PRINCIPALI ATTIVITÀ» è un'attività, citata alla lettera."""
+
+    def __init__(self):
+        self.messages = self
+
+    def create(self, *, messages, **_):
+        testo = messages[0]["content"].split("<documento>", 1)[1].split("</documento>", 1)[0]
+        righe = [r.strip() for r in testo.splitlines() if r.strip()]
+        inizio = next((i + 1 for i, r in enumerate(righe) if r.upper() == "PRINCIPALI ATTIVITÀ"), len(righe))
+        attivita = [{"titolo": r[:200], "granularita": 2, "testo_originale": r, "nota_contesto": None}
+                    for r in righe[inizio:] if len(r) >= 5]
+        return SimpleNamespace(content=[SimpleNamespace(type="text", text=json.dumps({"attivita": attivita}))])
+
+
+def lavoratore_prova(url: str) -> None:
+    """Lavoratore della coda nel processo di prova, con modello ed embedding finti."""
+    gestori_prova = gestori(client=ModelloProva(), incorpora=incorpora_prova)
+    with psycopg.connect(url, autocommit=True) as conn:
+        while True:
+            with conn.transaction():
+                job = prendi(conn, "prova", tipi=list(gestori_prova))
+            if job is None:
+                time.sleep(2)
+                continue
+            time.sleep(1.5)  # per vedere lo stato «in lavorazione»
+            try:
+                with conn.transaction():
+                    gestori_prova[job.tipo](conn, job.payload)
+                    completa(conn, job.job_id, "prova")
+            except Exception as errore:  # noqa: BLE001 - come scripts/worker.py
+                with conn.transaction():
+                    fallisci(conn, job.job_id, "prova", f"{type(errore).__name__}: {errore}"[:300],
+                             riprova_tra=timedelta(minutes=5))
 
 
 def _prepara(url: str) -> None:
@@ -141,6 +228,19 @@ def popola(conn: psycopg.Connection) -> None:
                                      org_id=None)
     approva_parametro(conn, admin, questionario, motivazione="dati di prova")
     assegna_ruolo(conn, crea_utente(conn, "prova|auditor"), "auditor", assegnata_da=admin)
+    # Pipeline dei documenti (fetta 5): vettori di prova dei task, quota e metrica degli abbinamenti, prezzi.
+    # I prezzi sono valori di prova per vedere la stima, non un listino.
+    for titolo, tid in task_id.items():
+        conn.execute("INSERT INTO task_embeddings (task_id, model_name, vec) VALUES (%s, %s, %s::vector)",
+                     (tid, MODELLO_EMBEDDING, str(incorpora_prova([titolo])[0])))
+    for codice, valore in (("quota_revisione_abbinamenti", {"valore": 0.5}),
+                           ("soglia_precisione_abbinamento", {"valore": 0.8}),
+                           ("regola_parziali", {"valore": "errore"}), ("livello_confidenza", {"valore": 0.95}),
+                           (PARAMETRO_PREZZI, {"modello": MODEL_ID, "ingresso_eur_mtok": 3, "uscita_eur_mtok": 15,
+                                               "caratteri_per_token": 3.5, "uscita_su_ingresso": 0.6})):
+        p = proponi_parametro(conn, admin, codice=codice, valore=valore, descrizione=f"{codice} (prova)",
+                              motivazione="dati di prova", org_id=None)
+        approva_parametro(conn, admin, p, motivazione="dati di prova")
     esito = calcola_organizzazione(conn, admin, org, seme=20261017, estrazioni=500)
     print(f"ACME S.p.A.: {len(task_id)} task, {esito['occorrenze']} occorrenze, {esito['nuove']} risultati")
 
@@ -161,6 +261,11 @@ def main() -> None:
             popola(conn)
         impostazioni = Impostazioni(ambiente="sviluppo", chiave_sessione="", cartella_web=web, accesso_sviluppo=True)
         app = crea_app(impostazioni, connetti=lambda: psycopg.connect(url))
+        threading.Thread(target=lavoratore_prova, args=(url,), daemon=True).start()
+        cartella = Path(tempfile.mkdtemp(prefix="mansionari-prova-"))
+        for nome, righe in MANSIONARI.items():
+            (cartella / nome).write_bytes(docx(righe))
+        print(f"Mansionari di prova da caricare: {cartella}")
         print(f"Piattaforma su http://127.0.0.1:{args.porta} · entra con prova|comitato")
         uvicorn.run(app, host="127.0.0.1", port=args.porta, log_level="warning")
 

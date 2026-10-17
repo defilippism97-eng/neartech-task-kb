@@ -1,5 +1,7 @@
 """Rotte dell'API (fase 6). Ogni rotta chiama il motore, che controlla i permessi e scrive gli atti."""
 
+import base64
+import binascii
 from datetime import date
 from typing import Any
 
@@ -7,9 +9,13 @@ import psycopg
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
 
+from neartech import pipeline
+from neartech.abbinamento import LIVELLI, decidi_lotto, imposta_livello
 from neartech.api.app import connessione, utente_corrente
 from neartech.calcolo import calcola_organizzazione
+from neartech.campioni import ESITI, registra_giudizio
 from neartech.indirizzi_pesi import approva_profilo, proponi_profilo, stato_indirizzi, verifica_profilo
+from neartech.metrica import calcola_precisione
 from neartech.percorso import stato_percorso
 from neartech.permessi import PermessoNegato, puo, ruoli_utente
 from neartech.restituzione import RestituzioneSuperata, approva_restituzione, restituzione_organizzazione
@@ -162,3 +168,147 @@ def approva(codice: str, corpo: Approvazione, request: Request, utente: str = De
     atto = approva_restituzione(conn, utente, org, attuale, motivazione=corpo.motivazione)
     request.app.state.conferma(conn)
     return {"atto": atto, "impronta": corpo.impronta}
+
+
+# --- pipeline dei documenti (amministratore tecnico) ----------------------------------
+
+class File(BaseModel):
+    nome_file: str = Field(min_length=6, max_length=255)
+    contenuto: str = Field(max_length=4 * pipeline.MASSIMO_FILE // 3 + 4)  # base64 del .docx
+
+
+class Avvio(BaseModel):
+    caricamenti: list[str] = Field(min_length=1, max_length=200)
+    motivazione: str = Field(min_length=3, max_length=4000)
+
+
+@router.get("/organizzazioni/{codice}/documenti")
+def documenti(codice: str, utente: str = Depends(utente_corrente),
+              conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    """Mansionari caricati con stato e stima, candidati da proporre, lotti e lavori in coda."""
+    return pipeline.stato_pipeline(conn, utente, _organizzazione(conn, utente, codice))
+
+
+@router.post("/organizzazioni/{codice}/documenti")
+def carica(codice: str, corpo: File, request: Request, utente: str = Depends(utente_corrente),
+           conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    try:
+        dati = base64.b64decode(corpo.contenuto, validate=True)
+    except binascii.Error as errore:
+        raise ValueError("contenuto non in base64") from errore
+    esito = pipeline.carica_file(conn, utente, _organizzazione(conn, utente, codice), corpo.nome_file, dati)
+    request.app.state.conferma(conn)
+    return esito
+
+
+@router.post("/organizzazioni/{codice}/documenti/scomposizione")
+def scomponi(codice: str, corpo: Avvio, request: Request, utente: str = Depends(utente_corrente),
+             conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    """Conferma la stima dei costi e accoda la scomposizione: le chiamate al modello le fa il lavoratore."""
+    esito = pipeline.avvia_scomposizione(conn, utente, _organizzazione(conn, utente, codice), corpo.caricamenti,
+                                         motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return esito
+
+
+@router.post("/organizzazioni/{codice}/abbinamenti/proposta")
+def proponi(codice: str, corpo: Motivazione, request: Request, utente: str = Depends(utente_corrente),
+            conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    esito = pipeline.avvia_proposta(conn, utente, _organizzazione(conn, utente, codice), motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return esito
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/applicazione")
+def applica(codice: str, lotto_id: str, corpo: Motivazione, request: Request, utente: str = Depends(utente_corrente),
+            conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    esito = pipeline.avvia_applicazione(conn, utente, _organizzazione(conn, utente, codice), lotto_id,
+                                        motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return esito
+
+
+# --- lotti di abbinamento (revisore) --------------------------------------------------
+
+class Livello(BaseModel):
+    livello: str = Field(pattern="^(" + "|".join(LIVELLI) + ")$")
+    motivazione: str = Field(min_length=3, max_length=4000)
+
+
+class EsitoCampione(BaseModel):
+    posizione: int = Field(ge=1)
+    esito: str = Field(pattern="^(" + "|".join(ESITI) + ")$")
+    nota: str = Field(default="", max_length=4000)
+
+
+class Decisione(BaseModel):
+    rifiutate: list[str] = Field(default_factory=list, max_length=10000)
+    motivazione: str = Field(min_length=3, max_length=4000)
+
+
+@router.get("/organizzazioni/{codice}/lotti")
+def elenco_lotti(codice: str, utente: str = Depends(utente_corrente),
+                 conn: psycopg.Connection = Depends(connessione)) -> list[dict[str, Any]]:
+    return pipeline.lotti(conn, utente, _organizzazione(conn, utente, codice))
+
+
+@router.get("/organizzazioni/{codice}/lotti/{lotto_id}")
+def lotto(codice: str, lotto_id: str, utente: str = Depends(utente_corrente),
+          conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    """Il lotto per il revisore: le coppie del campione (revisione cieca), poi la coda intera per decidere."""
+    return pipeline.dettaglio_lotto(conn, utente, _organizzazione(conn, utente, codice), lotto_id)
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/livello")
+def livello(codice: str, lotto_id: str, corpo: Livello, request: Request, utente: str = Depends(utente_corrente),
+            conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    atto = imposta_livello(conn, utente, _organizzazione(conn, utente, codice), lotto_id,
+                           livello_revisione=corpo.livello, motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return {"atto": atto}
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/campione")
+def campione(codice: str, lotto_id: str, corpo: Motivazione, request: Request, utente: str = Depends(utente_corrente),
+             conn: psycopg.Connection = Depends(connessione)) -> dict[str, str]:
+    campione_id = pipeline.crea_campione(conn, utente, _organizzazione(conn, utente, codice), lotto_id,
+                                         motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return {"campione_id": campione_id}
+
+
+def _campione_del_lotto(conn: psycopg.Connection, utente: str, org: str, lotto_id: str) -> str:
+    campione_id = pipeline.dettaglio_lotto(conn, utente, org, lotto_id)["lotto"]["campione_id"]
+    if campione_id is None:
+        raise ValueError("il lotto non ha un campione")
+    return campione_id
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/giudizi")
+def giudica_campione(codice: str, lotto_id: str, corpo: EsitoCampione, request: Request,
+                     utente: str = Depends(utente_corrente),
+                     conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    org = _organizzazione(conn, utente, codice)
+    giudizio = registra_giudizio(conn, utente, _campione_del_lotto(conn, utente, org, lotto_id), corpo.posizione,
+                                 corpo.esito, nota=corpo.nota or None,
+                                 versione_istruzioni=pipeline.ISTRUZIONI_ABBINAMENTO)
+    request.app.state.conferma(conn)
+    return {"giudizio": giudizio}
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/misura")
+def misura(codice: str, lotto_id: str, request: Request, utente: str = Depends(utente_corrente),
+           conn: psycopg.Connection = Depends(connessione)) -> dict[str, Any]:
+    org = _organizzazione(conn, utente, codice)
+    esito = calcola_precisione(conn, utente, _campione_del_lotto(conn, utente, org, lotto_id))
+    request.app.state.conferma(conn)
+    return {"esito": esito.esito, "precisione": esito.precisione}
+
+
+@router.post("/organizzazioni/{codice}/lotti/{lotto_id}/decisione")
+def decidi(codice: str, lotto_id: str, corpo: Decisione, request: Request, utente: str = Depends(utente_corrente),
+           conn: psycopg.Connection = Depends(connessione)) -> dict[str, int]:
+    atto = decidi_lotto(conn, utente, _organizzazione(conn, utente, codice), lotto_id, rifiutate=corpo.rifiutate,
+                        motivazione=corpo.motivazione)
+    request.app.state.conferma(conn)
+    return {"atto": atto}
