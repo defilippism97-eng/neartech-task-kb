@@ -49,14 +49,28 @@ export function MappaQuadranti({ occorrenze, thetaN, thetaD, giudicate, larghezz
   return (
     <div className="mappa">
       <svg viewBox={`0 0 ${larghezza} ${altezza}`} role="img" aria-label={descrizione} onClick={() => setFissato(null)}>
-        {zone.map(([q, x0, y0, x1, y1, colore]) => (
-          <g key={q}>
-            <rect x={x(x0)} y={y(y1)} width={x(x1) - x(x0)} height={y(y0) - y(y1)} fill={colore} rx={6} />
-            <text x={x(x0) + 10} y={y(y1) + 20} fontFamily="var(--f-mono)" fontSize={10.5} fontWeight={600} fill="#526175">
-              {ETICHETTE[q]}
-            </text>
-          </g>
-        ))}
+        <defs>
+          {/* Rilievo leggero delle zone: un'ombra navy morbida, come le superfici della piattaforma. */}
+          <filter id="rilievo-zona" x="-10%" y="-10%" width="120%" height="125%">
+            <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#0B2559" floodOpacity="0.10" />
+          </filter>
+        </defs>
+        {zone.map(([q, x0, y0, x1, y1, colore]) => {
+          const scarto = 3  // le zone si staccano tra loro: quattro tessere, non una griglia piatta
+          const sx = x(x0) + scarto, sy = y(y1) + scarto
+          const larga = x(x1) - x(x0) - 2 * scarto, alta = y(y0) - y(y1) - 2 * scarto
+          return (
+            <g key={q}>
+              <rect x={sx} y={sy} width={larga} height={alta} fill={colore} rx={14} stroke="#fff" strokeWidth={1.5}
+                filter="url(#rilievo-zona)" />
+              <text x={sx + 12} y={sy + 22} fontFamily="var(--f-mono)" fontSize={10.5} fontWeight={600} fill="#526175">
+                {ETICHETTE[q]}
+              </text>
+              <text x={sx + larga - 12} y={sy + 26} textAnchor="end" fontFamily="var(--f-ui)" fontSize={20} fontWeight={600}
+                fill="#0B2559" fillOpacity={0.8} aria-hidden="true">{conteggi[q] ?? 0}</text>
+            </g>
+          )
+        })}
         <line x1={x(thetaN)} y1={y(0)} x2={x(thetaN)} y2={y(1)} stroke="#0B2559" strokeDasharray="4 4" strokeOpacity={0.35} />
         <line x1={x(0)} y1={y(thetaD)} x2={x(1)} y2={y(thetaD)} stroke="#0B2559" strokeDasharray="4 4" strokeOpacity={0.35} />
         <text x={x(1)} y={altezza - 8} textAnchor="end" fontFamily="var(--f-mono)" fontSize={11} fill="#526175">N necessità →</text>

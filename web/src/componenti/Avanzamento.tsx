@@ -11,10 +11,10 @@ export function Avanzamento({ dati }: { dati: DatiAvanzamento }) {
   return (
     <section className="exp" aria-labelledby="titolo-avanzamento">
       <svg width={92} height={92} viewBox="0 0 92 92" aria-hidden="true">
-        <circle cx={46} cy={46} r={38} fill="none" stroke="rgba(255,255,255,.15)" strokeWidth={10} />
+        <circle cx={46} cy={46} r={38} fill="none" stroke="#EEF2F9" strokeWidth={10} />
         <circle cx={46} cy={46} r={38} fill="none" stroke="#00B4B4" strokeWidth={10} strokeLinecap="round"
           strokeDasharray={`${(circonferenza * percentuale) / 100} ${circonferenza}`} transform="rotate(-90 46 46)" />
-        <text x={46} y={51} textAnchor="middle" fill="#fff" fontFamily="var(--f-mono)" fontSize={17} fontWeight={600}>
+        <text x={46} y={51} textAnchor="middle" fill="#0B2559" fontFamily="var(--f-mono)" fontSize={17} fontWeight={600}>
           {percentuale}%
         </text>
       </svg>

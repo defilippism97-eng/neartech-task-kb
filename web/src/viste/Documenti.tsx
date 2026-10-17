@@ -99,7 +99,7 @@ function Scomposizione({ codice, dati }: { codice: string; dati: Pipeline }) {
           la stima dei costi viene prima di ogni chiamata al modello. Va approvato dal comitato di governance.</p>
       ) : (
         <>
-          <dl className="stima">
+          <dl className="stima-costi">
             <div><dt>Costo stimato</dt><dd>{euro(s.costo)}</dd></div>
             <div><dt>Al massimo, con i tentativi</dt><dd>{euro(s.costo_massimo)}</dd></div>
             <div><dt>Token in ingresso</dt><dd className="mono">~{migliaia(s.token_ingresso)}</dd></div>

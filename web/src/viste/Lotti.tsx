@@ -72,7 +72,7 @@ function Decisione({ codice, d }: { codice: string; d: DettaglioLotto }) {
   return (
     <div>
       {d.campione?.misura && (
-        <dl className="stima">
+        <dl className="stima-costi">
           <div><dt>Precisione del campione</dt><dd>{percento(d.campione.misura.precisione)}</dd></div>
           <div><dt>Esito</dt><dd>{d.campione.misura.esito.replaceAll('_', ' ')}</dd></div>
           <div><dt>Coppie giudicate</dt><dd className="mono">{d.campione.misura.n_elementi}</dd></div>

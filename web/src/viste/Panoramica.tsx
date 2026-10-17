@@ -5,6 +5,7 @@ import { api, ErroreApi, GIA_DECISA, SUPERATA, type Io, type Panoramica as DatiP
 import { Avanzamento } from '../componenti/Avanzamento'
 import { BarraPercorso } from '../componenti/BarraPercorso'
 import { Guscio } from '../componenti/Guscio'
+import { Icona } from '../componenti/Icona'
 import { ETICHETTE_RUOLO } from '../azioni'
 import { MappaQuadranti, VOCI_TOTALI } from '../componenti/MappaQuadranti'
 import { inviti } from '../inviti'
@@ -145,9 +146,13 @@ export function Panoramica() {
             </div>
           </section>
           <div className="s5 grid" style={{ alignContent: 'start' }}>
-            <div className="grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <div className="soft kpi"><b>{r.riepilogo.quadranti.q4}</b><span>task dove l'automazione è possibile</span></div>
-              <div className="soft kpi">
+            <div className="grid kpi-coppia">
+              <div className="kpi kpi-principale">
+                <span className="kpi-testa"><span className="kpi-icona"><Icona nome="bersaglio" /></span></span>
+                <b>{r.riepilogo.quadranti.q4}</b><span>task dove l'automazione è possibile</span>
+              </div>
+              <div className="kpi">
+                <span className="kpi-testa"><span className="kpi-icona"><Icona nome="scudo" /></span></span>
                 <b>{stabili ?? '—'}</b>
                 <span>{stabili === null ? 'risultati solidi: serve la soglia' : `risultati solidi su ${r.riepilogo.con_risultato}`}</span>
               </div>
