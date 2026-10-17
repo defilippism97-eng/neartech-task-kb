@@ -191,3 +191,9 @@ Esecuzione approvata dal responsabile del progetto. Copertura di riserva propost
 Esito: 504 occorrenze; 454 con N e D (le 50 restanti stanno su aree di responsabilità ritirate). Quadrante più probabile: Q4 370, Q3 84, nessun Q1 o Q2; 418 stabili, 36 sotto l'80% (da rivedere). N medio 0,03, D medio 0,30 (provvisorio: solo d1 e d2).
 
 **Punto metodologico aperto, da portare al comitato guida.** Per il giudizio (k2) il modello ha proposto il livello di riserva 2 per 280 task su 306. Sulla scala di riserva il livello 2 significa "strumenti commerciali con supervisione costante", cioè con una persona nel processo; la formula del piano però tratta una copertura pari alla domanda come divario nullo. Così un task che richiede giudizio 2 risulta coperto per intero anche se la scala dice che serve supervisione, e N viene quasi nullo ovunque. Va deciso se e come i livelli di riserva che presuppongono supervisione umana (1 e 2) debbano compensare la domanda. Fino ad allora i risultati sono provvisori e non motivano scelte organizzative.
+
+## 22. Copertura con supervisione e lettura per ruolo senza quote di tempo (2026-10-17)
+
+Approvate dal responsabile del progetto.
+- **Copertura di riserva con supervisione.** I livelli della scala di riserva che richiedono una persona (1 dimostrata in demo, 2 strumenti con supervisione costante) valgono un livello in meno contro la domanda; 3 e 4 valgono pieni. Copertura effettiva: 0→0, 1→0, 2→1, 3→3, 4→4, interpolata linearmente fra i livelli. Versione del calcolo `calcolo-nd-v2`; vale solo per la capacità di riserva.
+- **Lettura per ruolo.** Se le occorrenze di un ruolo non hanno tutte la quota di tempo, ogni task del ruolo pesa uguale; il ruolo lo dichiara (`pesi_tempo = 'uguali'`) ed è provvisorio, come quando usa capacità di riserva o un D provvisorio (migrazione 0035).

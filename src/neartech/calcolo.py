@@ -28,7 +28,20 @@ from psycopg.types.json import Jsonb
 
 from neartech.permessi import richiedi
 
-VERSIONE_CALCOLO = "calcolo-nd-v1"
+VERSIONE_CALCOLO = "calcolo-nd-v2"  # v2: copertura di riserva con supervisione un livello in meno (sezione 22)
+
+# Copertura effettiva della scala di riserva (registro di metodo, sezione 22): i livelli che richiedono una
+# persona (1 dimostrata in demo, 2 strumenti con supervisione costante) valgono un livello in meno; 3 e 4 pieni.
+# Fra un livello e l'altro la copertura è interpolata linearmente (2,5 vale 2). Vale solo per la capacità di
+# riserva: la capacità di test, quando sarà calibrata, avrà la sua scala.
+_RISERVA_EFFETTIVA = ((0.0, 0.0), (1.0, 0.0), (2.0, 1.0), (3.0, 3.0), (4.0, 4.0))
+
+
+def copertura_effettiva_riserva(c: float) -> float:
+    for (x0, y0), (x1, y1) in zip(_RISERVA_EFFETTIVA, _RISERVA_EFFETTIVA[1:]):
+        if c <= x1:
+            return y0 + (y1 - y0) * (max(c, x0) - x0) / (x1 - x0)
+    return _RISERVA_EFFETTIVA[-1][1]
 ESTRAZIONI = 2000  # dal piano: numero di simulazioni, non una soglia
 K_ITEMS = ("k1", "k2", "k3")
 D_ITEMS = ("d1", "d2", "d3", "d4")
@@ -81,10 +94,11 @@ def quadrante(n: float, d: float, theta_n: float, theta_d: float) -> str:
 
 def simula(
     giudizi: dict[str, list[float]], copertura: dict[str, tuple[float, float]] | None, profilo: Profilo, *,
-    estrazioni: int, seme: int,
+    estrazioni: int, seme: int, riserva: bool = False,
 ) -> Risultato:
     """Monte Carlo deterministico. giudizi: valori registrati per voce; copertura: (c_low, c_high) per dimensione,
-    o None se lo snapshot non copre il task. Senza copertura o senza k1, k2, k3, r: N vuoto."""
+    o None se lo snapshot non copre il task. Senza copertura o senza k1, k2, k3, r: N vuoto.
+    Con riserva=True la copertura estratta passa per la copertura effettiva della scala di riserva."""
     if estrazioni < 1:
         raise ValueError("servono estrazioni positive")
     rng = random.Random(seme)
@@ -98,6 +112,8 @@ def simula(
         n = None
         if con_n:
             c = {k: rng.uniform(*copertura[k]) for k in K_ITEMS}
+            if riserva:
+                c = {k: copertura_effettiva_riserva(v) for k, v in c.items()}
             n = n_puntuale({k: estratti[k] for k in K_ITEMS}, c, estratti["r"], profilo)
             valori_n.append(n)
         d, componenti = d_puntuale({j: estratti[j] for j in voci_d}, profilo)
@@ -221,7 +237,8 @@ def calcola_organizzazione(
             copertura = {r[0]: (float(r[1]), float(r[2])) for r in righe_c}
             copertura = copertura if all(k in copertura for k in K_ITEMS) else None
             seme_occorrenza = int(hashlib.sha256(f"{seme}:{occorrenza_id}".encode()).hexdigest()[:15], 16)
-            r = simula(valori, copertura, profilo, estrazioni=estrazioni, seme=seme_occorrenza)
+            r = simula(valori, copertura, profilo, estrazioni=estrazioni, seme=seme_occorrenza,
+                       riserva=tipo_capacita == "riserva")
             # L'impronta cambia con ogni input: giudizi usati, copertura, valori del profilo, snapshot, rubrica.
             impronta = hashlib.sha256(json.dumps(
                 {"giudizi": sorted(usati), "copertura": sorted((k, v) for k, v in (copertura or {}).items()),
