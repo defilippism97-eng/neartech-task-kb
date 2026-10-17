@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from neartech.abbinamento import (  # noqa: E402
     MODELLO_EMBEDDING,
+    REVISIONE_EMBEDDING,
     applica_lotto,
     coda_revisione,
     crea_campione_del_lotto,
@@ -45,7 +46,7 @@ def _incorpora():
     def incorpora(titoli: list[str]):
         if not caricato:
             from sentence_transformers import SentenceTransformer
-            caricato.append(SentenceTransformer(MODELLO_EMBEDDING, device="cpu"))
+            caricato.append(SentenceTransformer(MODELLO_EMBEDDING, revision=REVISIONE_EMBEDDING, device="cpu"))
         return caricato[0].encode(titoli, batch_size=64, normalize_embeddings=True).tolist()
 
     incorpora.modello = MODELLO_EMBEDDING

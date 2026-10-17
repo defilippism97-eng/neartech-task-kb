@@ -1,0 +1,8 @@
+# Ambiente per l'embedding bge-m3 (Python 3.13; docs/sviluppo.md). Versioni bloccate: un cambio richiede di
+# ricalcolare gli embedding dei task e di ripetere la verifica con i vettori del database.
+sentence-transformers==5.7.0
+transformers==5.20.1
+tokenizers==0.23.3
+huggingface-hub==2.2.0
+safetensors==0.8.0
+torch==2.14.1

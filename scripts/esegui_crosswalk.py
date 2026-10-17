@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from neartech.crosswalk import (  # noqa: E402
     CANDIDATE_SCHEMES,
     EMBEDDING_MODEL,
+    EMBEDDING_REVISION,
     CrosswalkError,
     find_candidates,
     judge,
@@ -51,7 +52,7 @@ def _embed_missing_tasks(conn) -> int:
     ).fetchall()
     if not missing:
         return 0
-    model = SentenceTransformer(EMBEDDING_MODEL, device="cpu")
+    model = SentenceTransformer(EMBEDDING_MODEL, revision=EMBEDDING_REVISION, device="cpu")
     vecs = model.encode([r[1] for r in missing], batch_size=64, normalize_embeddings=True)
     for (task_id, _title), vec in zip(missing, vecs):
         conn.execute(

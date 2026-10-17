@@ -7,6 +7,28 @@ python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e ".[dev]"
 ```
 
+### Ambiente per l'embedding (bge-m3)
+
+L'abbinamento al dataset (`scripts/abbina.py proponi`), il crosswalk (`scripts/esegui_crosswalk.py`) e gli embedding
+delle tassonomie (`scripts/calcola_embedding.py`) calcolano gli embedding bge-m3 in locale con `sentence-transformers`,
+che richiede `torch`. Per Python 3.15 `torch` non esiste ancora: serve un secondo ambiente con Python 3.13.
+
+```bash
+.venv/Scripts/python.exe -m pip install uv
+.venv/Scripts/uv python install 3.13
+.venv/Scripts/uv venv .venv-embedding --python 3.13
+.venv/Scripts/uv pip install --python .venv-embedding/Scripts/python.exe -e ".[dev]" -r requirements-embedding.txt
+```
+
+- Versioni bloccate in `requirements-embedding.txt`; revisione del modello bloccata in
+  `neartech.crosswalk.EMBEDDING_REVISION`. Alla prima esecuzione il modello si scarica da Hugging Face
+  (circa 2,3 GB, nella cache dell'utente); poi funziona senza rete (`HF_HUB_OFFLINE=1`).
+- Verificato il 2026-10-17: i vettori del nuovo ambiente coincidono con quelli dei task nel database (coseno
+  1,000000 su 40 task, vicino corretto 40 su 40); tutta la suite passa anche in questo ambiente.
+- Un cambio di modello, di revisione o di versione di `sentence-transformers` richiede di ricalcolare gli embedding
+  dei task e di ripetere questa verifica: vettori diversi spostano le proposte di abbinamento.
+- Su Windows senza modalità sviluppatore la cache di Hugging Face non usa i link simbolici: funziona, con un avviso.
+
 ## Database per i test
 
 I test usano un database PostgreSQL 16 con pgvector, ripulito e ricreato a ogni sessione. Due modi:

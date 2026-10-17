@@ -24,13 +24,14 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from neartech import campioni
-from neartech.crosswalk import EMBEDDING_MODEL, una_riga
+from neartech.crosswalk import EMBEDDING_MODEL, EMBEDDING_REVISION, una_riga
 from neartech.governance import DecisioneGiaPresa, parametro_vigente
 from neartech.occorrenze import documento, registra_occorrenza, ruolo, spazio_organizzazione
 from neartech.permessi import richiedi
 from neartech.registro import registra
 
 MODELLO_EMBEDDING = EMBEDDING_MODEL
+REVISIONE_EMBEDDING = EMBEDDING_REVISION
 VICINI = 5  # come il Canonicalizer: quanti task vicini si registrano, non una soglia
 PARAMETRO_QUOTA = "quota_revisione_abbinamenti"
 LIVELLI = ("campione", "completa", "nulla")

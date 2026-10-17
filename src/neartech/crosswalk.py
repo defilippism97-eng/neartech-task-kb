@@ -24,6 +24,9 @@ from pydantic import BaseModel, Field, ValidationError
 
 MODEL_ID = "claude-haiku-5-5"
 EMBEDDING_MODEL = "BAAI/bge-m3"
+# Revisione bloccata del modello su Hugging Face: è quella che riproduce i vettori dei task nel database
+# (coseno 1,000000 su 40 task, 2026-10-17). Un cambio richiede di ricalcolare gli embedding (docs/sviluppo.md).
+EMBEDDING_REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
 # Schemi di tassonomia con voci a livello di attività (le occupazioni ESCO_OCC non sono task).
 CANDIDATE_SCHEMES = ("ONET_TASK", "ATLANTE_ATTIVITA", "ESCO_SKILL")
 CANDIDATES_PER_SCHEME = 20
