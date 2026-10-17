@@ -197,3 +197,7 @@ Esito: 504 occorrenze; 454 con N e D (le 50 restanti stanno su aree di responsab
 Approvate dal responsabile del progetto.
 - **Copertura di riserva con supervisione.** I livelli della scala di riserva che richiedono una persona (1 dimostrata in demo, 2 strumenti con supervisione costante) valgono un livello in meno contro la domanda; 3 e 4 valgono pieni. Copertura effettiva: 0→0, 1→0, 2→1, 3→3, 4→4, interpolata linearmente fra i livelli. Versione del calcolo `calcolo-nd-v2`; vale solo per la capacità di riserva.
 - **Lettura per ruolo.** Se le occorrenze di un ruolo non hanno tutte la quota di tempo, ogni task del ruolo pesa uguale; il ruolo lo dichiara (`pesi_tempo = 'uguali'`) ed è provvisorio, come quando usa capacità di riserva o un D provvisorio (migrazione 0035).
+
+## 23. Ricalcolo con la versione 2 (2026-10-17)
+
+Stesso seme (20261017), stessa rubrica, profilo e snapshot; versione `calcolo-nd-v2` (sezione 22). Su 454 occorrenze con N e D: quadrante più probabile Q1 4, Q2 2, Q3 80, Q4 368; 413 stabili, 41 sotto l'80%. N medio 0,11 (massimo 0,71), D medio 0,30 (massimo 0,75). I 36 ruoli hanno la lettura per ruolo, tutti provvisori con pesi uguali. I risultati della versione 1 restano nella tabella (append-only); la vista dei ruoli legge l'ultimo calcolo.
