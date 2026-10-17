@@ -26,7 +26,7 @@ Quando un'organizzazione carica i suoi mansionari, ogni attività estratta diven
 ## Decisioni metodologiche aperte (non bloccano lo sviluppo)
 
 1. Valore della quota di revisione (`quota_revisione_abbinamenti`): parametro comune da approvare.
-2. Se una decisione in blocco va impedita quando la misura del lotto è sotto soglia (oggi: si registra, non si blocca).
+2. ~~Se una decisione in blocco va impedita quando la misura del lotto è sotto soglia~~: deciso il 2026-10-17, si registra e non si blocca (registro di metodo, sezione 26).
 3. Come il livello di revisione del lotto incide sullo stato dei risultati (oggi: si registra con i risultati).
 4. Se aggiungere un giudizio del modello sulle proposte (oggi: solo vicinanza; il prompt del Canonicalizer v2 non ha superato il controllo).
 
