@@ -9,3 +9,6 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 docs/ricerca/estratti/*.live.jsonl
+# Strumenti locali di Claude Code: worktree delle sessioni e configurazione dell'anteprima
+.claude/worktrees/
+.claude/launch.json

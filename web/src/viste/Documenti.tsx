@@ -135,7 +135,7 @@ export function Documenti() {
     return (
       <div className="vuoto">
         <p className="errore" role="alert">{messaggio(dati.error ?? io.error ?? organizzazioni.error)}</p>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
+        <Link to="/app" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
       </div>
     )
   }
@@ -150,7 +150,7 @@ export function Documenti() {
           <h1>{d.documenti.length === 0 ? 'Carica i mansionari dell\'organizzazione'
             : `${d.documenti.length} ${d.documenti.length === 1 ? 'mansionario' : 'mansionari'}, ${estratte} task estratti`}</h1>
         </div>
-        <Link to="/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
+        <Link to="/app/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
       </div>
       <div className="grid" style={{ gap: 18 }}>
         <section className="card" aria-labelledby="titolo-mansionari">

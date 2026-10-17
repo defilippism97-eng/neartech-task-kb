@@ -89,7 +89,6 @@ p { color: var(--slate); }
   transition: background .2s var(--ease), color .2s var(--ease), box-shadow .2s var(--ease); }
 a.voce:hover { background: var(--tela); color: var(--navy); }
 a.voce[aria-current="page"] { background: var(--navy); color: #fff; font-weight: 600; box-shadow: var(--ombra-pillola); }
-.voce-off { color: #94A3B8; cursor: default; }
 .who { margin-top: auto; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--bordo-superficie); padding-top: 16px; }
 .who-iniziale { width: 36px; height: 36px; border-radius: 50%; background: #E6FAFA; color: var(--teal-ink); font-weight: 700;
   display: grid; place-items: center; flex: none; }
@@ -409,8 +408,9 @@ dialog { color: var(--obsidian); }  /* la finestra di approvazione nasce dentro 
   /* Su tablet e telefono il guscio è una barra in alto e le sezioni una fila di pillole che scorre. */
   .side { position: sticky; z-index: 5; height: auto; display: grid; grid-template-columns: 1fr auto; align-items: center;
     padding: 12px 16px; gap: 10px; border-right: 0; border-bottom: 1px solid var(--bordo-superficie); box-shadow: var(--ombra-1); }
-  .side .org, .nav-gruppo, .nav:last-of-type, .who-testo, .who-iniziale { display: none; }
-  .side nav { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; }
+  .side .org, .nav-gruppo, .who-testo, .who-iniziale { display: none; }
+  /* I gruppi di voci stanno sulla stessa fila. */
+  .side nav { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; display: flex; gap: 4px; }
   .side .nav { flex-direction: row; margin: 0; }
   .voce { white-space: nowrap; padding: 8px 14px; }
   .who { margin: 0; border: 0; padding: 0; grid-column: 2; grid-row: 1; }

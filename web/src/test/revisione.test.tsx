@@ -44,7 +44,7 @@ describe('revisione', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const monta = () => {
-    const router = creaRouter(createMemoryHistory({ initialEntries: ['/org/acme/revisione'] }))
+    const router = creaRouter(createMemoryHistory({ initialEntries: ['/app/org/acme/revisione'] }))
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <RouterProvider router={router} />

@@ -17,9 +17,11 @@ cd web && npm ci && npm run build && cd ..
 .venv/Scripts/python.exe scripts/prova_locale.py
 ```
 
-Poi `http://localhost:8000`, accesso di sviluppo con `prova|comitato`. Per lavorare sul frontend con il ricaricamento
-a caldo: lo script sopra in un terminale, `npm run dev` in `web/` in un altro (il server di Vite inoltra `/api` e
-`/accesso` alla porta 8000). Test del frontend: `npm test`; tipi e controlli: `npx tsc -b`, `npx oxlint src`.
+Poi `http://localhost:8000/app`, accesso di sviluppo con `prova|comitato` (alla radice c'è il sito pubblico). I dati
+sintetici stanno in `scripts/prova/`: il seme di base e uno per corsia (`docs/piani/fase-6-cantiere.md`).
+Per lavorare sul frontend con il ricaricamento a caldo: lo script sopra in un terminale, `npm run dev` in `web/` in un
+altro (il server di Vite inoltra `/api` e `/accesso` alla porta 8000). Test del frontend: `npm test`; tipi e
+controlli: `npx tsc -b`, `npx oxlint src`.
 
 Nell'ambiente di prova la pipeline dei documenti gira con un lavoratore interno, un modello finto e vettori finti:
 nessuna chiamata a pagamento. Lo script stampa la cartella con due mansionari di prova da caricare come

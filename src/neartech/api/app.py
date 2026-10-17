@@ -38,6 +38,9 @@ from neartech.permessi import PermessoNegato, configura_log
 from neartech.restituzione import RestituzioneSuperata
 
 INTESTAZIONE_RICHIESTA = "X-Neartech-Richiesta"
+# L'applicazione autenticata sta sotto /app (accesso e home dell'utente); la radice e gli altri percorsi pubblici
+# sono del sito. Dopo l'accesso, e quando l'accesso non riesce, si torna qui.
+PERCORSO_APP = "/app"
 METODI_SICURI = ("GET", "HEAD", "OPTIONS")
 log = logging.getLogger("neartech.api")
 
@@ -187,7 +190,8 @@ def crea_app(impostazioni: Impostazioni, *, connetti: Callable[[], psycopg.Conne
 
     from neartech.api import accesso, rotte
     app.include_router(accesso.router)
-    app.include_router(rotte.router)
+    for router in rotte.ROUTERS:  # un router per area, in ordine fisso (neartech.api.rotte)
+        app.include_router(router)
 
     if impostazioni.cartella_web is not None:
         _servi_frontend(app, impostazioni.cartella_web)
@@ -195,8 +199,9 @@ def crea_app(impostazioni: Impostazioni, *, connetti: Callable[[], psycopg.Conne
 
 
 def _servi_frontend(app: FastAPI, cartella: Path) -> None:
-    """Frontend compilato: file statici e, per ogni altro percorso fuori da /api, la pagina dell'applicazione.
-    Mai file nascosti o mappe dei sorgenti."""
+    """Frontend compilato: file statici e, per ogni altro percorso fuori da /api e /accesso, la pagina
+    dell'applicazione (index.html), che poi sceglie la vista: il sito pubblico per / e gli altri percorsi pubblici,
+    l'applicazione autenticata per /app e /app/*. Mai file nascosti o mappe dei sorgenti."""
     cartella = cartella.resolve()
     indice = cartella / "index.html"
     if not indice.is_file():
@@ -217,4 +222,4 @@ def _servi_frontend(app: FastAPI, cartella: Path) -> None:
 
 
 def reindirizza_accesso_fallito() -> RedirectResponse:
-    return RedirectResponse("/?accesso=non-riuscito", status_code=303)
+    return RedirectResponse(f"{PERCORSO_APP}?accesso=non-riuscito", status_code=303)

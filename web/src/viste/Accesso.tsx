@@ -17,7 +17,7 @@ export function Accesso() {
     if (!soggetto.trim()) return
     try {
       await api.entraSviluppo(soggetto.trim())
-      window.location.assign('/')
+      window.location.assign('/app')
     } catch (e) {
       setErrore((e as ErroreApi).stato === 403 ? 'Soggetto non abilitato alla piattaforma.' : 'Accesso non riuscito. Riprova.')
     }

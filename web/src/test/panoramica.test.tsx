@@ -109,7 +109,7 @@ describe('panoramica del comitato', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const monta = () => {
-    const router = creaRouter(createMemoryHistory({ initialEntries: ['/org/acme/panoramica'] }))
+    const router = creaRouter(createMemoryHistory({ initialEntries: ['/app/org/acme/panoramica'] }))
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
         <RouterProvider router={router} />
@@ -140,7 +140,7 @@ describe('panoramica del comitato', () => {
     dati = panoramica({}, 'verifica')
     monta()
     expect(await screen.findByRole('heading', { name: 'Controlla le classificazioni a campione' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Apri la coda' })).toHaveAttribute('href', '/org/acme/revisione')
+    expect(screen.getByRole('link', { name: 'Apri la coda' })).toHaveAttribute('href', '/app/org/acme/revisione')
   })
 
   it('senza risultati spiega come si riempie la mappa', async () => {

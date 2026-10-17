@@ -51,7 +51,7 @@ describe('documenti e lotti', () => {
 
   it('mostra la stima e avvia la scomposizione solo con una motivazione', async () => {
     risposte['/api/organizzazioni/acme/documenti'] = pipeline()
-    monta('/org/acme/documenti')
+    monta('/app/org/acme/documenti')
     expect(await screen.findByRole('heading', { name: '1 mansionario da scomporre' })).toBeInTheDocument()
     expect(screen.getByText('Costo stimato').nextSibling).toHaveTextContent('0,014')
     const avvia = screen.getByRole('button', { name: 'Conferma la stima e avvia' })
@@ -65,7 +65,7 @@ describe('documenti e lotti', () => {
 
   it('senza prezzi approvati spiega che la stima viene prima', async () => {
     risposte['/api/organizzazioni/acme/documenti'] = pipeline({ prezzi: null, stima_da_avviare: null })
-    monta('/org/acme/documenti')
+    monta('/app/org/acme/documenti')
     expect(await screen.findByRole('note')).toHaveTextContent('prezzi_scomposizione')
     expect(screen.queryByRole('button', { name: 'Conferma la stima e avvia' })).not.toBeInTheDocument()
   })
@@ -80,7 +80,7 @@ describe('documenti e lotti', () => {
         { posizione: 1, candidato: 'Riconciliazioni bancarie giornaliere', task: 'Riconciliazioni bancarie', proposta: 'stesso task', mio_esito: null },
       ] },
     } satisfies DettaglioLotto
-    monta('/org/acme/lotti')
+    monta('/app/org/acme/lotti')
     expect(await screen.findByRole('heading', { name: '0 di 2 coppie giudicate' })).toBeInTheDocument()
     const gruppo = await screen.findByRole('group', { name: 'Giudizio sulla coppia 1' })
     expect(screen.queryByText(/distanza/)).not.toBeInTheDocument()
@@ -92,7 +92,7 @@ describe('documenti e lotti', () => {
   it('senza lotti il revisore sa da dove arriveranno', async () => {
     ruolo = 'revisore'
     risposte['/api/organizzazioni/acme/lotti'] = []
-    monta('/org/acme/lotti')
+    monta('/app/org/acme/lotti')
     expect(await screen.findByRole('heading', { name: 'Ancora nessun lotto' })).toBeInTheDocument()
   })
 })

@@ -93,7 +93,7 @@ export function Panoramica() {
     return (
       <div className="vuoto">
         <p className="errore" role="alert">{messaggioErrore((dati.error ?? io.error) as ErroreApi)}</p>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
+        <Link to="/app" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
       </div>
     )
   }

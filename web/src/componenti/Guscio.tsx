@@ -1,24 +1,14 @@
-import { Link } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { Link, rootRouteId, useRouteContext } from '@tanstack/react-router'
+import { Fragment, type ReactNode } from 'react'
 import { api } from '../api'
 import { ETICHETTE_RUOLO } from '../azioni'
-import { Icona, type NomeIcona } from './Icona'
+import { GRUPPO_LAVORO, type VoceNav } from '../rotte/tipi'
+import { Icona } from './Icona'
 import { Logo } from './Logo'
 
-// Guscio dell'applicazione per i ruoli di un'organizzazione. Le voci non ancora costruite si vedono come
-// "in arrivo": la piattaforma cresce a fette (docs/piani/fase-6-piattaforma.md).
-
-type Rotta = '/org/$codice/panoramica' | '/org/$codice/indirizzi' | '/org/$codice/revisione' | '/org/$codice/lotti'
-  | '/org/$codice/documenti'
-
-const PER_RUOLO: Record<string, [Rotta, string, NomeIcona][]> = {
-  revisore: [['/org/$codice/revisione', 'Revisione', 'revisione'], ['/org/$codice/lotti', 'Lotti', 'lotti']],
-  amministratore_tecnico: [['/org/$codice/documenti', 'Documenti', 'documenti']],
-}
-
-const IN_ARRIVO: [string, NomeIcona][] = [
-  ['Ruoli e task', 'ruoli'], ['Questionari', 'questionari'], ['Parametri e soglie', 'parametri'], ['Registro', 'registro'],
-]
+// Guscio dell'applicazione per i ruoli di un'organizzazione. Le voci arrivano dal registro delle aree
+// (web/src/rotte, `voci` di ogni file), tramite il contesto del router: si vedono solo quelle del ruolo corrente,
+// raggruppate per gruppo nell'ordine in cui compaiono.
 
 interface Props {
   codice: string
@@ -28,40 +18,45 @@ interface Props {
   children: ReactNode
 }
 
+function perGruppo(voci: VoceNav[]): [string, VoceNav[]][] {
+  const gruppi = new Map<string, VoceNav[]>()
+  for (const voce of voci) {
+    const gruppo = voce.gruppo ?? GRUPPO_LAVORO
+    gruppi.set(gruppo, [...(gruppi.get(gruppo) ?? []), voce])
+  }
+  return [...gruppi.entries()]
+}
+
 export function Guscio({ codice, nomeOrganizzazione, ruolo, soggetto, children }: Props) {
+  const registro = useRouteContext({ from: rootRouteId, select: (contesto) => contesto.voci })
   const esci = async () => {
     try {
       await api.esci()
     } finally {
-      window.location.assign('/')  // anche se la rete non risponde, si torna all'accesso
+      window.location.assign('/app')  // anche se la rete non risponde, si torna all'accesso
     }
   }
-  const voci: [Rotta, string, NomeIcona][] = [
-    ['/org/$codice/panoramica', 'Panoramica', 'panoramica'], ['/org/$codice/indirizzi', 'Indirizzi', 'indirizzi'],
-    ...(PER_RUOLO[ruolo] ?? []),
-  ]
+  const gruppi = perGruppo(registro.filter((voce) => voce.ruoli.includes(ruolo)))
   return (
     <div className="app">
       <aside className="side">
         <Logo variante="chiaro" />
         <div className="org"><b>{nomeOrganizzazione}</b><span>pilota · sperimentazione</span></div>
         <nav aria-label="Sezioni">
-          <span className="nav-gruppo">Lavoro</span>
-          <ul className="nav">
-            {voci.map(([to, etichetta, icona]) => (
-              <li key={to}>
-                <Link to={to} params={{ codice }} className="voce" activeProps={{ 'aria-current': 'page' }}>
-                  <Icona nome={icona} /> {etichetta}
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <span className="nav-gruppo">In arrivo</span>
-          <ul className="nav">
-            {IN_ARRIVO.map(([voce, icona]) => (
-              <li key={voce}><span className="voce voce-off" aria-disabled="true"><Icona nome={icona} /> {voce}</span></li>
-            ))}
-          </ul>
+          {gruppi.map(([gruppo, voci]) => (
+            <Fragment key={gruppo}>
+              <span className="nav-gruppo">{gruppo}</span>
+              <ul className="nav">
+                {voci.map((voce) => (
+                  <li key={voce.to}>
+                    <Link to={voce.to} params={{ codice }} className="voce" activeProps={{ 'aria-current': 'page' }}>
+                      <Icona nome={voce.icona} /> {voce.etichetta}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Fragment>
+          ))}
         </nav>
         <div className="who">
           <span className="who-iniziale" aria-hidden="true">{(ETICHETTE_RUOLO[ruolo] ?? ruolo).charAt(0)}</span>

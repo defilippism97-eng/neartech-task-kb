@@ -65,7 +65,7 @@ export function Revisione() {
     return (
       <div className="vuoto">
         <p className="errore" role="alert">{messaggio(dati.error ?? io.error ?? organizzazioni.error)}</p>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
+        <Link to="/app" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
       </div>
     )
   }
@@ -79,7 +79,7 @@ export function Revisione() {
           <span className="eyebrow">{nome} · revisione · rubrica {dati.data.rubrica.versione}</span>
           <h1>{coda.length} task da valutare, dal meno certo</h1>
         </div>
-        <Link to="/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
+        <Link to="/app/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
       </div>
       {coda.length === 0 ? (
         <div className="card vuoto"><h2>Nessun task da valutare</h2>

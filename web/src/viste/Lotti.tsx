@@ -178,7 +178,7 @@ export function Lotti() {
     return (
       <div className="vuoto">
         <p className="errore" role="alert">{messaggio(lotti.error ?? io.error ?? organizzazioni.error)}</p>
-        <Link to="/" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
+        <Link to="/app" className="btn btn-secondary" style={{ marginTop: 16 }}>Torna alle tue organizzazioni</Link>
       </div>
     )
   }
@@ -192,7 +192,7 @@ export function Lotti() {
           <span className="eyebrow">{nome} · lotti di abbinamento</span>
           <h1>{aperti.length === 0 ? 'Nessun lotto da decidere' : aperti.length === 1 ? '1 lotto da decidere' : `${aperti.length} lotti da decidere`}</h1>
         </div>
-        <Link to="/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
+        <Link to="/app/org/$codice/panoramica" params={{ codice }} className="btn btn-secondary">Torna alla mappa</Link>
       </div>
       {lotti.data.length === 0 ? (
         <div className="card vuoto"><h2>Ancora nessun lotto</h2>

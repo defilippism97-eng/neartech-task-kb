@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 import psycopg
-from neartech.api.app import apri_sessione, connessione, reindirizza_accesso_fallito
+from neartech.api.app import PERCORSO_APP, apri_sessione, connessione, reindirizza_accesso_fallito
 
 router = APIRouter(prefix="/accesso")
 
@@ -60,7 +60,7 @@ async def ritorno(request: Request, conn: psycopg.Connection = Depends(connessio
     if utente is None:
         return reindirizza_accesso_fallito()
     apri_sessione(request, utente)
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse(PERCORSO_APP, status_code=303)
 
 
 class AccessoSviluppo(BaseModel):

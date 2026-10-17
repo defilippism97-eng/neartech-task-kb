@@ -108,16 +108,16 @@ export function BarraPercorso({ percorso, ruolo, codice, comando }: Props) {
         <div className="azione-comando">
           {!tocca.pronta && <span className="state nuovo">schermata in arrivo</span>}
           {!tocca.attesa && tocca.rotta === 'indirizzi' && (
-            <Link to="/org/$codice/indirizzi" params={{ codice }} className="btn btn-pill">Apri gli indirizzi</Link>
+            <Link to="/app/org/$codice/indirizzi" params={{ codice }} className="btn btn-pill">Apri gli indirizzi</Link>
           )}
           {!tocca.attesa && tocca.rotta === 'revisione' && (
-            <Link to="/org/$codice/revisione" params={{ codice }} className="btn btn-pill">Apri la coda</Link>
+            <Link to="/app/org/$codice/revisione" params={{ codice }} className="btn btn-pill">Apri la coda</Link>
           )}
           {!tocca.attesa && tocca.rotta === 'documenti' && (
-            <Link to="/org/$codice/documenti" params={{ codice }} className="btn btn-pill">Apri i documenti</Link>
+            <Link to="/app/org/$codice/documenti" params={{ codice }} className="btn btn-pill">Apri i documenti</Link>
           )}
           {!tocca.attesa && tocca.rotta === 'lotti' && (
-            <Link to="/org/$codice/lotti" params={{ codice }} className="btn btn-pill">Apri i lotti</Link>
+            <Link to="/app/org/$codice/lotti" params={{ codice }} className="btn btn-pill">Apri i lotti</Link>
           )}
           {tocca.comando === 'ricalcolo' && (
             <button type="button" className="btn btn-pill" disabled={ricalcolo.isPending} aria-busy={ricalcolo.isPending}

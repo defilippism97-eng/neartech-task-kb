@@ -21,7 +21,7 @@ export function Home() {
   if (organizzazioni.error) return <p className="vuoto errore" role="alert">Impossibile caricare le organizzazioni. Ricarica la pagina.</p>
   const elenco = organizzazioni.data
   if (elenco.length === 1) {
-    return <Navigate to="/org/$codice/panoramica" params={{ codice: elenco[0].codice }} replace />
+    return <Navigate to="/app/org/$codice/panoramica" params={{ codice: elenco[0].codice }} replace />
   }
   return (
     <main className="scelta">
@@ -37,7 +37,7 @@ export function Home() {
           <ul>
             {elenco.map((o) => (
               <li key={o.codice}>
-                <Link to="/org/$codice/panoramica" params={{ codice: o.codice }} className="card scelta-voce">
+                <Link to="/app/org/$codice/panoramica" params={{ codice: o.codice }} className="card scelta-voce">
                   <b>{o.nome}</b><span className="mono">{o.codice}</span>
                 </Link>
               </li>
