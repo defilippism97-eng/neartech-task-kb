@@ -247,9 +247,9 @@ Decisioni del responsabile del progetto per la fase 6 (`docs/piani/fase-6-piatta
 
 **Da definire:** le domande del questionario del comitato e la regola che traduce le risposte in pesi (con il comitato del primo pilota); l'aggregazione del gruppo nei questionari d3/d4 (proposta: mediana) e `minimo_rispondenti_gruppo` (il piano indica 5).
 
-## 28. Dagli indirizzi del comitato ai pesi di D (2026-10-17, proposta da approvare)
+## 28. Dagli indirizzi del comitato ai pesi di D (2026-10-17)
 
-Costruito nella fetta 3 della fase 6 (`neartech.indirizzi_pesi`, migrazione 0037). Il meccanismo è deciso (sezione 27); il contenuto del questionario e la regola sono una **bozza da approvare** dal responsabile del progetto: `docs/governance/questionario-indirizzi-bozza-1.json`.
+Costruito nella fetta 3 della fase 6 (`neartech.indirizzi_pesi`, migrazione 0037). Il meccanismo è deciso (sezione 27); il contenuto del questionario e la regola sono **approvati dal responsabile del progetto il 2026-10-17** (versione `bozza-1`): `docs/governance/questionario-indirizzi-bozza-1.json`.
 - **Questionario:** otto domande, due per componente di D (una che spinge verso la presenza umana, una verso l'automazione), risposte da "Per niente" a "Del tutto".
 - **Regola:** per ogni componente, la media delle risposte riportate in [−1, 1] (con il verso della domanda) sposta il peso di partenza di al massimo ±50% (intensità 0,5); poi ogni peso resta fra 0,10 e 0,45 e i pesi si riportano a somma uno. Pesi di N, λ e soglie dei quadranti restano quelli di partenza.
 - **Atti:** proposta (risposte nel registro, nota nello spazio), approvazione del comitato, verifica dell'auditor; il profilo si attiva solo con entrambi gli atti, e il database lo impone.

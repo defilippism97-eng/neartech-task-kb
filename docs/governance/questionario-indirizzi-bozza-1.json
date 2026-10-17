@@ -1,6 +1,6 @@
 {
   "versione": "bozza-1",
-  "stato": "bozza da approvare dal responsabile del progetto (registro di metodo, sezione 27)",
+  "stato": "approvato dal responsabile del progetto il 2026-10-17 (registro di metodo, sezione 28)",
   "intensita": 0.5,
   "limiti": {"min": 0.1, "max": 0.45},
   "risposte": ["Per niente", "Poco", "In parte", "Molto", "Del tutto"],
