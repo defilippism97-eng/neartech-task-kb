@@ -99,3 +99,19 @@ Approvate dal responsabile del progetto.
 - **Ruoli dell'amministratore tecnico:** può creare utenze di prova e assegnarsi ruoli di organizzazione.
 - **Testi di governance dell'organizzazione:** indirizzi del comitato, descrizioni e motivazioni dei parametri dell'organizzazione vanno nello spazio dell'organizzazione, insieme al resto, così che sia sempre possibile estrarre un unico report di audit dell'analisi e delle decisioni. Vedi ADR 0004.
 - **Produzione:** approvati l'unione delle PR #6 e #7, l'applicazione delle migrazioni, il bootstrap dell'amministratore, la copia del testo di Società Dolce nello spazio dell'organizzazione e la sua rimozione da `public`, la separazione dei ruoli di database (a cura del responsabile), l'inserimento dei parametri comuni e la creazione dei campioni delle fusioni.
+
+## 11. Fusioni del Canonicalizer corrette dopo la revisione (2026-10-16)
+
+Approvata dal responsabile del progetto. Misura ufficiale delle 61 fusioni "stessa attività": 46/61 = 75,4% (intervallo 63,3–84,5%), sotto la soglia di 0,9. Separate 11 fusioni (3 errate, 8 parziali), tenute 4 parziali (`docs/revisione/proposta-scissioni-2026-10-16.md`). I task separati non vengono rifusi automaticamente; il loro crosswalk va rifatto. Il prompt del Canonicalizer va ricalibrato sulla distinzione fra compito esecutivo e compito di responsabilità prima di nuove esecuzioni.
+
+## 12. Testo del cliente fuori da `public` (2026-10-17)
+
+Realizzazione dell'ADR 0001, approvata nella sezione 10 (passi di produzione). In `public` restano i legami task–ruolo–documento con gli stessi identificativi dello spazio dell'organizzazione e nomi neutri; il testo sta solo in `org_<codice>`. Vincoli nel database (migrazioni 0023 e 0024). Eseguita su Società Dolce il 2026-10-17 dopo la verifica che ogni riga avesse la copia identica nello spazio. Vedi ADR 0005.
+
+## 13. Parametri comuni esaminati dal comitato, proponente e approvatore, testi nello spazio (2026-10-17)
+
+Realizzazione delle decisioni b, e, g della sezione 10.
+- **b:** il comitato guida vede i parametri comuni vigenti e per ciascuno li adotta o chiede una ricalibrazione motivata (atti `adozione` e `richiesta_ricalibrazione`, permessi `adottare_parametro_comune` e `chiedere_ricalibrazione`, migrazione 0025). L'adozione vale per una versione. Il valore comune si applica anche senza adozione; `parametro_vigente` riporta `adozione_id`. Se l'adozione debba diventare obbligatoria prima dei calcoli è una decisione di governance aperta. Linee guida: `docs/governance/linee-guida-parametri-comuni.md`.
+- **e:** ogni approvazione, rifiuto o ritiro registra `stesso_proponente` nei dettagli.
+- **g:** testi di governance dell'organizzazione nel suo spazio, impronta con la chiave dello spazio nel registro, report di audit unico (ADR 0004, sezione Realizzazione).
+- **Prompt v2 del Canonicalizer:** aggiunta, prima di qualsiasi esecuzione, la frase che chiede di trattare i titoli come dati (revisione di sicurezza). Il set di controllo si fa su questa versione.

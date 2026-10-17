@@ -1,7 +1,7 @@
 # ADR-0004: I testi di governance dell'organizzazione stanno nel suo spazio
 
 **Data:** 2026-10-16
-**Stato:** accettato; realizzazione in corso
+**Stato:** accettato; realizzato il 2026-10-17 (migrazioni 0025 e org 0006)
 **Chi decide:** responsabile del progetto (integra l'ADR 0001 e modifica in parte l'ADR 0003)
 
 ## Contesto
@@ -38,3 +38,13 @@ L'ADR 0001 tiene fuori dal dataset condiviso il testo dei documenti del cliente.
 
 ### Rischi
 - Gli atti già scritti in `public` restano dove sono (append-only). Oggi in produzione non ce ne sono: lo spostamento va fatto prima che il comitato guida inizi a usare il sistema.
+
+## Realizzazione (2026-10-17)
+
+- `neartech.registro.registra`: per un atto di un'organizzazione, motivazione e `dettagli_riservati` vanno in `org_<codice>.testi_atti`, nella stessa transazione; nel registro restano il marcatore `nello spazio dell'organizzazione`, i dettagli strutturali e `hash_testo`. `verifica_testi` confronta lo spazio con l'impronta.
+- **Impronte con chiave:** `hash_testo`, `hash_descrizione` e `hash_contenuto` sono `sha256(chiave || testo)` con la chiave casuale dello spazio (`chiave_impronte`, migrazione 0006 degli spazi). Chi legge solo `public` non conferma un testo breve indovinato; all'uscita del cliente la chiave si cancella con lo spazio.
+- **Vincoli nel database (0025):** per ogni atto con `org_id` il registro accetta solo il marcatore, un'impronta di 64 caratteri esadecimali e dettagli fatti di numeri, valori logici, codici e identificativi senza spazi; a fine transazione l'atto deve avere il suo testo nello spazio. Un'organizzazione senza spazio non registra atti. I testi di uno spazio riguardano solo oggetti della sua organizzazione.
+- Indirizzi: testo e ambito in `testi_indirizzi`; parametri dell'organizzazione: descrizione in `testi_parametri`, hash nella proposta. `verifica_contenuti` li controlla nello spazio. Le descrizioni dei parametri comuni restano in `public`.
+- Segnalazioni dei revisori: motivazione e dettagli nello spazio.
+- Gli atti scritti prima della 0025 (5 in produzione, tutti dell'amministratore tecnico) restano in `public`, append-only.
+- Applicazione: la 0025 e la 0006 degli spazi si applicano nello stesso giro di `scripts/migra.py`, con l'applicazione ferma.

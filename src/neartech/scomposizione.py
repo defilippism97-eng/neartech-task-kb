@@ -24,11 +24,12 @@ from xml.etree import ElementTree as ET
 import psycopg
 from pydantic import BaseModel, Field, ValidationError
 
+from neartech.crosswalk import una_riga
+from neartech.occorrenze import documento, registra_occorrenza, ruolo
+
 MODEL_ID = "claude-sonnet-5-5"  # estrazione da documenti: Sonnet, come da CLAUDE.md
 MAX_ATTEMPTS = 2
 MAX_TOKENS = 16000  # le job più lunghe producono risposte oltre 8.000 token
-ORG_NAME = "Società Dolce"
-ORG_SECTOR = "servizi alla persona e terzo settore"
 SOURCE_KIND = "org_document"
 SOURCE_LICENSE = "documento interno dell'organizzazione"
 
@@ -53,7 +54,7 @@ class ScompostoError(RuntimeError):
 
 
 class _Attivita(BaseModel):
-    titolo: str = Field(min_length=5, max_length=200)
+    titolo: str = Field(min_length=5, max_length=200, pattern=r"^[^\r\n\t]+$")  # una riga: entra in altri prompt
     granularita: int = Field(ge=1, le=3)
     testo_originale: str = Field(min_length=3)
     nota_contesto: str | None = None
@@ -112,10 +113,12 @@ def carica_documenti(cartella: Path) -> tuple[list[DocumentoJob], list[str]]:
 
 
 def _user_message(doc: DocumentoJob, titoli_esistenti: list[str]) -> str:
-    elenco = "\n".join(f"- {t}" for t in titoli_esistenti) or "(nessuno)"
+    elenco = "\n".join(f"- {una_riga(t)}" for t in titoli_esistenti) or "(nessuno)"
+    # Il documento non può chiudere il proprio recinto: i tag eventualmente presenti nel testo si neutralizzano.
+    testo = re.sub(r"</?\s*documento\s*>", "[documento]", doc.testo, flags=re.IGNORECASE)
     return (
         f"Titoli già presenti (riusali se equivalenti):\n{elenco}\n\n"
-        f"<documento>\n{doc.testo}\n</documento>"
+        f"<documento>\n{testo}\n</documento>"
     )
 
 
@@ -163,36 +166,12 @@ def prompt_hash() -> str:
     return hashlib.sha256((SYSTEM_PROMPT + "\n" + MODEL_ID).encode("utf-8")).hexdigest()
 
 
-def _organizzazione(conn: psycopg.Connection) -> str:
-    row = conn.execute("SELECT org_id FROM organizations WHERE name = %s", (ORG_NAME,)).fetchone()
-    if row:
-        return str(row[0])
-    return str(conn.execute(
-        "INSERT INTO organizations (name, sector) VALUES (%s, %s) RETURNING org_id", (ORG_NAME, ORG_SECTOR)
-    ).fetchone()[0])
-
-
-def _ruolo(conn: psycopg.Connection, org_id: str, nome: str) -> str:
-    row = conn.execute("SELECT role_id FROM roles WHERE org_id = %s AND name = %s", (org_id, nome)).fetchone()
-    if row:
-        return str(row[0])
-    return str(conn.execute(
-        "INSERT INTO roles (org_id, name) VALUES (%s, %s) RETURNING role_id", (org_id, nome)
-    ).fetchone()[0])
-
-
-def _fonte(conn: psycopg.Connection, doc: DocumentoJob) -> str:
-    versione = doc.sha256[:16]
-    row = conn.execute(
-        "SELECT source_id FROM sources WHERE name = %s AND version = %s", (doc.nome_file, versione)
-    ).fetchone()
-    if row:
-        return str(row[0])
-    return str(conn.execute(
-        """INSERT INTO sources (kind, name, version, license, content_hash)
-           VALUES (%s, %s, %s, %s, %s) RETURNING source_id""",
-        (SOURCE_KIND, doc.nome_file, versione, SOURCE_LICENSE, doc.sha256),
-    ).fetchone()[0])
+def organizzazione_per_codice(conn: psycopg.Connection, codice: str) -> str:
+    """Organizzazione con il suo spazio: il testo dei documenti va solo lì (ADR 0005)."""
+    riga = conn.execute("SELECT org_id FROM organizations WHERE codice = %s", (codice,)).fetchone()
+    if riga is None:
+        raise LookupError(f"nessuna organizzazione con codice {codice!r}: va creata prima, con il suo spazio")
+    return str(riga[0])
 
 
 def titoli_attivi(conn: psycopg.Connection) -> list[str]:
@@ -201,11 +180,17 @@ def titoli_attivi(conn: psycopg.Connection) -> list[str]:
     ).fetchall()]
 
 
-def salva_documento(conn: psycopg.Connection, doc: DocumentoJob, attivita: list[_Attivita]) -> int:
-    """Salva organizzazione, ruolo, fonte, task canonici e occorrenze. Ritorna le occorrenze nuove."""
-    org_id = _organizzazione(conn)
-    role_id = _ruolo(conn, org_id, doc.ruolo)
-    source_id = _fonte(conn, doc)
+def salva_documento(
+    conn: psycopg.Connection, doc: DocumentoJob, attivita: list[_Attivita], *, org_id: str
+) -> int:
+    """Salva ruolo, documento, task canonici e occorrenze. Ritorna le occorrenze nuove.
+
+    Testo del documento, nome del ruolo e nome del file vanno nello spazio dell'organizzazione;
+    in public restano solo i legami con nomi neutri (neartech.occorrenze).
+    """
+    ruolo_id = ruolo(conn, org_id, doc.ruolo)
+    documento_id = documento(conn, org_id, nome_file=doc.nome_file, sha256=doc.sha256,
+                             licenza=SOURCE_LICENSE, tipo=SOURCE_KIND)
     phash = prompt_hash()
     nuove = 0
     for att in attivita:
@@ -216,13 +201,8 @@ def salva_documento(conn: psycopg.Connection, doc: DocumentoJob, attivita: list[
         ).fetchone()
         if row is None:
             row = conn.execute("SELECT task_id FROM canonical_tasks WHERE title_it = %s", (att.titolo.strip(),)).fetchone()
-        task_id = str(row[0])
-        cur = conn.execute(
-            """INSERT INTO task_occurrences
-                 (task_id, role_id, context_note, raw_snippet, time_share, source_id, model_name, prompt_hash)
-               VALUES (%s, %s, %s, %s, NULL, %s, %s, %s)
-               ON CONFLICT (task_id, role_id) DO NOTHING""",
-            (task_id, role_id, att.nota_contesto, att.testo_originale, source_id, MODEL_ID, phash),
-        )
-        nuove += cur.rowcount
+        if registra_occorrenza(conn, org_id, task_id=str(row[0]), ruolo_id=ruolo_id, documento_id=documento_id,
+                               estratto=att.testo_originale, nota_contesto=att.nota_contesto,
+                               model_name=MODEL_ID, prompt_hash=phash):
+            nuove += 1
     return nuove

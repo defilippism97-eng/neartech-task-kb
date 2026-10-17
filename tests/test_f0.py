@@ -32,20 +32,24 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 def _setup_base(conn: psycopg.Connection) -> dict:
     """Crea org, ruolo, task, occorrenza, fonte, rubrica e profilo di default."""
     org = conn.execute("INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id").fetchone()[0]
+    # Legami senza testo in public (ADR 0005): nome neutro del ruolo, nessun estratto nell'occorrenza.
     role = conn.execute(
-        "INSERT INTO roles (org_id, name) VALUES (%s, 'Coordinatore sintetico') RETURNING role_id", (org,)
+        """WITH n AS (SELECT gen_random_uuid() AS id)
+           INSERT INTO roles (role_id, org_id, name) SELECT id, %s, 'ruolo ' || id FROM n RETURNING role_id""",
+        (org,),
     ).fetchone()[0]
     task = conn.execute(
         "INSERT INTO canonical_tasks (title_it, granularity) VALUES ('Task sintetico', 2) RETURNING task_id"
     ).fetchone()[0]
     src = conn.execute(
-        """INSERT INTO sources (kind, name, version, license, content_hash)
-           VALUES ('org_document', 'Mansionario sintetico', '1', 'interno', 'hash-synth') RETURNING source_id"""
+        """WITH n AS (SELECT gen_random_uuid() AS id)
+           INSERT INTO sources (source_id, kind, name, version, license, content_hash)
+           SELECT id, 'org_document', 'documento ' || id, '0123456789abcdef', 'interno', 'hash-synth' FROM n RETURNING source_id"""
     ).fetchone()[0]
     occ = conn.execute(
         """INSERT INTO task_occurrences
-             (task_id, role_id, raw_snippet, time_share, source_id, model_name, prompt_hash)
-           VALUES (%s, %s, 'frammento sintetico', 1.0, %s, 'test', 'test') RETURNING occurrence_id""",
+             (task_id, role_id, time_share, source_id, model_name, prompt_hash)
+           VALUES (%s, %s, 1.0, %s, 'test', 'test') RETURNING occurrence_id""",
         (task, role, src),
     ).fetchone()[0]
     conn.execute("INSERT INTO rubric_versions (version, is_current) VALUES ('r-test', true)")

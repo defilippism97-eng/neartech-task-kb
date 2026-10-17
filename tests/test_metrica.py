@@ -17,13 +17,15 @@ from neartech.campioni import (
 )
 from neartech.governance import ParametroAssente, approva_parametro, parametro_vigente, proponi_parametro
 from neartech.metrica import CampioneIncompleto, DisaccordoRevisori, calcola_precisione, intervallo_wilson
+from neartech.organizzazioni import crea_organizzazione
 from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
+from neartech.registro import registra
 
 
 @pytest.fixture
 def base(conn):
     admin = inizializza_amministratore(conn, "sso|admin")
-    org = str(conn.execute("INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id").fetchone()[0])
+    org = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
     revisore = crea_utente(conn, "sso|revisore")
     secondo = crea_utente(conn, "sso|secondo-revisore")
     comitato = crea_utente(conn, "sso|comitato")
@@ -315,12 +317,9 @@ def test_riferimento_con_chiavi_estranee_rifiutato(conn, base):
 
 def test_campione_con_meno_elementi_della_dimensione_rifiutato_al_commit(conn, base):
     """Il controllo è differito a fine transazione: qui lo si forza con SET CONSTRAINTS."""
-    decisione = conn.execute(
-        """INSERT INTO registro_decisioni (tipo_oggetto, oggetto_id, atto, autore_id, motivazione, org_id)
-           VALUES ('campione_revisione', '00000000-0000-0000-0000-0000000000aa', 'approvazione', %s, 'x', %s)
-           RETURNING decisione_id""",
-        (base["revisore"], base["org"]),
-    ).fetchone()[0]
+    decisione = registra(conn, autore_id=base["revisore"], tipo_oggetto="campione_revisione",
+                         oggetto_id="00000000-0000-0000-0000-0000000000aa", atto="approvazione",
+                         motivazione="x", org_id=base["org"])
     conn.execute(
         """INSERT INTO campioni_revisione (campione_id, org_id, tipo_proposta, criterio, popolazione, dimensione,
                                            versione_istruzioni, decisione_id)

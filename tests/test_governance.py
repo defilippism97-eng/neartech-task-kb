@@ -22,16 +22,15 @@ from neartech.governance import (
     segnala,
     verifica_contenuti,
 )
+from neartech.organizzazioni import crea_organizzazione
 from neartech.permessi import PermessoNegato, assegna_ruolo, crea_utente, inizializza_amministratore
 from neartech.registro import ancora_catena, registra, verifica_catena
 
 
 @pytest.fixture
 def org(conn):
-    org_id = str(conn.execute(
-        "INSERT INTO organizations (name) VALUES ('Org sintetica') RETURNING org_id"
-    ).fetchone()[0])
     admin = inizializza_amministratore(conn, "sso|admin")
+    org_id = crea_organizzazione(conn, admin, nome="Org sintetica", codice="sintetica")
     comitato = crea_utente(conn, "sso|comitato")
     revisore = crea_utente(conn, "sso|revisore")
     assegna_ruolo(conn, comitato, "comitato_guida", org_id, assegnata_da=admin)
@@ -69,7 +68,7 @@ def test_registro_non_si_modifica(conn, org, comando):
 
 
 def test_motivazione_obbligatoria(conn, org):
-    with pytest.raises(psycopg.errors.CheckViolation):
+    with pytest.raises(ValueError, match="motivazione"):
         _atto(conn, org, motivazione="   ")
 
 
@@ -77,6 +76,7 @@ def test_manomissione_rilevata_dalla_verifica(conn, org):
     _atto(conn, org)
     manomessa = _atto(conn, org, oggetto_id="y")
     _atto(conn, org, oggetto_id="z")
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # i controlli differiti del registro, prima dell'ALTER
     conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
     conn.execute("UPDATE registro_decisioni SET motivazione = 'riscritta' WHERE decisione_id = %s", (manomessa,))
     attesa = conn.execute(
@@ -88,8 +88,9 @@ def test_manomissione_rilevata_dalla_verifica(conn, org):
 def test_correzione_e_una_riga_nuova(conn, org):
     originale = _atto(conn, org)
     correzione = _atto(conn, org, atto="correzione", corregge_id=originale, motivazione="corregge un errore")
+    # Le motivazioni di un'organizzazione stanno nel suo spazio (ADR 0004).
     righe = dict(conn.execute(
-        "SELECT decisione_id, motivazione FROM registro_decisioni WHERE decisione_id IN (%s, %s)",
+        "SELECT decisione_id, motivazione FROM org_sintetica.testi_atti WHERE decisione_id IN (%s, %s)",
         (originale, correzione),
     ).fetchall())
     assert righe == {originale: "motivazione sintetica", correzione: "corregge un errore"}
@@ -208,9 +209,10 @@ def test_comitato_non_segnala(conn, org):
 # --- rafforzamenti dopo la revisione ---------------------------------------------
 
 def test_coda_cancellata_rilevata_con_l_ancora(conn, org):
-    _atto(conn, org)
+    _atto(conn, org, org_id=None)
     ancora = ancora_catena(conn)
-    _atto(conn, org, oggetto_id="y")
+    _atto(conn, org, oggetto_id="y", org_id=None)
+    conn.execute("SET CONSTRAINTS ALL IMMEDIATE")  # i controlli differiti del registro, prima dell'ALTER
     conn.execute("ALTER TABLE registro_decisioni DISABLE TRIGGER registro_append_only")
     conn.execute("DELETE FROM registro_decisioni WHERE posizione >= %s", (ancora[0],))
     assert verifica_catena(conn, ancora=ancora) == ancora[0]
@@ -251,8 +253,9 @@ def test_contenuto_degli_indirizzi_verificato(conn, org):
     indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="x", testo="testo originale",
                                   ambito="ambito", motivazione="x")
     assert verifica_contenuti(conn) == []
-    conn.execute("ALTER TABLE indirizzi_comitato DISABLE TRIGGER indirizzi_append_only")
-    conn.execute("UPDATE indirizzi_comitato SET testo = 'testo cambiato' WHERE indirizzo_id = %s", (indirizzo,))
+    conn.execute("ALTER TABLE org_sintetica.testi_indirizzi DISABLE TRIGGER testi_indirizzi_append_only")
+    conn.execute("UPDATE org_sintetica.testi_indirizzi SET testo = 'testo cambiato' WHERE indirizzo_id = %s",
+                 (indirizzo,))
     assert verifica_contenuti(conn) == [("indirizzo", indirizzo)]
 
 
@@ -274,7 +277,7 @@ def test_versione_superata_non_si_approva(conn, org):
 
 
 def test_segnalazione_solo_su_oggetti_della_propria_organizzazione(conn, org):
-    altra = str(conn.execute("INSERT INTO organizations (name) VALUES ('Altra') RETURNING org_id").fetchone()[0])
+    altra = crea_organizzazione(conn, org["admin"], nome="Altra", codice="altra")
     comitato_altra = crea_utente(conn, "sso|comitato-altra")
     assegna_ruolo(conn, comitato_altra, "comitato_guida", altra, assegnata_da=org["admin"])
     indirizzo = proponi_indirizzo(conn, comitato_altra, org_id=altra, codice="x", testo="x",
@@ -298,3 +301,37 @@ def test_identificativi_in_maiuscolo_accettati(conn, org):
     parametro = _proponi(conn, org, {"valore": 0.9})
     approva_parametro(conn, org["comitato"], parametro.upper(), motivazione="ok")
     assert parametro_vigente(conn, "soglia_prova", org["id"]).parametro_id == parametro
+
+
+# --- proponente e approvatore (metodologia, sezione 10, decisione e) ---------------
+
+def _dettagli(conn, decisione_id):
+    return conn.execute("SELECT dettagli FROM registro_decisioni WHERE decisione_id = %s", (decisione_id,)).fetchone()[0]
+
+
+def test_approvazione_dello_stesso_proponente_ammessa_e_segnata(conn, org):
+    atto = approva_parametro(conn, org["comitato"], _proponi(conn, org, {"valore": 0.9}), motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is True
+
+
+def test_approvazione_di_un_altro_membro_segnata(conn, org):
+    secondo = crea_utente(conn, "sso|comitato-2")
+    assegna_ruolo(conn, secondo, "comitato_guida", org["id"], assegnata_da=org["admin"])
+    atto = approva_parametro(conn, secondo, _proponi(conn, org, {"valore": 0.9}), motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is False
+
+
+def test_rifiuto_e_ritiro_segnano_il_proponente(conn, org):
+    rifiuto = rifiuta_parametro(conn, org["comitato"], _proponi(conn, org, {"valore": 0.5}), motivazione="no")
+    assert _dettagli(conn, rifiuto)["stesso_proponente"] is True
+    parametro = _proponi(conn, org, {"valore": 0.8}, codice="altra_prova")
+    approva_parametro(conn, org["comitato"], parametro, motivazione="ok")
+    ritiro = ritira_parametro(conn, org["comitato"], parametro, motivazione="ritirata")
+    assert _dettagli(conn, ritiro)["stesso_proponente"] is True
+
+
+def test_approvazione_di_un_indirizzo_segna_il_proponente(conn, org):
+    indirizzo = proponi_indirizzo(conn, org["comitato"], org_id=org["id"], codice="prova", testo="t",
+                                  ambito="a", motivazione="m")
+    atto = approva_indirizzo(conn, org["comitato"], indirizzo, motivazione="ok")
+    assert _dettagli(conn, atto)["stesso_proponente"] is True

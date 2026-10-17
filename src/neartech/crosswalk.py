@@ -48,6 +48,11 @@ class CrosswalkError(RuntimeError):
     pass
 
 
+def una_riga(testo: str) -> str:
+    """Titoli ed etichette nei prompt sono dati: su una riga, così non creano voci o istruzioni nuove."""
+    return " ".join(testo.split())
+
+
 @dataclass(frozen=True)
 class Candidate:
     node_id: str
@@ -97,8 +102,8 @@ def find_candidates(conn: psycopg.Connection, task_id: str, scheme: str, k: int 
 
 
 def _user_message(task_title: str, candidates: list[Candidate]) -> str:
-    lines = [f"{i}. [{c.code}] {c.label}" for i, c in enumerate(candidates, start=1)]
-    return f"Task canonico: {task_title}\n\nCandidati:\n" + "\n".join(lines)
+    lines = [f"{i}. [{una_riga(c.code)}] {una_riga(c.label)}" for i, c in enumerate(candidates, start=1)]
+    return f"Task canonico: {una_riga(task_title)}\n\nCandidati:\n" + "\n".join(lines)
 
 
 def _parse(text: str, candidates: list[Candidate]) -> list[Judgement]:

@@ -3,8 +3,7 @@
 Ogni organizzazione ha uno schema org_<codice> con il testo del cliente; il dataset
 condiviso resta in public. Il codice è validato prima di arrivare al database, perché
 diventa il nome di uno schema, e si assegna una sola volta (trigger della migrazione 0015).
-Lo spazio si crea solo da funzioni che verificano i permessi: crea_organizzazione e
-neartech.spostamento.sposta_testo_cliente.
+Lo spazio si crea solo da funzioni che verificano i permessi (crea_organizzazione).
 """
 
 import re
