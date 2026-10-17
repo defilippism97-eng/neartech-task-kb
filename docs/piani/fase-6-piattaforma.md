@@ -127,4 +127,4 @@ Emersi dalle revisioni di sicurezza e di codice della fetta 0, da fare prima del
 2. Coppia di caratteri (Inter + JetBrains Mono oppure Geist + Geist Mono): oggi Inter, cambio di un solo token.
 3. Fornitore di ospitalità in UE (proposta nell'ADR 0007).
 4. Questionari d3/d4: aggregazione del gruppo (proposta: mediana sulla scala 0–4) e `minimo_rispondenti_gruppo` (il piano indica 5).
-5. Le domande del questionario del comitato e la regola che traduce le risposte in pesi: da definire con il comitato del primo pilota.
+5. Le domande del questionario del comitato e la regola che traduce le risposte in pesi: da definire con il comitato del primo pilota. Proposta di riprogettazione della fase di ascolto (materiali, interviste, scenari): `docs/piani/fase-ascolto-comitato.md`.
