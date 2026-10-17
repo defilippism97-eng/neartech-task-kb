@@ -22,15 +22,32 @@ Due conseguenze guidano tutto il progetto:
 1. **Un cambio di pesi sposta un task sulla mappa solo lungo l'asse di D**, cioè fra Q1 e Q2 (N alto) o fra Q3 e Q4 (N basso). Il passaggio che conta di più per gli indirizzi è **Q3 ↔ Q4**: N basso significa che la tecnologia copre il task, e la domanda "lo affidiamo all'IA o lo teniamo alle persone perché è desiderabile così?" è esattamente quella che il comitato deve orientare.
 2. **Un cambio di pesi sposta D solo nei task con componenti diverse fra loro.** Un task con d1 = d2 ha lo stesso D con qualunque peso. Gli scenari utili sono quelli fra task che differiscono nelle componenti, perché solo lì la scelta del comitato dice qualcosa sul peso relativo.
 
+## Che cosa vive il comitato: semplice per chi partecipa
+
+Il metodo statistico serve al codice e all'auditor; **il comitato non lo vede**. Per il comitato la fase sono quattro momenti, con un linguaggio senza termini tecnici:
+
+| Momento | Che cosa fa il comitato | Tempo |
+|---|---|---|
+| 1. Materiali | Carica i documenti che ha già (anche nessuno) | quando vuole |
+| 2. Interviste | Una conversazione per membro con il facilitatore; poi legge una pagina di sintesi e risponde a quattro domande: *"questa componente per noi conta più, come o meno del profilo comune?"* | 1 ora a testa, più 15 minuti insieme |
+| 3. Scenari | Ogni membro, da solo, risponde a 14 schede: *"di questi quattro compiti, quale terreste alle persone e quale cedereste all'IA?"* | 20–25 minuti |
+| 4. Restituzione | Legge una pagina: i pesi proposti, quanti task cambiano quadrante e quali, dove le scelte confermano o smentiscono quanto detto nelle interviste; approva o modifica | 1 incontro |
+
+Regole di semplicità:
+- **Nessun numero da dare.** Il comitato non assegna punteggi né percentuali: risponde "più / come / meno" e sceglie fra compiti che conosce.
+- **Nessun termine tecnico nelle schermate:** non compaiono "prior", "logit", "intervallo di credibilità". La precisione si dice a parole ("le vostre scelte sono nette", "le vostre scelte non bastano per dire nulla su questa componente").
+- **Un documento di restituzione di una pagina**, con il dettaglio tecnico in un allegato per l'auditor.
+- **Se le schede non bastano, i pesi restano dove sono** e la schermata lo dice: nessun secondo giro obbligatorio.
+
 ## 1. Le tre componenti dell'ascolto e che cosa danno al profilo di D
 
-La fase ha tre componenti, in quest'ordine. **Solo la terza produce numeri.** Le prime due danno contesto, vincoli e materiale di confronto; non entrano nella stima dei pesi, perché un riassunto del modello o una frase di un'intervista non devono diventare un peso senza passare da una scelta delle persone.
+La fase ha tre componenti, in quest'ordine. Le interviste danno il **punto di partenza** dei pesi, gli scenari lo **confermano o lo correggono**. Né un riassunto del modello né una frase di un'intervista diventano un peso da soli: passano sempre da una risposta o da una scelta delle persone.
 
-| Componente | Che cosa si raccoglie | Che cosa dà al profilo di D | Che cosa non fa |
-|---|---|---|---|
-| A. Materiali documentali | Documenti già esistenti dell'impresa | Perimetro degli scenari; vincoli dichiarati dall'impresa; confronto con le scelte | Non fissa pesi |
-| B. Interviste aperte e di visione | Conversazioni con i membri del comitato | Processi e temi su cui costruire gli scenari; spiegazione delle scelte; confronto | Non fissa pesi |
-| C. Scenari di automazione | Scelte del comitato fra task reali | **La stima dei pesi** w_d1–w_d4 | — |
+| Componente | Che cosa si raccoglie | Che cosa dà al profilo di D |
+|---|---|---|
+| A. Materiali documentali | Documenti già esistenti dell'impresa | Perimetro degli scenari; vincoli dichiarati dall'impresa; confronto con le scelte |
+| B. Interviste aperte e di visione | Conversazioni con i membri del comitato | **Punto di partenza** dei pesi (quattro risposte del comitato dopo la sintesi); processi e temi per gli scenari |
+| C. Scenari di automazione | Scelte del comitato fra task reali | **Stima finale** dei pesi, a partire dal punto di partenza |
 
 ### A. Materiali documentali
 
@@ -61,9 +78,9 @@ Interviste individuali di 45–60 minuti con ciascun membro del comitato (e, se 
 7. Chi, fuori dall'impresa, giudicherebbe le vostre scelte sull'automazione, e con quale metro?
 
 Che cosa ne esce:
-- **Temi** per componente di D (relazione, responsabilità, senso del lavoro, valore per il beneficiario) e **processi** citati come centrali: alimentano la scelta del perimetro e il testo degli scenari, non i pesi.
-- **Spiegazioni:** dopo la sessione sugli scenari, le interviste aiutano il comitato a leggere le proprie scelte.
-- **Confronto** con le scelte, come per i documenti.
+- **Il punto di partenza dei pesi.** Il modello riassume le interviste in una pagina, per componente di D, con le frasi citate alla lettera. Il comitato la legge e, per ogni componente, risponde a una sola domanda: *"Per noi questa componente conta più, come o meno del profilo comune?"*. Quattro risposte, un atto registrato. Il codice le traduce con una regola fissa del parametro di governance (più = +x%, meno = −x%, poi dentro i limiti e a somma uno, come `bozza-1`): è il **punto di partenza** da cui partono gli scenari. Il passaggio dalle parole al numero lo fa il comitato, non il modello. L'intensità x è più bassa dello spostamento massimo ammesso dagli scenari, perché le preferenze dichiarate sono il punto debole da cui partiamo.
+- **Temi e processi** citati come centrali: alimentano la scelta del perimetro e il testo degli scenari.
+- **Confronto:** se le scelte negli scenari smentiscono il punto di partenza, la restituzione lo dice in una frase.
 
 Il contenuto delle interviste si legge **solo in forma aggregata**, senza attribuzione a chi ha parlato (sezione 4).
 
@@ -77,7 +94,7 @@ La premessa neutralizza la fattibilità e l'economia (che N e il costo misurano 
 
 Ogni task compare con il nome, una descrizione breve tratta dal mansionario e il ruolo. **Non compaiono i valori di d1–d4**: se il comitato li vedesse sceglierebbe sui numeri, e torneremmo alle preferenze dichiarate. Il collegamento fra scelta e pesi lo fa il codice, usando i valori di d1–d4 registrati per quei task.
 
-Dopo il giro individuale, una **sessione plenaria** discute le schede su cui il comitato si è diviso di più (misura aggregata, nessun nome). Le scelte della plenaria si registrano come record a parte; la stima usa il giro individuale (decisione aperta 3).
+Le schede su cui il comitato si è diviso di più (misura aggregata, nessun nome) si discutono nell'incontro di restituzione, senza una sessione in più. La stima usa il giro individuale (decisione aperta 3).
 
 ## 2. Come si generano gli scenari dai task dell'impresa
 
@@ -133,7 +150,7 @@ Le componenti mancanti si trattano come nel calcolo: entrano solo quelle disponi
 
 ### 3.2 La stima
 
-**Stima bayesiana su una griglia, deterministica.** Il prior sui pesi è una Dirichlet **centrata sul profilo di partenza**, con una concentrazione `c` che è un parametro di governance: con poche scelte o scelte contraddittorie il risultato resta vicino al profilo di partenza, con molte scelte coerenti se ne allontana quanto le scelte giustificano. Il prior su `α` è debolmente informativo (parametro).
+**Stima bayesiana su una griglia, deterministica.** Il prior sui pesi è una Dirichlet **centrata sul punto di partenza** (il profilo comune spostato dalle quattro risposte del comitato dopo le interviste, sezione 1.B), con una concentrazione `c` che è un parametro di governance: con poche scelte o scelte contraddittorie il risultato resta vicino al profilo di partenza, con molte scelte coerenti se ne allontana quanto le scelte giustificano. Il prior su `α` è debolmente informativo (parametro).
 
 Lo spazio dei pesi ha tre dimensioni libere (una sola nella prima applicazione con d1 e d2): la posteriore si calcola su una griglia fine del simplesso ammesso per una griglia di valori di `α`. Nessun campionatore, nessun seme: stesso input, stesso risultato, verificabile dall'auditor rifacendo il conto. Esce:
 
@@ -248,6 +265,7 @@ Regole operative:
 9. **Enfasi per classi di task** (passo 5 del flusso della fase 6): rinviare (proposta), oppure stimare pesi diversi per processo, che richiede molte più schede.
 10. **Sorte del questionario `bozza-1`:** ritirarlo quando il nuovo metodo è approvato, lasciando i profili già calcolati con le loro chiavi (proposta), oppure tenerlo come via rapida per organizzazioni che non fanno la fase di ascolto.
 11. **Ripetizione:** quando si ripete la fase (cambio del perimetro, nuovi giudizi d3/d4, cambio di vertice, a scadenza fissa).
+12. **Quanto pesano le interviste rispetto agli scenari:** l'intensità x della regola "più / come / meno" (proposta: metà dello scostamento massimo ammesso, così gli scenari possono sempre correggere il punto di partenza) e la forza del punto di partenza nella stima (concentrazione del prior, decisione 8).
 
 ## Che cosa servirà per costruirla (non in questa proposta)
 
